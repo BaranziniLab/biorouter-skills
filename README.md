@@ -25,7 +25,7 @@ General-purpose skills — research, writing, planning, code style, and design.
 
 | Skill | Trigger | What it does |
 |---|---|---|
-| [`auto-research`](auto-research) | `/auto-research` | End-to-end research pipeline: scope → literature review → hypotheses → analysis plan → verification → cited write-up. Orchestrates `bio-skills` and the BioRouter extensions; never fabricates citations or results. |
+| [`scientific-research`](scientific-research) | `/scientific-research` | End-to-end research pipeline: scope → literature review → hypotheses → analysis plan → verification → cited write-up. Orchestrates `bio-skills` and the BioRouter extensions; never fabricates citations or results. |
 | [`anti-ai-writing`](anti-ai-writing) | `/anti-ai-writing` | Pass/fail checklist that strips AI tells out of prose, articles, and essays. |
 | [`taste-skill`](taste-skill) | Auto (frontend design) | Anti-slop frontend design — landing pages, portfolios, dashboards, and paper companion sites that don't look templated. |
 | [`develop-biorouter-extension`](develop-biorouter-extension) | `/develop-biorouter-extension` | Step-by-step guide for building a `.brxt` extension — manifest, MCP server, bundled skills. |
@@ -38,13 +38,31 @@ General-purpose skills — research, writing, planning, code style, and design.
 
 ---
 
+## Developer & authoring skills
+
+Engineering, review, and skill-authoring tools — adapted from [Anthropic's official Claude Code plugins](https://github.com/anthropics/claude-plugins-official) (Apache 2.0). Because BioRouter is a Goose fork with **no hook engine** and no `commands/`/`agents/` loaders, each upstream plugin's commands, subagents, and hooks have been folded into a single self-contained `SKILL.md` of agent instructions. Notably, `hookify` becomes a *self-enforced* guardrails skill rather than programmatic hooks.
+
+| Skill | Trigger | What it does |
+|---|---|---|
+| [`code-review`](code-review) | `/code-review` | Multi-stage, confidence-scored review of a pull request (or local diff); drops low-confidence findings and posts a formatted PR comment via `gh`. |
+| [`code-simplifier`](code-simplifier) | `/code-simplifier` | Simplifies recently-changed code for clarity while preserving exact behavior; defers language style to `python-scripting`/`r-scripting`. |
+| [`commit-commands`](commit-commands) | `/commit-commands` | Three git workflows — clean single commit; commit + push + open PR; and clean up `[gone]` branches and their worktrees. |
+| [`claude-md-management`](claude-md-management) | `/claude-md-management` | Captures session learnings into `CLAUDE.md`, and audits/scores existing project-memory files against a quality rubric. |
+| [`skill-creator`](skill-creator) | `/skill-creator` | The canonical guide to authoring BioRouter skills — frontmatter, progressive disclosure, packaging, and testing. |
+| [`hookify`](hookify) | `/hookify` | Captures project guardrails (warn/block rules) into `.biorouter/guardrails.md` that the agent self-enforces each turn (BioRouter has no hook engine). |
+| [`code-modernization`](code-modernization) | `/code-modernization` | Phased legacy-modernization workflow: preflight → assess → map → extract rules → brief → transform → harden → status. |
+| [`playground`](playground) | `/playground` | Generates self-contained single-file interactive HTML playgrounds for configuring something visually and copying out a prompt. |
+| [`frontend-design`](frontend-design) | Auto (frontend work) | Anthropic's anti-slop frontend guidance; complements the `taste-skill`. |
+
+---
+
 ## BioSkills — bioinformatics bundle
 
 [`bio-skills/`](bio-skills) is a large, context-triggered bundle covering the working biologist's toolkit: sequence I/O, alignment, variant calling, single-cell, ATAC/ChIP-seq, proteomics, metabolomics, pathway analysis, machine learning, workflow management, and 60+ more categories (450+ individual skills). These load automatically when BioRouter sees a relevant file or task (a `.vcf`, a `scanpy` import, a `Seurat` object). See [`bio-skills/INDEX.md`](bio-skills/INDEX.md) for the full catalog.
 
 Integrated from [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT). BioRouter's house style prefers [`uv`](https://github.com/astral-sh/uv) over `pip`; skills with `pip install` lines carry a one-line uv tip banner while leaving the original commands intact for reproducibility.
 
-`auto-research` is designed to delegate to this bundle — and to the SPOKE, CDW, OMOP, and MedCP extensions — for any biomedical data access, so the orchestrator never has to recall facts from memory.
+`scientific-research` is designed to delegate to this bundle — and to the SPOKE, CDW, OMOP, and MedCP extensions — for any biomedical data access, so the orchestrator never has to recall facts from memory.
 
 ---
 
@@ -106,10 +124,11 @@ A good `description:` is the single most important line — it is what the model
 
 ## License & attribution
 
-This repository is licensed under the [MIT License](LICENSE). Some skills are adapted from upstream open-source libraries and retain their original (MIT) terms:
+This repository is licensed under the [MIT License](LICENSE). Some skills are adapted from upstream open-source libraries and retain their original terms:
 
 - **`bio-skills/`** — from [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT).
 - **`taste-skill/`** — from [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) (MIT).
 - **`superpowers/`** — adapted from the open-source "superpowers" Claude Code skill library.
+- **Developer & authoring skills** (`code-review`, `code-simplifier`, `commit-commands`, `claude-md-management`, `skill-creator`, `hookify`, `code-modernization`, `playground`, `frontend-design`) — adapted from [anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official) (Apache 2.0). Each `SKILL.md` notes its source in a header comment.
 
 Maintained by the [Baranzini Lab](https://baranzinilab.ucsf.edu/) at UCSF.

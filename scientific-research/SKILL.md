@@ -1,10 +1,10 @@
 ---
-name: auto-research
+name: scientific-research
 description: Run a research question end to end — scoping, literature review, hypothesis generation, analysis planning, result verification, and a cited write-up. Use when the user wants to investigate a topic, survey prior work, plan or critique an analysis, draft a paper section, or run a multi-step "do the research for me" task. Delegates biomedical data access to the bio-skills bundle and to BioRouter extensions (SPOKE, CDW, OMOP, MedCP).
 user-invocable: true
 ---
 
-# Auto-Research
+# Scientific Research
 
 A pipeline for taking a research question from a one-line prompt to a verified, cited draft — without inventing facts. This skill is the **orchestrator**: it decides the path, then hands the domain work to the right tool. It does not replace a scientist's judgment; every claim it surfaces is meant to be checked, and it flags where it is uncertain.
 
@@ -14,7 +14,7 @@ A pipeline for taking a research question from a one-line prompt to a verified, 
 
 ## When this fires
 
-Use `/auto-research` (or let it auto-load) when the request is a *research task*, not a code task:
+Use `/scientific-research` (or let it auto-load) when the request is a *research task*, not a code task:
 
 - "What's known about X?" / "Survey the literature on Y."
 - "Generate hypotheses for why Z happens."
