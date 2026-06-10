@@ -4,6 +4,8 @@ description: Plan a feature end-to-end for the Ralph autonomous agent loop. Use 
 user-invocable: true
 ---
 
+<!-- Adapted for BioRouter from snarktank/ralph (Ryan Carson, MIT), itself based on Geoffrey Huntley's Ralph pattern (https://ghuntley.com/ralph). -->
+
 # RALPH
 
 End-to-end planning skill for the Ralph autonomous agent loop. Takes a feature idea and produces two artifacts:

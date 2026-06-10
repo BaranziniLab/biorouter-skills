@@ -121,3 +121,24 @@ Skip any step = lying, not verifying
 Run the command. Read the output. THEN claim the result.
 
 This is non-negotiable.
+
+## Enforcing it with a Stop hook (optional)
+
+The rule above is a discipline the agent holds itself to. On Biorouter you can also make it a hard gate: a **`Stop` hook** that runs the project's verification command and refuses to let the turn end if it fails. The agent then cannot claim done over a red suite — the engine sends the failure back and the loop continues.
+
+Add this to `<project>/.biorouter/hooks.yaml` (project hooks require `hooks.allow_project_hooks: true` in `~/.config/biorouter/config.yaml`), swapping in the real command for the repo:
+
+```yaml
+hooks:
+  Stop:
+    - hooks:
+        - type: command
+          timeout: 300
+          command: |
+            cargo test --quiet >/dev/null 2>&1 || {
+              echo "Verification failed — fix the failures before finishing." >&2
+              exit 2
+            }
+```
+
+Use the repo's own command (`npm run lint:check && npm test`, `pytest -q`, `Rscript -e 'testthat::test_dir("tests")'`, etc.). Stop blocks cap at five in a row, so a genuinely stuck run still ends rather than looping forever. The **hookify** skill generates rules like this for you. Keep the gate command-based and deterministic rather than an LLM judge, so "passing" means the suite actually ran green.

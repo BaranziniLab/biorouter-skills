@@ -29,7 +29,7 @@ General-purpose skills — research, writing, planning, code style, and design.
 | [`anti-ai-writing`](anti-ai-writing) | `/anti-ai-writing` | Pass/fail checklist that strips AI tells out of prose, articles, and essays. |
 | [`taste-skill`](taste-skill) | Auto (frontend design) | Anti-slop frontend design — landing pages, portfolios, dashboards, and paper companion sites that don't look templated. |
 | [`develop-biorouter-extension`](develop-biorouter-extension) | `/develop-biorouter-extension` | Step-by-step guide for building a `.brxt` extension — manifest, MCP server, bundled skills. |
-| [`ralph`](ralph) | `/ralph` | End-to-end planning for the **Ralph** autonomous agent loop — generates a markdown PRD from a feature idea, then converts it to `prd.json` sized for one-story-per-iteration execution. |
+| [`ralph`](ralph) | `/ralph` | End-to-end planning for the **Ralph** autonomous agent loop — generates a markdown PRD from a feature idea, then converts it to `prd.json` sized for one-story-per-iteration execution. Adapted from [snarktank/ralph](https://github.com/snarktank/ralph) (MIT), itself based on [Geoffrey Huntley's Ralph pattern](https://ghuntley.com/ralph). |
 | [`ucsf-hpc`](ucsf-hpc) | `/ucsf-hpc` | SSH setup, SLURM templates (CPU/GPU/H200), file transfer, and module management for the UCSF CHPC cluster. |
 | [`python-scripting`](python-scripting) | Auto (Python) | Enforces Python naming, typing, error handling, and project-structure conventions. |
 | [`r-scripting`](r-scripting) | Auto (R) | Tidyverse conventions and documentation standards for R. |
@@ -40,7 +40,7 @@ General-purpose skills — research, writing, planning, code style, and design.
 
 ## Developer & authoring skills
 
-Engineering, review, and skill-authoring tools — adapted from [Anthropic's official Claude Code plugins](https://github.com/anthropics/claude-plugins-official) (Apache 2.0). Because BioRouter is a Goose fork with **no hook engine** and no `commands/`/`agents/` loaders, each upstream plugin's commands, subagents, and hooks have been folded into a single self-contained `SKILL.md` of agent instructions. Notably, `hookify` becomes a *self-enforced* guardrails skill rather than programmatic hooks.
+Engineering, review, and skill-authoring tools — adapted from [Anthropic's official Claude Code plugins](https://github.com/anthropics/claude-plugins-official) (Apache 2.0). Each upstream plugin ships as slash-commands and subagents (none of them carry lifecycle hooks); BioRouter has no `commands/` or `agents/` loader, so each plugin's commands and subagents are folded into one self-contained `SKILL.md` the model loads on demand. `hookify` is the exception — BioRouter has a hook engine, so it writes genuine, enforced hooks in `<project>/.biorouter/hooks.yaml` instead of honor-system notes.
 
 | Skill | Trigger | What it does |
 |---|---|---|
@@ -48,7 +48,7 @@ Engineering, review, and skill-authoring tools — adapted from [Anthropic's off
 | [`code-simplifier`](code-simplifier) | `/code-simplifier` | Simplifies recently-changed code for clarity while preserving exact behavior; defers language style to `python-scripting`/`r-scripting`. |
 | [`commit-commands`](commit-commands) | `/commit-commands` | Three git workflows — clean single commit; commit + push + open PR; and clean up `[gone]` branches and their worktrees. |
 | [`skill-creator`](skill-creator) | `/skill-creator` | The canonical guide to authoring BioRouter skills — frontmatter, progressive disclosure, packaging, and testing. |
-| [`hookify`](hookify) | `/hookify` | Captures project guardrails (warn/block rules) into `.biorouter/guardrails.md` that the agent self-enforces each turn (BioRouter has no hook engine). |
+| [`hookify`](hookify) | `/hookify` | Captures project guardrails (warn/block rules) and writes them as real Biorouter hooks in `<project>/.biorouter/hooks.yaml` — a `block` rule stops the action, a `warn` rule surfaces a notice. Requires `hooks.allow_project_hooks: true`. |
 | [`code-modernization`](code-modernization) | `/code-modernization` | Phased legacy-modernization workflow: preflight → assess → map → extract rules → brief → transform → harden → status. |
 | [`playground`](playground) | `/playground` | Generates self-contained single-file interactive HTML playgrounds for configuring something visually and copying out a prompt. |
 | [`frontend-design`](frontend-design) | Auto (frontend work) | Anthropic's anti-slop frontend guidance; complements the `taste-skill`. |
@@ -57,7 +57,7 @@ Engineering, review, and skill-authoring tools — adapted from [Anthropic's off
 
 ## BioSkills — bioinformatics bundle
 
-[`bio-skills/`](bio-skills) is a large, context-triggered bundle covering the working biologist's toolkit: sequence I/O, alignment, variant calling, single-cell, ATAC/ChIP-seq, proteomics, metabolomics, pathway analysis, machine learning, workflow management, and 60+ more categories (450+ individual skills). These load automatically when BioRouter sees a relevant file or task (a `.vcf`, a `scanpy` import, a `Seurat` object). See [`bio-skills/INDEX.md`](bio-skills/INDEX.md) for the full catalog.
+[`bio-skills/`](bio-skills) is a large, context-triggered bundle covering the working biologist's toolkit: sequence I/O, alignment, variant calling, single-cell, ATAC/ChIP-seq, proteomics, metabolomics, pathway analysis, machine learning, workflow management, and more — 456 individual skills across 63 categories in this snapshot (upstream now ships 540). These load automatically when BioRouter sees a relevant file or task (a `.vcf`, a `scanpy` import, a `Seurat` object). See [`bio-skills/INDEX.md`](bio-skills/INDEX.md) for the full catalog.
 
 Integrated from [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT). BioRouter's house style prefers [`uv`](https://github.com/astral-sh/uv) over `pip`; skills with `pip install` lines carry a one-line uv tip banner while leaving the original commands intact for reproducibility.
 
@@ -86,7 +86,7 @@ biorouter-skills/
 │   ├── brainstorming/
 │   ├── test-driven-development/
 │   └── …
-└── bio-skills/                    ← bioinformatics bundle (60+ categories)
+└── bio-skills/                    ← bioinformatics bundle (63 categories)
     ├── INDEX.md
     ├── single-cell/
     ├── variant-calling/
@@ -121,13 +121,22 @@ A good `description:` is the single most important line — it is what the model
 
 ---
 
-## License & attribution
+## Sources & attribution
 
-This repository is licensed under the [MIT License](LICENSE). Some skills are adapted from upstream open-source libraries and retain their original terms:
+This repository is licensed under the [MIT License](LICENSE). Most skills are adapted from open-source projects; we keep their original license and credit the upstream author. The table below is the full directory of where each skill comes from and what we changed to fit BioRouter. Lab-original skills are written by the [Baranzini Lab](https://baranzinilab.ucsf.edu/).
 
-- **`bio-skills/`** — from [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT).
-- **`taste-skill/`** — from [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) (MIT).
-- **`superpowers/`** — adapted from the open-source "superpowers" Claude Code skill library.
-- **Developer & authoring skills** (`code-review`, `code-simplifier`, `commit-commands`, `skill-creator`, `hookify`, `code-modernization`, `playground`, `frontend-design`) — adapted from [anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official) (Apache 2.0). Each `SKILL.md` notes its source in a header comment.
+| Skill | Source | License | What changed for BioRouter |
+|---|---|---|---|
+| `bio-skills` | [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) | MIT | Dropped the `bio-` name prefix, set `user-invocable: false`, and added a one-line `uv` tip banner to skills that shipped `pip install` commands (originals left intact). 456 skills / 63 categories in this snapshot; upstream has since grown to 540. |
+| `taste-skill` | [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) | MIT | Wired to BioRouter's auto-trigger on frontend work; content kept. Attribution header retained in the `SKILL.md`. |
+| `superpowers` | [obra/superpowers](https://github.com/obra/superpowers) by Jesse Vincent | MIT | Folded the 13 engineering-discipline skills in; dropped the upstream `using-superpowers` dispatcher and its `SessionStart` hook (BioRouter discovers skills natively). `verification-before-completion` and `finishing-a-development-branch` gained an optional `Stop`-hook recipe to hard-enforce "tests pass before finishing." |
+| `ralph` | [snarktank/ralph](https://github.com/snarktank/ralph) by Ryan Carson, after [Geoffrey Huntley's Ralph pattern](https://ghuntley.com/ralph) | MIT | Reworked the PRD → `prd.json` → one-story-per-iteration flow around BioRouter's agent loop and `/ralph` invocation. |
+| `code-review`, `code-simplifier`, `commit-commands`, `skill-creator`, `code-modernization`, `playground`, `frontend-design` | [anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official) | Apache 2.0 | Each upstream plugin's slash-commands and subagents folded into one `SKILL.md` (these plugins ship no hooks). Shell routed through the Developer extension; lab-specific defaults adjusted. Each `SKILL.md` keeps a source header. |
+| `hookify` | [anthropics/claude-plugins-official → hookify](https://github.com/anthropics/claude-plugins-official/tree/main/plugins/hookify) | Apache 2.0 | Rewritten to generate real, enforced BioRouter hooks (`<project>/.biorouter/hooks.yaml`) — the upstream's enforced-hook behavior, expressed in BioRouter's native hook schema. |
+| `scientific-research` | Lab-original | MIT | — Orchestrates `bio-skills` and the SPOKE / CDW / OMOP / MedCP extensions. |
+| `anti-ai-writing` | Lab-original | MIT | — Prose checklist for stripping AI tells. |
+| `ucsf-hpc` | Lab-original | MIT | — UCSF CHPC cluster: SSH, SLURM templates, modules. |
+| `python-scripting`, `r-scripting`, `ggplot-visualization` | Lab-original | MIT | — House style for Python, R, and ggplot2; auto-triggered by file context. |
+| `develop-biorouter-extension` | Lab-original | MIT | — Guide for the `.brxt` extension format. |
 
 Maintained by the [Baranzini Lab](https://baranzinilab.ucsf.edu/) at UCSF.

@@ -37,6 +37,8 @@ Stop. Don't proceed to Step 2.
 
 **If tests pass:** Continue to Step 2.
 
+> **Enforce it (optional):** on Biorouter you can make "tests must pass before finishing" a hard gate with a `Stop` hook in `<project>/.biorouter/hooks.yaml` that runs the suite and `exit 2`s on failure — see the **verification-before-completion** skill or generate one with **hookify**. Requires `hooks.allow_project_hooks: true`.
+
 ### Step 2: Detect Environment
 
 **Determine workspace state before presenting options:**

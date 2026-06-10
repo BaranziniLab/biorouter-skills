@@ -1,135 +1,148 @@
 ---
 name: hookify
-description: Capture project guardrails — rules that warn or block unwanted behaviors (destructive shell commands, debug prints, editing sensitive files, finishing without tests) — and self-enforce them each turn. Use when the user wants to add a guardrail, prevent a behavior, "stop doing X", or set up checks the agent should honor before acting.
+description: Turn project guardrails into real, enforced Biorouter hooks — rules that warn on or block unwanted behavior (destructive shell commands, debug prints, edits to sensitive files, finishing without passing tests). Use when the user wants to add a guardrail, prevent a behavior, "stop doing X", or gate an action the agent must clear before proceeding.
 user-invocable: true
 ---
 
 <!-- Adapted for BioRouter from anthropics/claude-plugins-official/plugins/hookify (Apache License 2.0). -->
 
-# Hookify (self-enforced guardrails)
+# Hookify (enforced guardrails)
 
-## Read this first — the limitation
+This skill captures project guardrails and writes them as real Biorouter **hooks** — shell commands the engine runs on lifecycle events. A `block` rule actually stops the action; a `warn` rule surfaces a notice and lets it through. This is genuine enforcement, not an honor-system note the agent has to remember.
 
-BioRouter does **not** execute programmatic hooks. There is no hook engine: PreToolUse / PostToolUse / Stop / UserPromptSubmit do not run. So the guardrails this skill creates are **conventions the agent itself honors each turn — not enforced gates.** A determined or forgetful agent can bypass them; they are a discipline, not a wall.
+Rules live in `<project>/.biorouter/hooks.yaml`. The agent regenerates that file as the user adds, edits, or removes rules.
 
-If you need *true* enforcement that cannot be skipped, it must live in a `.brxt` extension or a workflow validation step — see the **develop-biorouter-extension** skill. Use this skill when honor-system guardrails are good enough (the common case for "please stop doing X").
+## Prerequisite: enable project hooks
 
-Be upfront with the user about this distinction when you set up rules, especially for `block` rules — a `block` here means "the agent refuses and explains", not "the system prevents it".
+Project-level hooks are off by default, so a cloned repo can't run commands on someone's machine without consent. Before the generated file does anything, the user must opt in **once**, globally, in `~/.config/biorouter/config.yaml`:
 
----
+```yaml
+hooks:
+  allow_project_hooks: true
+```
 
-## Workflow: capturing rules
+(or set `BIOROUTER_ALLOW_PROJECT_HOOKS=1`). Until they do, `.biorouter/hooks.yaml` is read but ignored. Always state this when you set up the first rule, and confirm the user wants project hooks enabled.
+
+## Workflow
 
 ### 1. Gather candidate rules
 
 Two sources:
 
-- **Explicit instruction** — the user says "warn me when I use `rm -rf`" or "don't leave `console.log` in TypeScript". Turn that directly into a rule.
-- **Conversation scan** — if the user just runs the skill with no specifics, scan the recent conversation for frustration or correction signals: places they said "no, don't do that", "you keep…", "I told you already", or had to undo your work. Each recurring correction is a candidate rule.
+- **Explicit instruction** — "warn me when I use `rm -rf`", "don't leave `console.log` in TypeScript", "don't finish until the tests pass." Turn each directly into a rule.
+- **Conversation scan** — if the user runs the skill with no specifics, read back over the recent conversation for correction signals: "no, don't do that", "you keep…", "I told you already", places they had to undo your work. Each recurring correction is a candidate rule.
 
 ### 2. Confirm with the user
 
-Present the candidate rules as a short list. For each, confirm:
-- whether to add it,
-- whether it's `warn` (surface a message, then proceed) or `block` (refuse and explain).
+List the candidates. For each, confirm: include it or not, and `warn` (notice, then proceed) or `block` (stop the action). Default to `warn` unless the behavior is genuinely destructive. Write nothing until the user signs off.
 
-Don't write anything until the user signs off. Default to `warn` unless the behavior is genuinely destructive.
+### 3. Generate the hooks
 
-### 3. Write them to the project guardrails file
+Append (or merge) one hook block per confirmed rule into `<project>/.biorouter/hooks.yaml`, using the patterns below. Create the directory and file if missing. Keep each block labelled with a `# --- <rule-name> (<warn|block>) ---` comment so the rules stay legible and removable.
 
-Append each confirmed rule to `./.biorouter/guardrails.md` (create the directory and file if missing). One rule per entry, in the format below.
+## How rules map to hooks
 
----
+| Rule kind | Event | Mechanism |
+|---|---|---|
+| `warn` on a tool input | `PreToolUse` (matcher = tool name) | `command` hook, exit 0, prints `{"systemMessage":"…"}` → a non-blocking yellow notice |
+| `block` a shell command | `PreToolUse` matcher `developer__shell` | inspect `.tool_input.command`; if it matches, `echo reason >&2; exit 2` → the call is denied and the reason is fed back to the model |
+| `block` a file edit | `PreToolUse` matcher `developer__text_editor` | inspect `.tool_input.path` / `.tool_input.file_text` / `.tool_input.new_str`; block the same way |
+| `block` finishing without tests | `Stop` | run the project's test command; `exit 2` with the failure as the reason so the turn can't end red |
+| fuzzy / judgment-based rule | any event | a `prompt` hook — an LLM judge returns `{"ok":false,"reason":"…"}` to block |
 
-## Rule file format
+Two things to know about the matcher and the payload:
 
-`./.biorouter/guardrails.md` holds simple markdown, one rule per entry. Each rule has:
+- **The matcher matches the tool *name* only** (`developer__shell`, `developer__text_editor`, or a regex / `a|b` alternation), not the command text. So content checks (`rm -rf`, `console.log`, a path) happen *inside* the hook's shell script, which reads the event JSON from stdin.
+- **The payload fields** for the built-in Developer tools: shell → `.tool_input.command`; text editor → `.tool_input.command` (`view`/`write`/`str_replace`/`insert`), `.tool_input.path`, `.tool_input.file_text` (on write), `.tool_input.new_str` (on str_replace/insert).
 
-- **name** — short identifier.
-- **scope** — when it applies: `before-bash`, `before-edit`, `before-finish`, or `always`.
-- **match** — the condition described plainly (a pattern, or a situation). Plain language is fine — you are the one checking it, not a regex engine.
-- **action** — `warn` or `block`.
-- **message** — what to surface when it matches.
+The generated scripts use `jq` to read those fields. If `jq` isn't available, fall back to `grep`/`sed` on the raw stdin. A hook that errors fails *open* (the action proceeds), so keep the scripts simple and defensive — note in the file that a broken script silently disables its guardrail.
 
-Entry template:
+## hooks.yaml patterns
 
-```markdown
-## <name>
-- scope: <before-bash | before-edit | before-finish | always>
-- match: <pattern or condition in plain language>
-- action: <warn | block>
-- message: <what to tell the user when this rule fires>
+A complete generated file looks like this. Emit only the blocks for rules the user confirmed.
+
+```yaml
+# .biorouter/hooks.yaml — generated by hookify
+# Requires hooks.allow_project_hooks: true in ~/.config/biorouter/config.yaml
+# Each block below is one guardrail; remove a block to drop the rule.
+hooks:
+  PreToolUse:
+    # --- block-destructive-shell (block) ---
+    - matcher: "developer__shell"
+      hooks:
+        - type: command
+          timeout: 15
+          command: |
+            input=$(cat)
+            cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
+            if printf '%s' "$cmd" | grep -qE 'rm[[:space:]]+-rf|dd[[:space:]]+if=|mkfs|chmod[[:space:]]+777|:[[:space:]]*\(\)[[:space:]]*\{'; then
+              echo "Destructive command blocked by hookify (rm -rf / dd / mkfs / chmod 777 / fork bomb). Verify the path and use a safer approach." >&2
+              exit 2
+            fi
+
+    # --- warn-debug-code (warn) ---
+    - matcher: "developer__text_editor"
+      hooks:
+        - type: command
+          timeout: 15
+          command: |
+            input=$(cat)
+            txt=$(printf '%s' "$input" | jq -r '.tool_input.file_text // .tool_input.new_str // ""')
+            if printf '%s' "$txt" | grep -qE 'console\.log\(|debugger;|[^a-zA-Z_.]print\('; then
+              printf '%s' '{"systemMessage":"Debug statement added (console.log / print / debugger) — remove it before committing."}'
+            fi
+
+    # --- block-sensitive-files (block) ---
+    - matcher: "developer__text_editor"
+      hooks:
+        - type: command
+          timeout: 15
+          command: |
+            input=$(cat)
+            path=$(printf '%s' "$input" | jq -r '.tool_input.path // ""')
+            if printf '%s' "$path" | grep -qE '(^|/)\.env($|\.)|/credentials|/secrets|\.pem$|id_rsa'; then
+              echo "Editing a sensitive file ($path) is blocked by hookify. Keep credentials out of the repo and confirm the file is gitignored." >&2
+              exit 2
+            fi
+
+  Stop:
+    # --- require-tests-before-finish (block) ---
+    - hooks:
+        - type: command
+          timeout: 300
+          command: |
+            # Swap in this project's real test command.
+            cargo test --quiet >/dev/null 2>&1 || {
+              echo "Tests have not passed this session. Run the suite and fix failures before finishing." >&2
+              exit 2
+            }
 ```
 
----
+For a rule that's easier to describe than to pattern-match, use a `prompt` hook instead of a shell script:
 
-## Enforcement instruction
-
-This is the part that makes the skill work, since nothing runs automatically:
-
-**At the start of each turn, and again BEFORE any risky action** — running a shell command, editing a file, or declaring the task complete — read `./.biorouter/guardrails.md` (if it exists) and check the rules whose `scope` matches what you are about to do:
-
-- `before-bash` rules: check before running any shell command.
-- `before-edit` rules: check before editing or writing a file.
-- `before-finish` rules: check before telling the user the task is done.
-- `always` rules: check on every turn.
-
-For each matching rule:
-- **warn** → surface the rule's message to the user, then continue.
-- **block** → do **not** take the action. Tell the user the rule blocked it, show the message, and explain the situation. Proceed only if the user explicitly overrides.
-
-If `./.biorouter/guardrails.md` doesn't exist, there are no guardrails — carry on normally.
-
----
-
-## Examples
-
-### Block destructive shell commands
-
-```markdown
-## block-destructive-shell
-- scope: before-bash
-- match: command contains `rm -rf`, `dd if=`, `mkfs`, or `chmod 777`
-- action: block
-- message: Destructive command detected. This can cause data loss — verify the exact path and use a safer approach before proceeding.
+```yaml
+hooks:
+  PreToolUse:
+    - matcher: "developer__shell"
+      hooks:
+        - type: prompt
+          prompt: "Block any command that deletes files outside the project directory or rewrites git history (force-push, hard reset, filter-branch)."
 ```
 
-### Warn on leftover debug code
+Notes when generating:
 
-```markdown
-## warn-debug-code
-- scope: before-edit
-- match: new content adds `console.log(`, `debugger;`, or a stray `print(`
-- action: warn
-- message: Debug statement added — remember to remove it before committing.
-```
-
-### Warn before editing sensitive files
-
-```markdown
-## warn-sensitive-files
-- scope: before-edit
-- match: file path matches `.env`, `credentials`, or `secrets`
-- action: warn
-- message: Editing a sensitive file. Make sure no credentials are hardcoded and the file is gitignored.
-```
-
-### Require tests before finishing
-
-```markdown
-## require-tests-before-finish
-- scope: before-finish
-- match: no test command (e.g. `npm test`, `pytest`, `cargo test`) was run this session
-- action: block
-- message: Tests haven't been run this session. Run the test suite to verify the changes before declaring the task complete.
-```
-
----
+- For a **`Stop` test-gate**, substitute the project's actual command (`npm test`, `pytest`, `cargo test`, `Rscript -e 'testthat::test_dir(...)'`). Stop hooks cap at 5 consecutive blocks per session, so the agent won't get stuck forever; the payload's `stop_hook_active` flag lets a smarter script skip re-runs.
+- For a **`warn`**, exit 0 and print the `{"systemMessage":"…"}` JSON only when the rule fires; print nothing otherwise.
+- For a **`block`**, write the reason to stderr and `exit 2`. The reason is shown to the user and handed back to the model, so make it actionable.
 
 ## Managing rules
 
-- **List** rules: read `./.biorouter/guardrails.md` and summarize the entries.
-- **Disable** a rule: with the user's OK, delete its entry (or comment it out) from the file.
-- **Edit** a rule: change its `match`, `action`, or `message` in place.
+- **List** — read `.biorouter/hooks.yaml` and summarize each labelled block.
+- **Disable** — with the user's OK, delete the rule's block (or comment it out).
+- **Edit** — change the matcher, the pattern inside the script, the message, or warn↔block.
 
-Keep the file short and the rules specific — a long list of vague guardrails is easy to lose track of, and since enforcement is voluntary, focus on the few that matter most.
+Keep the file short and the rules specific. A handful of sharp guardrails beats a long list of vague ones.
+
+## When a hook can't express the rule
+
+Hooks act on tool calls and lifecycle events, matched by tool name + a script over the input. They can't read intent that never shows up as a tool call, and they don't fire inside another extension's internal steps. For a rule like that — a cross-turn judgment, a semantic "don't change the paper's argument" — fall back to a plain-language note the agent honors each turn (a short `<project>/.biorouter/guardrails.md` line), and tell the user it's a convention, not an enforced gate. This is now the exception; prefer a real hook whenever the rule can be pinned to a tool or the end of a turn. For enforcement that must hold regardless of the agent, build it into a `.brxt` extension or a workflow validation step — see the **develop-biorouter-extension** skill.
