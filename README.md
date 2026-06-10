@@ -47,7 +47,6 @@ Engineering, review, and skill-authoring tools — adapted from [Anthropic's off
 | [`code-review`](code-review) | `/code-review` | Multi-stage, confidence-scored review of a pull request (or local diff); drops low-confidence findings and posts a formatted PR comment via `gh`. |
 | [`code-simplifier`](code-simplifier) | `/code-simplifier` | Simplifies recently-changed code for clarity while preserving exact behavior; defers language style to `python-scripting`/`r-scripting`. |
 | [`commit-commands`](commit-commands) | `/commit-commands` | Three git workflows — clean single commit; commit + push + open PR; and clean up `[gone]` branches and their worktrees. |
-| [`claude-md-management`](claude-md-management) | `/claude-md-management` | Captures session learnings into `CLAUDE.md`, and audits/scores existing project-memory files against a quality rubric. |
 | [`skill-creator`](skill-creator) | `/skill-creator` | The canonical guide to authoring BioRouter skills — frontmatter, progressive disclosure, packaging, and testing. |
 | [`hookify`](hookify) | `/hookify` | Captures project guardrails (warn/block rules) into `.biorouter/guardrails.md` that the agent self-enforces each turn (BioRouter has no hook engine). |
 | [`code-modernization`](code-modernization) | `/code-modernization` | Phased legacy-modernization workflow: preflight → assess → map → extract rules → brief → transform → harden → status. |
@@ -129,6 +128,6 @@ This repository is licensed under the [MIT License](LICENSE). Some skills are ad
 - **`bio-skills/`** — from [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT).
 - **`taste-skill/`** — from [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) (MIT).
 - **`superpowers/`** — adapted from the open-source "superpowers" Claude Code skill library.
-- **Developer & authoring skills** (`code-review`, `code-simplifier`, `commit-commands`, `claude-md-management`, `skill-creator`, `hookify`, `code-modernization`, `playground`, `frontend-design`) — adapted from [anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official) (Apache 2.0). Each `SKILL.md` notes its source in a header comment.
+- **Developer & authoring skills** (`code-review`, `code-simplifier`, `commit-commands`, `skill-creator`, `hookify`, `code-modernization`, `playground`, `frontend-design`) — adapted from [anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official) (Apache 2.0). Each `SKILL.md` notes its source in a header comment.
 
 Maintained by the [Baranzini Lab](https://baranzinilab.ucsf.edu/) at UCSF.
