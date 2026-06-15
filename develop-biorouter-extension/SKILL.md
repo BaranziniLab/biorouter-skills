@@ -79,6 +79,54 @@ build-backend = "hatchling.build"
 
 The `entry_point` field in `manifest.json` must match the Python module name (the package importable as `python -m <entry_point>`).
 
+## Cross-Platform Dependencies (avoid source builds)
+
+`uv sync` runs on the **end user's machine** at install time. Every dependency
+(direct *and* transitive) must therefore either ship a prebuilt wheel for the
+user's OS + CPU + Python, or be compilable there. When no wheel matches, uv
+falls back to building from source — which silently requires a C and/or Rust
+toolchain the user may not have, turning "install an extension" into a compiler
+error. This is the single most common cause of install failures.
+
+**Real example:** `cryptography` ≥ 49 (2026-06-12) removed x86_64 (Intel) macOS
+wheels. Any extension that pulls it in — e.g. transitively via
+`fastmcp → fastmcp-slim[server] → joserfc → cryptography` — forces Intel-Mac
+users into a from-source Rust build that fails on most machines.
+
+**Mitigation — cap the dependency only where wheels are missing.** Use a uv
+constraint with an environment marker so other platforms keep the newest
+version. This works even for *transitive* deps (a constraint narrows a version
+that's already in the tree; it does not add a new dependency):
+
+```toml
+[tool.uv]
+# cryptography >=49 dropped x86_64 macOS wheels (2026-06-12), forcing a
+# from-source Rust build on Intel Macs. Cap it to <49 there so Intel users get
+# a prebuilt wheel; arm64/Linux/Windows are unaffected.
+constraint-dependencies = [
+    "cryptography<49; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+]
+```
+
+**Verify resolution per platform** before you publish — `uv pip compile`
+resolves for a target without installing:
+
+```bash
+uv pip compile pyproject.toml --python-platform x86_64-apple-darwin  | grep -i cryptography   # Intel mac → must be <49
+uv pip compile pyproject.toml --python-platform aarch64-apple-darwin | grep -i cryptography   # Apple silicon
+uv pip compile pyproject.toml --python-platform x86_64-unknown-linux-gnu | grep -i cryptography
+```
+
+Guidelines:
+- Prefer dependency versions that ship wheels for **every** platform you
+  support. Check a package's "Download files" page on PyPI for the wheel tags.
+- Commit a `uv.lock` for reproducible installs. After adding a constraint, run
+  `uv lock` and `uv lock --check`. The lock is what `uv sync` consumes, so an
+  invalid lock breaks installs outright — always validate it.
+- Pure-Python packages (no compiled extension) are always safe. The risk is
+  packages with native code: `cryptography`, `pymssql`, `pydantic-core`,
+  anything built with maturin/setuptools-rust/cffi.
+
 ## Optional: Bundled Skills
 
 Skills can be shipped inside the `.brxt` and are installed atomically alongside the extension:
@@ -130,7 +178,11 @@ Exclude `.venv/`, `__pycache__/`, and any build artifacts.
 
 BioRouter installs by:
 1. Unzipping all contents to `~/.config/biorouter/extensions/<name>/`
-2. Running `uv sync` (timeout: 120s) to build the virtual environment
+2. Running `uv sync` (timeout: 10 minutes — generous so a legitimate
+   from-source build of a dependency has time to finish) to build the virtual
+   environment. If `uv sync` fails, BioRouter surfaces uv's output along with a
+   hint for common causes (missing/broken Rust toolchain, no wheel for the
+   platform).
 
 Uninstallation removes the entire `~/.config/biorouter/extensions/<name>/` directory, including any bundled skills.
 
@@ -148,4 +200,8 @@ Before distributing a `.brxt`, verify:
 [ ] Each SKILL.md has --- frontmatter with name and description
 [ ] .venv/ and __pycache__/ are excluded from the ZIP
 [ ] uv sync completes cleanly from the unzipped directory
+[ ] Every dependency has a wheel for each target platform, OR a marker-scoped
+    constraint caps it to a version that does (verify with `uv pip compile
+    --python-platform ...`, including x86_64-apple-darwin for Intel Macs)
+[ ] If a uv.lock is committed, `uv lock --check` passes
 ```
