@@ -1,6 +1,7 @@
 ---
 name: genome-annotation-prokaryotic-annotation
 description: Annotate bacterial and archaeal genomes with Bakta for comprehensive structural and functional annotation, or Prokka for lightweight annotation. Generates GFF3, GenBank, and FASTA outputs with NCBI-compatible locus tags. Use when annotating a newly assembled prokaryotic genome or preparing annotations for NCBI submission.
+license: Apache-2.0
 tool_type: cli
 primary_tool: Bakta
 user-invocable: false

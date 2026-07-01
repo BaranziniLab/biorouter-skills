@@ -1,6 +1,7 @@
 ---
 name: read-alignment-hisat2-alignment
 description: Align RNA-seq reads with HISAT2, a memory-efficient splice-aware aligner. Use when STAR's memory requirements are too high or for general RNA-seq alignment.
+license: Apache-2.0
 tool_type: cli
 primary_tool: HISAT2
 user-invocable: false

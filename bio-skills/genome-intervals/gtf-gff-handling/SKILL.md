@@ -1,6 +1,7 @@
 ---
 name: genome-intervals-gtf-gff-handling
 description: Parse, query, and convert GTF and GFF3 annotation files. Extract gene, transcript, and exon coordinates using gffread, gtfparse, and gffutils. Use when extracting specific features from gene annotations or converting between annotation formats.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: gffread
 user-invocable: false

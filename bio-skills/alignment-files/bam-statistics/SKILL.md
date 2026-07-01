@@ -1,6 +1,7 @@
 ---
 name: bam-statistics
 description: Generate alignment statistics using samtools flagstat, stats, depth, coverage, and mosdepth. Use when assessing alignment quality, calculating coverage, or generating QC reports.
+license: Apache-2.0
 tool_type: cli
 primary_tool: samtools
 user-invocable: false

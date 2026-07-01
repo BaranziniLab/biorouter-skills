@@ -1,6 +1,7 @@
 ---
 name: clinical-biostatistics-subgroup-analysis
 description: Performs stratified and subgroup analyses for clinical trial data. Covers Mantel-Haenszel pooling, Breslow-Day homogeneity testing, interaction terms in regression, multiple comparisons correction, and forest plot visualization. Use when analyzing treatment effects across patient subgroups or controlling for stratification variables.
+license: Apache-2.0
 tool_type: python
 primary_tool: statsmodels
 user-invocable: false

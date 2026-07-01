@@ -1,6 +1,7 @@
 ---
 name: sequence-similarity
 description: Find homologous sequences using iterative BLAST (PSI-BLAST), profile HMMs (HMMER), and reciprocal best hit analysis. Use when identifying orthologs, distant homologs, or protein family members where standard BLAST is not sensitive enough.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: BLAST+
 user-invocable: false

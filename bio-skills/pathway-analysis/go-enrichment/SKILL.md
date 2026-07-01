@@ -1,6 +1,7 @@
 ---
 name: pathway-go-enrichment
 description: Gene Ontology over-representation analysis using clusterProfiler enrichGO. Use when identifying biological functions enriched in a gene list from differential expression or other analyses. Supports all three ontologies (BP, MF, CC), multiple ID types, and customizable statistical thresholds.
+license: Apache-2.0
 tool_type: r
 primary_tool: clusterProfiler
 user-invocable: false

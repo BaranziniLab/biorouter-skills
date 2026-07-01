@@ -1,6 +1,7 @@
 ---
 name: methylation-dmr-detection
 description: Differentially methylated region (DMR) detection using methylKit tiles, bsseq BSmooth, and DMRcate. Use when identifying contiguous genomic regions with methylation differences between experimental conditions or cell types.
+license: Apache-2.0
 tool_type: r
 primary_tool: methylKit
 user-invocable: false

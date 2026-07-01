@@ -1,6 +1,7 @@
 ---
 name: crispr-screens-base-editing-analysis
 description: Analyzes base editing and prime editing outcomes including editing efficiency, bystander edits, and indel frequencies. Use when quantifying CRISPR base editor results, comparing ABE vs CBE efficiency, or assessing prime editing fidelity.
+license: Apache-2.0
 tool_type: python
 primary_tool: CRISPResso2
 user-invocable: false

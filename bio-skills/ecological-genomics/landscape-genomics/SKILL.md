@@ -1,6 +1,7 @@
 ---
 name: ecological-genomics-landscape-genomics
 description: Tests genotype-environment associations and identifies loci under local adaptation using LFMM2 (LEA), pcadapt outlier detection, OutFLANK Fst-based selection scans, and redundancy analysis. Detects adaptive genetic variation correlated with environmental variables while controlling for population structure. Use when identifying adaptive loci across environmental gradients, testing for signatures of local adaptation, or predicting genetic vulnerability to climate change with gradientForest.
+license: Apache-2.0
 tool_type: r
 primary_tool: LEA
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: restriction-mapping
 description: Create restriction maps showing enzyme cut positions on DNA sequences using Biopython Bio.Restriction. Visualize cut sites, calculate distances between sites, and generate text or graphical maps. Use when creating or analyzing restriction maps.
+license: Apache-2.0
 tool_type: python
 primary_tool: Bio.Restriction
 user-invocable: false

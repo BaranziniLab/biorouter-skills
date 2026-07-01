@@ -1,6 +1,7 @@
 ---
 name: spatial-transcriptomics-spatial-domains
 description: Identify spatial domains and tissue regions in spatial transcriptomics data using Squidpy and Scanpy. Cluster spots considering both expression and spatial context to define anatomical regions. Use when identifying tissue domains or spatial regions.
+license: Apache-2.0
 tool_type: python
 primary_tool: squidpy
 user-invocable: false

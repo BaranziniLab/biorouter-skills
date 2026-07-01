@@ -1,6 +1,7 @@
 ---
 name: imaging-mass-cytometry-data-preprocessing
 description: Load and preprocess imaging mass cytometry (IMC) and MIBI data. Covers MCD/TIFF handling, hot pixel removal, and image normalization. Use when starting IMC analysis from raw MCD files or preparing images for segmentation.
+license: Apache-2.0
 tool_type: python
 primary_tool: steinbock
 user-invocable: false

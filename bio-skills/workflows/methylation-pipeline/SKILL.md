@@ -1,6 +1,7 @@
 ---
 name: workflows-methylation-pipeline
 description: End-to-end bisulfite sequencing workflow from FASTQ to differentially methylated regions. Covers Bismark alignment, methylation calling, and DMR detection with methylKit. Use when analyzing bisulfite sequencing data.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: Bismark
 workflow: true

@@ -1,6 +1,7 @@
 ---
 name: phasing-imputation-imputation-qc
 description: Quality control of phasing and imputation results. Filter by INFO scores, assess accuracy, and prepare imputed data for downstream analysis. Use when filtering low-quality imputed variants or validating imputation accuracy before GWAS.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: bcftools
 user-invocable: false

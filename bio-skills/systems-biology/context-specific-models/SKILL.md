@@ -1,6 +1,7 @@
 ---
 name: systems-biology-context-specific-models
 description: Build tissue and condition-specific metabolic models using GIMME, iMAT, and INIT algorithms with expression data constraints. Create models that reflect cell-type specific metabolism. Use when building tissue-specific metabolic models or integrating transcriptomics with FBA.
+license: Apache-2.0
 tool_type: python
 primary_tool: cobrapy
 user-invocable: false

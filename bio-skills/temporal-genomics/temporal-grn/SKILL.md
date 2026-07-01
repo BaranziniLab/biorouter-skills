@@ -1,6 +1,7 @@
 ---
 name: temporal-genomics-temporal-grn
 description: Infers dynamic gene regulatory networks from bulk time-series expression data using Granger causality (statsmodels), dynGENIE3 (Extra-Trees on ODE-derived expression derivatives), and dynamic Bayesian networks (bnlearn). Identifies time-delayed regulatory relationships and tracks network rewiring across conditions. Use when inferring causal regulatory relationships from bulk temporal expression data or detecting TF influence propagation over time. Not for static co-expression networks (see gene-regulatory-networks/coexpression-networks).
+license: Apache-2.0
 tool_type: mixed
 primary_tool: statsmodels
 user-invocable: false

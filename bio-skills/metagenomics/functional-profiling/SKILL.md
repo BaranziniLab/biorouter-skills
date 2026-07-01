@@ -1,6 +1,7 @@
 ---
 name: metagenomics-functional-profiling
 description: Profile functional potential of metagenomes using HUMAnN3 and similar tools. Use when obtaining pathway abundances, gene family counts, or functional annotations from metagenomic data.
+license: Apache-2.0
 tool_type: cli
 primary_tool: humann
 user-invocable: false

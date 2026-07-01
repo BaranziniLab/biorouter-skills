@@ -1,6 +1,7 @@
 ---
 name: expression-matrix-normalization
 description: Normalize and transform RNA-seq count matrices for differential expression, visualization, and clustering. Covers between-sample (TMM, RLE, upper quartile), within-sample (TPM, FPKM), variance-stabilizing (VST, rlog), and single-cell (scran) methods. Use when choosing or applying normalization to expression data.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: DESeq2
 user-invocable: false

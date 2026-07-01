@@ -1,6 +1,7 @@
 ---
 name: spatial-transcriptomics-spatial-visualization
 description: Visualize spatial transcriptomics data using Squidpy and Scanpy. Create tissue plots with gene expression, clusters, and annotations overlaid on histology images. Use when visualizing spatial expression patterns.
+license: Apache-2.0
 tool_type: python
 primary_tool: squidpy
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: genome-assembly-short-read-assembly
 description: De novo genome assembly from Illumina short reads using SPAdes. Covers bacterial, fungal, and small eukaryotic genome assembly, as well as metagenome and transcriptome assembly modes. Use when assembling genomes from Illumina reads.
+license: Apache-2.0
 tool_type: cli
 primary_tool: SPAdes
 user-invocable: false

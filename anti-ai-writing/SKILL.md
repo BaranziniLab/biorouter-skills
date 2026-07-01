@@ -1,6 +1,7 @@
 ---
 name: anti-ai-writing
 description: Anti-AI writing scale. Reference this before generating any prose, article, summary, essay, or substantial written content to avoid common AI writing patterns.
+license: Apache-2.0
 user-invocable: true
 ---
 

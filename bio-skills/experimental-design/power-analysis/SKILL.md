@@ -1,6 +1,7 @@
 ---
 name: experimental-design-power-analysis
 description: Calculates statistical power and minimum sample sizes for RNA-seq, ATAC-seq, and other sequencing experiments. Use when planning experiments, determining how many replicates are needed, or assessing whether a study is adequately powered to detect expected effect sizes.
+license: Apache-2.0
 tool_type: r
 primary_tool: RNASeqPower
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: read-qc-quality-reports
 description: Generate and interpret quality reports from FASTQ files using FastQC and MultiQC. Assess per-base quality, adapter content, GC bias, duplication levels, and overrepresented sequences. Use when performing initial QC on raw sequencing data or validating preprocessing results.
+license: Apache-2.0
 tool_type: cli
 primary_tool: fastqc
 user-invocable: false

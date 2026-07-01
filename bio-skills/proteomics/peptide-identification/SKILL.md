@@ -1,6 +1,7 @@
 ---
 name: proteomics-peptide-identification
 description: Peptide-spectrum matching and protein identification from MS/MS data. Use when identifying peptides from tandem mass spectra. Covers database searching, spectral library matching, and FDR estimation using target-decoy approaches.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: pyOpenMS
 user-invocable: false

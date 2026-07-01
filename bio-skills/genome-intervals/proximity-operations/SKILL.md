@@ -1,6 +1,7 @@
 ---
 name: genome-intervals-proximity-operations
 description: Find nearest features, search within windows, and extend intervals using closest, window, flank, and slop operations. Use when performing TSS proximity analysis, assigning enhancers to genes, defining promoter regions, or finding nearby genomic features.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: bedtools
 user-invocable: false

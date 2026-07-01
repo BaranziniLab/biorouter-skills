@@ -1,6 +1,7 @@
 ---
 name: small-rna-seq-mirdeep2-analysis
 description: Discover novel miRNAs and quantify known miRNAs using miRDeep2 de novo prediction from small RNA-seq data. Use when identifying new miRNAs or performing comprehensive miRNA profiling with discovery.
+license: Apache-2.0
 tool_type: cli
 primary_tool: miRDeep2
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: atac-seq-nucleosome-positioning
 description: Map nucleosome center positions, occupancy, and fuzziness from ATAC-seq fragment-size patterns using NucleoATAC, ATACseqQC, DANPOS3, or scprinter. Use when characterizing nucleosome organization at promoters and enhancers, calling +1/-1 nucleosomes flanking NFRs, generating V-plots for chromatin structure visualization, or comparing nucleosome positioning between conditions.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: NucleoATAC
 user-invocable: false

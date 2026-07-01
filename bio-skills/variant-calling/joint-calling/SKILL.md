@@ -1,6 +1,7 @@
 ---
 name: variant-calling-joint-calling
 description: Joint genotype calling across multiple samples using GATK CombineGVCFs and GenotypeGVCFs. Essential for cohort studies, population genetics, and leveraging VQSR. Use when performing joint genotyping across multiple samples.
+license: Apache-2.0
 tool_type: cli
 primary_tool: GATK
 user-invocable: false

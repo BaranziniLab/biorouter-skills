@@ -1,6 +1,7 @@
 ---
 name: expression-matrix-counts-ingest
 description: Load gene expression count matrices from various formats including CSV, TSV, featureCounts, Salmon, kallisto, and 10X. Use when importing quantification results for downstream analysis.
+license: Apache-2.0
 tool_type: python
 primary_tool: pandas
 user-invocable: false

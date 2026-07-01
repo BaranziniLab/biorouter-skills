@@ -1,6 +1,7 @@
 ---
 name: code-simplifier
 description: Simplify and refine recently-modified code for clarity, consistency, and maintainability while preserving exact functionality. Use after writing or editing code, or when asked to clean up / simplify a change.
+license: Apache-2.0
 user-invocable: true
 ---
 

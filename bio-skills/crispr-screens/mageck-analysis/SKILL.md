@@ -1,6 +1,7 @@
 ---
 name: crispr-screens-mageck-analysis
 description: MAGeCK (Model-based Analysis of Genome-wide CRISPR-Cas9 Knockout) for pooled CRISPR screen analysis. Covers count normalization, gene ranking, and pathway analysis. Use when identifying essential genes, drug targets, or resistance mechanisms from dropout or enrichment screens.
+license: Apache-2.0
 tool_type: cli
 primary_tool: mageck
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: tcr-bcr-analysis-scirpy-analysis
 description: Analyze single-cell TCR and BCR data integrated with gene expression using scirpy. Use when working with 10x Genomics VDJ data alongside scRNA-seq or when integrating immune receptor information with cell state analysis.
+license: Apache-2.0
 tool_type: python
 primary_tool: scirpy
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: experimental-design-multiple-testing
 description: Applies multiple testing correction methods including FDR, Bonferroni, and q-value for genomics data. Use when filtering differential expression results, setting significance thresholds, or choosing between correction methods for different study designs.
+license: Apache-2.0
 tool_type: r
 primary_tool: qvalue
 user-invocable: false

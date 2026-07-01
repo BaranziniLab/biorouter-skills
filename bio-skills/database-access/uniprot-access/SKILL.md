@@ -1,6 +1,7 @@
 ---
 name: uniprot-access
 description: Access UniProt protein database for sequences, annotations, and functional information. Use when retrieving protein data, GO terms, domain annotations, or protein-protein interactions.
+license: Apache-2.0
 tool_type: python
 primary_tool: requests
 user-invocable: false

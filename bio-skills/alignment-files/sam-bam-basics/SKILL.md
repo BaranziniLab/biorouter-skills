@@ -1,6 +1,7 @@
 ---
 name: sam-bam-basics
 description: View, convert, and understand SAM/BAM/CRAM alignment files using samtools and pysam. Use when inspecting alignments, converting between formats, or understanding alignment file structure.
+license: Apache-2.0
 tool_type: cli
 primary_tool: samtools
 user-invocable: false

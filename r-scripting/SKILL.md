@@ -1,6 +1,7 @@
 ---
 name: r-scripting
 description: R scripting conventions. Apply whenever writing, editing, or reviewing any R code.
+license: Apache-2.0
 user-invocable: false
 ---
 

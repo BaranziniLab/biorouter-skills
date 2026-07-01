@@ -1,6 +1,7 @@
 ---
 name: local-blast
 description: Run local BLAST searches using BLAST+ command-line tools. Use when running fast unlimited searches, building custom databases, performing large-scale analysis, or when NCBI servers are slow or unavailable.
+license: Apache-2.0
 tool_type: cli
 primary_tool: BLAST+
 user-invocable: false

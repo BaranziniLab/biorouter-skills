@@ -1,6 +1,7 @@
 ---
 name: read-qc-quality-filtering
 description: Filter reads by quality scores, length, and N content using Trimmomatic and fastp. Apply sliding window trimming, remove low-quality bases from read ends, and discard reads below thresholds. Use when reads have poor quality tails or require minimum quality for downstream analysis.
+license: Apache-2.0
 tool_type: cli
 primary_tool: trimmomatic
 user-invocable: false

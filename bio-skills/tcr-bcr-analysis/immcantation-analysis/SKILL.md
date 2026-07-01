@@ -1,6 +1,7 @@
 ---
 name: tcr-bcr-analysis-immcantation-analysis
 description: Analyze BCR repertoires for somatic hypermutation, clonal lineages, and B cell phylogenetics using the Immcantation framework. Use when studying B cell affinity maturation, germinal center dynamics, or antibody evolution.
+license: Apache-2.0
 tool_type: r
 primary_tool: alakazam
 user-invocable: false

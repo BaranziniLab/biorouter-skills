@@ -1,6 +1,7 @@
 ---
 name: chipseq-peak-calling
 description: ChIP-seq peak calling using MACS3 and HOMER findPeaks. Call narrow peaks for transcription factors or broad peaks for histone modifications. Supports single-caller and multi-caller consensus approaches, input control, fragment size modeling, and various output formats. Use when calling peaks from ChIP-seq alignments.
+license: Apache-2.0
 tool_type: cli
 primary_tool: macs3
 user-invocable: false

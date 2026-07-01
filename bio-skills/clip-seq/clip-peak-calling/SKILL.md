@@ -1,6 +1,7 @@
 ---
 name: clip-seq-clip-peak-calling
 description: Call protein-RNA binding site peaks from CLIP-seq data using CLIPper, PureCLIP, or Piranha. Use when identifying RBP binding sites from aligned CLIP reads.
+license: Apache-2.0
 tool_type: cli
 primary_tool: CLIPper
 user-invocable: false

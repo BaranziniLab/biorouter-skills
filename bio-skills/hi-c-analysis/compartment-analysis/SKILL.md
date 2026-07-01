@@ -1,6 +1,7 @@
 ---
 name: hi-c-analysis-compartment-analysis
 description: Detect A/B compartments from Hi-C data using cooltools and eigenvector decomposition. Identify active (A) and inactive (B) chromatin compartments from contact matrices. Use when identifying A/B compartments from Hi-C data.
+license: Apache-2.0
 tool_type: python
 primary_tool: cooltools
 user-invocable: false

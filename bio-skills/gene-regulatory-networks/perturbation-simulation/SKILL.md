@@ -1,6 +1,7 @@
 ---
 name: gene-regulatory-networks-perturbation-simulation
 description: Simulate transcription factor perturbation effects on cell state using CellOracle, which integrates GRN inference with in silico knockout and overexpression modeling. Predicts cell identity shifts and differentiation trajectory changes from TF perturbations. Use when predicting the effect of transcription factor knockouts, planning perturbation experiments, or identifying driver TFs for cell fate transitions.
+license: Apache-2.0
 tool_type: python
 primary_tool: CellOracle
 user-invocable: false

@@ -16,6 +16,8 @@ Protein structure analysis using Biopython's Bio.PDB module. Covers reading/writ
 | structure-modification | Transform coordinates, remove/add entities, modify properties |
 | alphafold-predictions | Download and analyze AlphaFold Database structures, pLDDT confidence |
 | modern-structure-prediction | Predict structures with ESMFold, AlphaFold3, Chai-1, Boltz-1 |
+| protein-language-models | Generate ESM-style protein embeddings and variant-effect features with compute/resource checks |
+| molecular-docking-diffdock | Run DiffDock-style learned pose prediction with ligand/protein preparation and confidence interpretation |
 
 ## Example Prompts
 
@@ -38,6 +40,8 @@ Protein structure analysis using Biopython's Bio.PDB module. Covers reading/writ
 - "Predict the structure of this sequence with ESMFold"
 - "Run AlphaFold3 on my protein complex"
 - "Compare predictions from ESMFold, Chai-1, and Boltz-1"
+- "Generate ESM embeddings for this protein family"
+- "Use DiffDock-style pose prediction and compare it to classical docking"
 
 ## Requirements
 

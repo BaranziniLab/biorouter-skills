@@ -1,6 +1,7 @@
 ---
 name: clip-seq-clip-alignment
 description: Align CLIP-seq reads to the genome with crosslink site awareness. Use when mapping preprocessed CLIP reads for peak calling.
+license: Apache-2.0
 tool_type: cli
 primary_tool: STAR
 user-invocable: false

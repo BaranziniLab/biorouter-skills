@@ -1,6 +1,7 @@
 ---
 name: phylo-divergence-dating
 description: Estimate divergence times using molecular clock models with BEAST2, MCMCTree, and TreePL. Use when dating speciation events, calibrating phylogenies with fossils, choosing between strict and relaxed clock models, or estimating evolutionary rates across lineages.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: BEAST2
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: workflows-crispr-screen-pipeline
 description: End-to-end CRISPR screen analysis from FASTQ to hit genes. Orchestrates guide counting, QC, statistical analysis with MAGeCK, and hit calling with multiple methods. Use when analyzing pooled CRISPR screens from count data to hit calling.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: MAGeCK
 workflow: true

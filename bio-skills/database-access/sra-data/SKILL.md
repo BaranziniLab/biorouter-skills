@@ -1,6 +1,7 @@
 ---
 name: sra-data
 description: Download sequencing data from NCBI SRA using the SRA toolkit. Use when downloading FASTQ files from SRA accessions, prefetching large datasets, or validating SRA downloads.
+license: Apache-2.0
 tool_type: cli
 primary_tool: sra-tools
 user-invocable: false

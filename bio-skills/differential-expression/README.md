@@ -16,6 +16,7 @@ Differential expression analysis using R/Bioconductor packages DESeq2 and edgeR 
 | de-visualization | MA plots, volcano plots, PCA, heatmaps with diagnostic interpretation |
 | de-results | Filter, annotate, export results; interpretation guidance, GSEA/ORA preparation |
 | timeseries-de | Time-series DE with limma splines, maSigPro, ImpulseDE2 |
+| pydeseq2 | PyDESeq2 workflow with design formula checks, contrasts, QC plots, and Python-native DESeq2-style result export |
 
 ## Example Prompts
 
@@ -34,6 +35,7 @@ Differential expression analysis using R/Bioconductor packages DESeq2 and edgeR 
 - "Prepare a ranked gene list for GSEA from my DE results"
 - "Run DESeq2 on my bacterial RNA-seq data with appropriate KEGG annotation"
 - "Run DE analysis using PyDESeq2 in Python"
+- "Use PyDESeq2 with a Python-only workflow and export publication-ready DE tables"
 
 ## Requirements
 

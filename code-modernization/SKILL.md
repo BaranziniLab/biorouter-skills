@@ -1,6 +1,7 @@
 ---
 name: code-modernization
 description: Phased legacy-modernization workflow for COBOL, legacy Java/C++, and monoliths — assess, map, extract business rules, plan, transform module-by-module, and harden. Use when the user wants to understand, document, or modernize a legacy system.
+license: Apache-2.0
 user-invocable: true
 ---
 

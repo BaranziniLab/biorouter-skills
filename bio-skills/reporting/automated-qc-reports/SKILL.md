@@ -1,6 +1,7 @@
 ---
 name: reporting-automated-qc-reports
 description: Generates standardized quality control reports by aggregating metrics from FastQC, alignment, and other tools using MultiQC. Use when summarizing QC metrics across samples, creating shareable quality reports, or building automated QC pipelines.
+license: Apache-2.0
 tool_type: cli
 primary_tool: multiqc
 user-invocable: false

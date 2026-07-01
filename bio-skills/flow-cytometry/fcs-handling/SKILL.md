@@ -1,6 +1,7 @@
 ---
 name: flow-cytometry-fcs-handling
 description: Read and manipulate Flow Cytometry Standard (FCS) files. Covers loading data, accessing parameters, and basic data exploration. Use when loading and inspecting flow or mass cytometry data before preprocessing.
+license: Apache-2.0
 tool_type: r
 primary_tool: flowCore
 user-invocable: false

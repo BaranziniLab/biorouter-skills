@@ -1,6 +1,7 @@
 ---
 name: alignment-sorting
 description: Sort alignment files by coordinate or read name using samtools and pysam. Use when preparing BAM files for indexing, variant calling, or paired-end analysis.
+license: Apache-2.0
 tool_type: cli
 primary_tool: samtools
 user-invocable: false

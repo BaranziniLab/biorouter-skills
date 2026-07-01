@@ -1,6 +1,7 @@
 ---
 name: small-rna-seq-differential-mirna
 description: Perform differential expression analysis of miRNAs between conditions using DESeq2 or edgeR with small RNA-specific considerations. Use when identifying miRNAs that change between treatment groups, disease states, or developmental stages.
+license: Apache-2.0
 tool_type: r
 primary_tool: DESeq2
 user-invocable: false

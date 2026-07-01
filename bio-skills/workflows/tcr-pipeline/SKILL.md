@@ -1,6 +1,7 @@
 ---
 name: workflows-tcr-pipeline
 description: End-to-end TCR/BCR repertoire analysis from FASTQ to clonotype diversity metrics. Use when analyzing immune repertoire sequencing data from bulk or single-cell experiments.
+license: Apache-2.0
 tool_type: cli
 primary_tool: MiXCR
 user-invocable: false

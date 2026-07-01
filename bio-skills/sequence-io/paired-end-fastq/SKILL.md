@@ -1,6 +1,7 @@
 ---
 name: paired-end-fastq
 description: Handle paired-end FASTQ files (R1/R2) using Biopython. Use when working with Illumina paired reads, synchronizing pairs, interleaving/deinterleaving, or filtering paired data.
+license: Apache-2.0
 tool_type: python
 primary_tool: Bio.SeqIO
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: pathway-gsea
 description: Gene Set Enrichment Analysis using clusterProfiler gseGO and gseKEGG. Use when analyzing ranked gene lists to find coordinated expression changes in gene sets without arbitrary significance cutoffs. Detects subtle but coordinated expression changes.
+license: Apache-2.0
 tool_type: r
 primary_tool: clusterProfiler
 user-invocable: false

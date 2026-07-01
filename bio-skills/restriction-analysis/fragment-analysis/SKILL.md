@@ -1,6 +1,7 @@
 ---
 name: restriction-fragment-analysis
 description: Analyze restriction digest fragments using Biopython Bio.Restriction. Predict fragment sizes, get fragment sequences, simulate gel electrophoresis patterns, and perform double digests. Use when analyzing restriction digest fragment patterns.
+license: Apache-2.0
 tool_type: python
 primary_tool: Bio.Restriction
 user-invocable: false

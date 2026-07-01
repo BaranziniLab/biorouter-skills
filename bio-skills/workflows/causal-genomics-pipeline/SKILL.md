@@ -1,6 +1,7 @@
 ---
 name: workflows-causal-genomics-pipeline
 description: End-to-end post-GWAS causal inference pipeline orchestrating heritability partitioning, genetic correlation, Mendelian randomization with CHP-aware sensitivity (CAUSE / LHC-MR), colocalization, fine-mapping with SuSiE / FOCUS, mediation, TWAS triangulation, cis-pQTL drug-target MR, effector-gene prioritization (L2G / PoPS / cS2G), and GenomicSEM common-factor GWAS. Use when triangulating causal inference across multiple complementary methods, prioritizing tissues via stratified LDSC, nominating or de-risking drug targets, mapping a lead SNP to a candidate effector gene, modeling shared genetic architecture across correlated traits, or producing a STROBE-MR-compliant publication-grade evidence battery from GWAS summary statistics.
+license: Apache-2.0
 tool_type: r
 primary_tool: TwoSampleMR
 workflow: true

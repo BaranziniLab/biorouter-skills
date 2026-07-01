@@ -1,6 +1,7 @@
 ---
 name: basecalling
 description: "Convert raw Nanopore signal data (FAST5/POD5) to nucleotide sequences using Dorado basecaller. Covers model selection, GPU acceleration, modified base detection, and quality filtering. Use when processing raw Nanopore data before alignment. Note: Guppy is deprecated; use Dorado for all new analyses."
+license: Apache-2.0
 tool_type: cli
 primary_tool: dorado
 user-invocable: false

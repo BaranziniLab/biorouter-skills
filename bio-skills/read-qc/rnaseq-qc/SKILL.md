@@ -1,6 +1,7 @@
 ---
 name: rnaseq-qc
 description: RNA-seq specific quality control including rRNA contamination detection, strandedness verification, gene body coverage, and transcript integrity metrics. Use when validating RNA-seq libraries before differential expression analysis.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: RSeQC
 user-invocable: false

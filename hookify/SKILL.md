@@ -1,6 +1,7 @@
 ---
 name: hookify
 description: Turn project guardrails into real, enforced Biorouter hooks — rules that warn on or block unwanted behavior (destructive shell commands, debug prints, edits to sensitive files, finishing without passing tests). Use when the user wants to add a guardrail, prevent a behavior, "stop doing X", or gate an action the agent must clear before proceeding.
+license: Apache-2.0
 user-invocable: true
 ---
 

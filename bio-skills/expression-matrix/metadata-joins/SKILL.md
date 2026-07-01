@@ -1,6 +1,7 @@
 ---
 name: expression-matrix-metadata-joins
 description: Merge sample metadata with count matrices and add gene annotations. Use when preparing data for differential expression analysis or visualization.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: pandas
 user-invocable: false

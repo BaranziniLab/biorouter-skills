@@ -1,6 +1,7 @@
 ---
 name: metagenomics-kraken
 description: Taxonomic classification of metagenomic reads using Kraken2. Fast k-mer based classification against RefSeq database. Use when performing initial taxonomic classification of shotgun metagenomic reads before abundance estimation with Bracken.
+license: Apache-2.0
 tool_type: cli
 primary_tool: kraken2
 user-invocable: false

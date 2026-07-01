@@ -1,6 +1,7 @@
 ---
 name: systems-biology-flux-balance-analysis
 description: Perform flux balance analysis (FBA) and flux variability analysis (FVA) on genome-scale metabolic models using COBRApy. Predict growth rates, metabolic fluxes, and optimal resource utilization. Use when predicting metabolic phenotypes or optimizing flux distributions.
+license: Apache-2.0
 tool_type: python
 primary_tool: cobrapy
 user-invocable: false

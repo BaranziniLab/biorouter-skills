@@ -1,6 +1,7 @@
 ---
 name: ecological-genomics-conservation-genetics
 description: Assesses genetic health of populations for conservation using effective population size estimation (GONE2 for recent Ne trajectory, NeEstimator for contemporary Ne, Stairway Plot 2 and PSMC for historical Ne), F-statistics (hierfstat), runs of homozygosity (detectRUNS), and genetic diversity metrics. Use when estimating effective population size, detecting inbreeding or bottlenecks, or assessing genetic diversity in threatened species from microsatellite or SNP data.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: hierfstat
 user-invocable: false

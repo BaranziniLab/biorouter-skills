@@ -1,6 +1,7 @@
 ---
 name: spatial-transcriptomics-spatial-statistics
 description: Compute spatial statistics for spatial transcriptomics data using Squidpy. Calculate Moran's I, Geary's C, spatial autocorrelation, co-occurrence analysis, and neighborhood enrichment. Use when computing spatial autocorrelation or co-occurrence statistics.
+license: Apache-2.0
 tool_type: python
 primary_tool: squidpy
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: epitranscriptomics-m6anet-analysis
 description: Detect m6A modifications from Oxford Nanopore direct RNA sequencing using m6Anet. Use when analyzing epitranscriptomic modifications from long-read RNA data without immunoprecipitation.
+license: Apache-2.0
 tool_type: python
 primary_tool: m6Anet
 user-invocable: false

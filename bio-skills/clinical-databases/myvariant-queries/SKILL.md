@@ -1,6 +1,7 @@
 ---
 name: clinical-databases-myvariant-queries
 description: Query myvariant.info API for aggregated variant annotations from multiple databases (ClinVar, gnomAD, dbSNP, COSMIC, etc.) in a single request. Use when annotating variants with clinical and population data from multiple sources simultaneously.
+license: Apache-2.0
 tool_type: python
 primary_tool: myvariant
 user-invocable: false

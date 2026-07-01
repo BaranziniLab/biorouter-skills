@@ -1,6 +1,7 @@
 ---
 name: comparative-genomics-ortholog-inference
 description: Infer orthologous gene groups across species using OrthoFinder and ProteinOrtho. Identify orthologs, paralogs, and co-orthologs for comparative genomics and functional annotation transfer. Use when identifying gene orthologs across species or building orthogroups for evolutionary analysis.
+license: Apache-2.0
 tool_type: cli
 primary_tool: OrthoFinder
 user-invocable: false

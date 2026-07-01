@@ -1,6 +1,7 @@
 ---
 name: longitudinal-monitoring
 description: Tracks ctDNA dynamics over time for treatment response monitoring using serial liquid biopsy samples. Analyzes tumor fraction trends, mutation clearance kinetics, and defines molecular response criteria. Use when monitoring patients during therapy or detecting molecular relapse before clinical progression.
+license: Apache-2.0
 tool_type: python
 primary_tool: pandas
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: clip-seq-clip-motif-analysis
 description: Identify enriched sequence motifs at CLIP-seq binding sites for RBP binding specificity. Use when characterizing the sequence preferences of an RNA-binding protein.
+license: Apache-2.0
 tool_type: cli
 primary_tool: HOMER
 user-invocable: false

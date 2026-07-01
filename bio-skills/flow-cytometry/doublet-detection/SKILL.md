@@ -1,6 +1,7 @@
 ---
 name: flow-cytometry-doublet-detection
 description: Detect and remove doublets from flow and mass cytometry data. Covers FSC/SSC gating and computational doublet detection methods. Use when filtering out cell aggregates before clustering or quantitative analysis.
+license: Apache-2.0
 tool_type: r
 primary_tool: flowCore
 user-invocable: false

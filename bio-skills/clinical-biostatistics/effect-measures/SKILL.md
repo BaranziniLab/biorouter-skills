@@ -1,6 +1,7 @@
 ---
 name: clinical-biostatistics-effect-measures
 description: Computes and interprets treatment effect measures including odds ratios, risk ratios, number needed to treat, and confidence intervals from clinical trial data. Covers crude and adjusted measures, non-collapsibility of odds ratios, and forest plot visualization. Use when reporting treatment effects or comparing effect sizes across clinical studies.
+license: Apache-2.0
 tool_type: python
 primary_tool: statsmodels
 user-invocable: false

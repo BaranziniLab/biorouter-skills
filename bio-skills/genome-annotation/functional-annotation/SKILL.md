@@ -1,6 +1,7 @@
 ---
 name: genome-annotation-functional-annotation
 description: Assign GO terms, KEGG orthologs, Pfam domains, and EC numbers to predicted proteins using eggNOG-mapper and InterProScan. Produces functional summaries for downstream pathway and enrichment analysis. Use when adding functional annotation to predicted genes or characterizing protein functions in a new genome.
+license: Apache-2.0
 tool_type: cli
 primary_tool: eggNOG-mapper
 user-invocable: false

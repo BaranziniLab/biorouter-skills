@@ -16,6 +16,8 @@ Machine learning skills for biomarker discovery, model interpretation, and predi
 | atlas-mapping | scArches/scANVI for single-cell reference mapping |
 | survival-analysis | Kaplan-Meier curves, Cox regression for time-to-event data |
 | omics-classifiers | RandomForest, XGBoost, logistic regression for diagnostics |
+| causal-ml-dml | Double machine learning, orthogonal scores, cross-fitting, and CATE estimation |
+| model-explainability-shap | SHAP model explanation with leakage, background-data, and causal-overinterpretation checks |
 
 ## Example Prompts
 
@@ -24,6 +26,8 @@ Machine learning skills for biomarker discovery, model interpretation, and predi
 - "Run nested cross-validation on my diagnostic classifier"
 - "Map my query single-cell data to the Human Lung Cell Atlas"
 - "Build a survival model from my clinical data"
+- "Estimate treatment effects with double machine learning and cross-fitting"
+- "Explain this model with SHAP without making causal claims"
 
 ## Requirements
 

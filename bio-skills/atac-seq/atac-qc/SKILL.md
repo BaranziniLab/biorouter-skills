@@ -1,6 +1,7 @@
 ---
 name: atac-seq-atac-qc
 description: ATAC-seq library quality control -- TSS enrichment, FRiP, fragment-size periodicity, library complexity (NRF/PBC1/PBC2), mitochondrial fraction, and ENCODE 4 thresholds. Use when assessing whether an ATAC-seq library passes ENCODE acceptance criteria, diagnosing transposition artefacts, comparing Omni-ATAC vs standard prep quality, or selecting which replicates to drop before peak calling.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: deeptools
 user-invocable: false

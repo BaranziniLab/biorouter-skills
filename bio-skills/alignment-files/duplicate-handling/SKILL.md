@@ -1,6 +1,7 @@
 ---
 name: duplicate-handling
 description: Mark and remove PCR/optical duplicates using samtools fixmate and markdup. Use when preparing alignments for variant calling or when duplicate reads would bias analysis.
+license: Apache-2.0
 tool_type: cli
 primary_tool: samtools
 user-invocable: false

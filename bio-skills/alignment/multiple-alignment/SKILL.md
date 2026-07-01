@@ -1,6 +1,7 @@
 ---
 name: alignment-multiple
 description: Perform multiple sequence alignment using MAFFT, MUSCLE5, ClustalOmega, or T-Coffee. Guides tool and algorithm selection based on dataset size, sequence divergence, and downstream application. Use when aligning three or more homologous sequences for phylogenetics, conservation analysis, or evolutionary studies.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: MAFFT
 user-invocable: false

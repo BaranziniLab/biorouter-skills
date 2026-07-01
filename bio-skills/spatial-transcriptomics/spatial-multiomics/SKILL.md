@@ -1,6 +1,7 @@
 ---
 name: spatial-transcriptomics-spatial-multiomics
 description: Analyze high-resolution spatial platforms like Slide-seq, Stereo-seq, and Visium HD. Use when working with subcellular resolution or high-density spatial data.
+license: Apache-2.0
 tool_type: python
 primary_tool: squidpy
 user-invocable: false

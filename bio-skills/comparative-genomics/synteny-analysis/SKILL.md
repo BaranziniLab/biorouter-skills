@@ -1,6 +1,7 @@
 ---
 name: comparative-genomics-synteny-analysis
 description: Analyze genome collinearity and syntenic blocks using MCScanX, SyRI, and JCVI for comparative genomics. Detect conserved gene order, chromosomal rearrangements, and whole-genome duplications. Use when comparing genome structure between species or identifying conserved genomic regions.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: MCScanX
 user-invocable: false

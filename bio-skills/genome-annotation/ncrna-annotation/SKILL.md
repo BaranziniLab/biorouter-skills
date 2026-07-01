@@ -1,6 +1,7 @@
 ---
 name: genome-annotation-ncrna-annotation
 description: Identify non-coding RNAs including tRNAs, rRNAs, snoRNAs, and regulatory RNAs using Infernal covariance model searches against Rfam and tRNAscan-SE for tRNA prediction. Use when performing genome-wide ncRNA annotation with assembly input producing GFF output.
+license: Apache-2.0
 tool_type: cli
 primary_tool: Infernal
 user-invocable: false

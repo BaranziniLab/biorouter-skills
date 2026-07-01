@@ -1,6 +1,7 @@
 ---
 name: imaging-mass-cytometry-interactive-annotation
 description: Interactive cell type annotation for IMC data. Covers napari-based annotation, marker-guided labeling, training data generation, and annotation validation. Use when manually annotating cell types for training classifiers or validating automated phenotyping results.
+license: Apache-2.0
 tool_type: python
 primary_tool: napari
 user-invocable: false

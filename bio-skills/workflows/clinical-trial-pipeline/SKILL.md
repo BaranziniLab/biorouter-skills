@@ -1,6 +1,7 @@
 ---
 name: workflows-clinical-trial-pipeline
 description: End-to-end clinical trial analysis workflow from CDISC data loading through statistical testing to regulatory-compliant reporting. Covers data preparation, logistic regression, categorical tests, subgroup analysis, and Table 1 generation. Use when performing a complete analysis of clinical trial data.
+license: Apache-2.0
 tool_type: python
 primary_tool: statsmodels
 workflow: true

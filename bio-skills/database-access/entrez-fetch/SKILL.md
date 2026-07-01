@@ -1,6 +1,7 @@
 ---
 name: entrez-fetch
 description: Retrieve records from NCBI databases using Biopython Bio.Entrez. Use when downloading sequences, fetching GenBank records, getting document summaries, or parsing NCBI data into Biopython objects.
+license: Apache-2.0
 tool_type: python
 primary_tool: Bio.Entrez
 user-invocable: false

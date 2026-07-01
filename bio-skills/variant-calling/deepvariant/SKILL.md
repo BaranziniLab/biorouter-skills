@@ -1,6 +1,7 @@
 ---
 name: variant-calling-deepvariant
 description: Deep learning-based variant calling with Google DeepVariant. Provides high accuracy for germline SNPs and indels from Illumina, PacBio, and ONT data. Use when calling variants with DeepVariant deep learning caller or when highest germline calling accuracy is required.
+license: Apache-2.0
 tool_type: cli
 primary_tool: DeepVariant
 user-invocable: false

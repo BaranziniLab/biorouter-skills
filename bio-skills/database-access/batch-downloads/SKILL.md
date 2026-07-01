@@ -1,6 +1,7 @@
 ---
 name: batch-downloads
 description: Download large datasets from NCBI efficiently using history server, batching, and rate limiting. Use when performing bulk sequence downloads, handling large query results, or production-scale data retrieval.
+license: Apache-2.0
 tool_type: python
 primary_tool: Bio.Entrez
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: single-cell-multimodal-integration
 description: Analyze multi-modal single-cell data (CITE-seq, Multiome, spatial). Use when working with data that measures multiple modalities per cell like RNA + protein or RNA + ATAC. Use when analyzing CITE-seq, Multiome, or other multi-modal single-cell data.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: Seurat
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: immunoinformatics-tcr-epitope-binding
 description: Predict TCR-epitope specificity using ERGO-II and deep learning models for T-cell receptor antigen recognition. Match TCRs to their cognate epitopes or predict TCR targets. Use when analyzing TCR repertoire specificity or identifying antigen-reactive T-cells.
+license: Apache-2.0
 tool_type: python
 primary_tool: ERGO-II
 user-invocable: false

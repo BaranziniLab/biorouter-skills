@@ -1,6 +1,7 @@
 ---
 name: clinical-databases-somatic-signatures
 description: Extract and analyze mutational signatures from somatic variants using SigProfiler or MutationalPatterns to characterize mutagenic processes. Use when identifying DNA damage mechanisms or etiology in cancer genomes.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: SigProfilerExtractor
 user-invocable: false

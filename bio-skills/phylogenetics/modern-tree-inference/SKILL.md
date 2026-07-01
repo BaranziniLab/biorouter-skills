@@ -1,6 +1,7 @@
 ---
 name: phylo-modern-tree-inference
 description: Build maximum likelihood phylogenetic trees using IQ-TREE2 and RAxML-NG with expert model selection, branch support assessment, and topology testing. Use when inferring publication-quality ML trees, selecting substitution models, interpreting bootstrap and concordance factor support, or running partitioned phylogenomic analyses.
+license: Apache-2.0
 tool_type: cli
 primary_tool: IQ-TREE2
 user-invocable: false

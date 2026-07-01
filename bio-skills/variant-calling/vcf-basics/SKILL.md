@@ -1,6 +1,7 @@
 ---
 name: vcf-basics
 description: View, query, and understand VCF/BCF variant files using bcftools and cyvcf2. Use when inspecting variants, extracting specific fields, or understanding VCF format structure.
+license: Apache-2.0
 tool_type: cli
 primary_tool: bcftools
 user-invocable: false

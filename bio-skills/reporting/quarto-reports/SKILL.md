@@ -1,6 +1,7 @@
 ---
 name: reporting-quarto-reports
 description: Build reproducible scientific documents, presentations, and websites with Quarto supporting R, Python, Julia, and Observable JS. Use when creating reproducible reports with Quarto.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: Quarto
 user-invocable: false

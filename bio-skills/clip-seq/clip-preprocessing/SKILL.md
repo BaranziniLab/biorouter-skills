@@ -1,6 +1,7 @@
 ---
 name: clip-seq-clip-preprocessing
 description: Preprocess CLIP-seq data including adapter trimming, UMI extraction, and PCR duplicate removal. Use when preparing raw CLIP, iCLIP, or eCLIP reads for peak calling.
+license: Apache-2.0
 tool_type: cli
 primary_tool: umi_tools
 user-invocable: false

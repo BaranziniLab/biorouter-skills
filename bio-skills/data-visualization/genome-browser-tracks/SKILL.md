@@ -1,6 +1,7 @@
 ---
 name: data-visualization-genome-browser-tracks
 description: Generate genome browser visualizations using pyGenomeTracks or IGV batch scripting for publication figures. Use when creating publication figures of genomic regions with multiple data tracks.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: pyGenomeTracks
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: single-cell-perturb-seq
 description: Analyze Perturb-seq and CROP-seq CRISPR screening data integrated with scRNA-seq. Use when identifying gene function through pooled genetic perturbations in single cells.
+license: Apache-2.0
 tool_type: python
 primary_tool: Pertpy
 user-invocable: false

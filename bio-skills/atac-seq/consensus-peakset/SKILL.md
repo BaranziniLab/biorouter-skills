@@ -1,6 +1,7 @@
 ---
 name: atac-seq-consensus-peakset
 description: Build a differential-ready consensus peakset from per-replicate ATAC-seq peaks using iterative overlap removal, fixed-width re-centering, and majority-rule overlap. Use when generating a stable peak coordinate system for downstream differential accessibility, ML feature engineering, cross-sample comparison, or fixed-width peak counts; covers Corces 2018 iterative overlap (501 bp), DiffBind summit re-centering, and ENCODE consistency rules.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: bedtools
 user-invocable: false

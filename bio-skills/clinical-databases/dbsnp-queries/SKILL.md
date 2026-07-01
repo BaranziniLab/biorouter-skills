@@ -1,6 +1,7 @@
 ---
 name: clinical-databases-dbsnp-queries
 description: Query dbSNP for rsID lookups, variant annotations, and cross-references to other databases. Use when mapping between rsIDs and genomic coordinates or retrieving basic variant information.
+license: Apache-2.0
 tool_type: python
 primary_tool: myvariant
 user-invocable: false

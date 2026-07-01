@@ -1,6 +1,7 @@
 ---
 name: scientific-research
 description: Run a research question end to end — scoping, literature review, hypothesis generation, analysis planning, result verification, and a cited write-up. Use when the user wants to investigate a topic, survey prior work, plan or critique an analysis, draft a paper section, or run a multi-step "do the research for me" task. Delegates biomedical data access to the bio-skills bundle and to BioRouter extensions (SPOKE, CDW, OMOP, MedCP).
+license: Apache-2.0
 user-invocable: true
 ---
 

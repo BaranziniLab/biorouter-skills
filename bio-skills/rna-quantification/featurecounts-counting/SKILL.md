@@ -1,6 +1,7 @@
 ---
 name: rna-quantification-featurecounts-counting
 description: Count reads per gene from aligned BAM files using Subread featureCounts. Use when processing BAM files from STAR/HISAT2 to generate gene-level counts for DESeq2/edgeR.
+license: Apache-2.0
 tool_type: cli
 primary_tool: featureCounts
 user-invocable: false

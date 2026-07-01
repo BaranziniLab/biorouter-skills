@@ -1,6 +1,7 @@
 ---
 name: skill-creator
 description: Author new BioRouter skills and improve existing ones — write the SKILL.md, get the description triggering reliably, structure bundled resources, and package for release. Use whenever the user wants to create a skill from scratch, edit or optimize a skill, fix a skill that won't trigger, or package a skill as a zip.
+license: Apache-2.0
 user-invocable: true
 ---
 

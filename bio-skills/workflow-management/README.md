@@ -12,6 +12,7 @@ Reproducible pipeline frameworks for scalable bioinformatics analyses with depen
 |-------|-------------|
 | snakemake-workflows | Build reproducible pipelines with Snakemake rules and DAGs |
 | nextflow-pipelines | Create containerized workflows with Nextflow DSL2 |
+| nextflow-nfcore | Run and review Nextflow/nf-core workflows with profiles, containers, reports, and reproducibility checks |
 | cwl-workflows | Create portable, standards-based pipelines with Common Workflow Language |
 | wdl-workflows | Build workflows with WDL for Terra/AnVIL and GATK pipelines |
 
@@ -19,6 +20,7 @@ Reproducible pipeline frameworks for scalable bioinformatics analyses with depen
 
 - "Create a Snakemake workflow for RNA-seq analysis"
 - "Set up a Nextflow pipeline with Docker containers"
+- "Run nf-core/rnaseq with pinned versions and execution reports"
 - "Run my workflow on a SLURM cluster"
 - "Add checkpointing to my pipeline"
 - "Convert my pipeline to CWL for portability"

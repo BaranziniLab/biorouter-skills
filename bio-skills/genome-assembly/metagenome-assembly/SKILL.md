@@ -1,6 +1,7 @@
 ---
 name: genome-assembly-metagenome-assembly
 description: Metagenome assembly from long reads using metaFlye and metaSPAdes with binning strategies. Use when reconstructing genomes from microbial communities, recovering metagenome-assembled genomes (MAGs), or resolving strain-level variation in complex samples.
+license: Apache-2.0
 tool_type: cli
 primary_tool: metaFlye
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: clinical-databases-variant-prioritization
 description: Filter and prioritize variants by pathogenicity, population frequency, and clinical evidence for rare disease analysis. Use when identifying candidate disease-causing variants from exome or genome sequencing.
+license: Apache-2.0
 tool_type: python
 primary_tool: pandas
 user-invocable: false

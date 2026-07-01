@@ -1,6 +1,7 @@
 ---
 name: single-cell-scatac-analysis
 description: Single-cell ATAC-seq analysis with Signac (R/Seurat) and ArchR. Process 10X Genomics scATAC data, perform QC, dimensionality reduction, clustering, peak calling, and motif activity scoring with chromVAR. Use when analyzing single-cell ATAC-seq data.
+license: Apache-2.0
 tool_type: r
 primary_tool: Signac
 user-invocable: false

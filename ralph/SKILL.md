@@ -1,6 +1,7 @@
 ---
 name: ralph
 description: Plan a feature end-to-end for the Ralph autonomous agent loop. Use when starting a new feature, writing requirements, drafting a PRD, or producing prd.json. Generates a markdown PRD from a feature description, then converts it to the prd.json format Ralph executes one story at a time.
+license: Apache-2.0
 user-invocable: true
 ---
 

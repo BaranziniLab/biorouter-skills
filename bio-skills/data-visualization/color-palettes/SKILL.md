@@ -1,6 +1,7 @@
 ---
 name: data-visualization-color-palettes
 description: Select and apply colorblind-friendly palettes for scientific figures using viridis, RColorBrewer, and custom color schemes. Use when selecting colorblind-friendly palettes for figures.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: viridis
 user-invocable: false

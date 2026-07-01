@@ -1,6 +1,7 @@
 ---
 name: workflow-management-cwl-workflows
 description: Create portable, standards-based bioinformatics pipelines with Common Workflow Language (CWL). Use when building workflows that need maximum portability across execution platforms, sharing pipelines with collaborators using different systems, or contributing to community workflow registries.
+license: Apache-2.0
 tool_type: cli
 primary_tool: cwltool
 user-invocable: false

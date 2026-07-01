@@ -1,6 +1,7 @@
 ---
 name: code-review
 description: Review a pull request through a multi-stage, confidence-scored pipeline and post a single PR comment with only high-confidence findings. Use when asked to review a PR, or to review the local working-tree/branch diff when no PR exists.
+license: Apache-2.0
 user-invocable: true
 ---
 

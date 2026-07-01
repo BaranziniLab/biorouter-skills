@@ -1,6 +1,7 @@
 ---
 name: proteomics-differential-abundance
 description: Statistical testing for differentially abundant proteins between conditions. Covers preprocessing (log2 transformation, normalization), limma and DEqMS workflows with empirical Bayes moderation, fold change shrinkage for accurate effect size estimation, and Python alternatives. Use when identifying proteins with significant abundance changes between experimental groups.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: limma
 user-invocable: false

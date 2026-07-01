@@ -1,6 +1,7 @@
 ---
 name: flow-cytometry-cytometry-qc
 description: Comprehensive quality control for flow cytometry and CyTOF data. Covers flow rate stability, signal drift, margin events, dead cell exclusion, and batch QC. Use when assessing acquisition quality or identifying problematic samples before analysis.
+license: Apache-2.0
 tool_type: r
 primary_tool: flowAI
 user-invocable: false

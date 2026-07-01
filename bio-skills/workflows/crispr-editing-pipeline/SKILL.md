@@ -1,6 +1,7 @@
 ---
 name: workflows-crispr-editing-pipeline
 description: End-to-end CRISPR experiment design from target selection to delivery-ready constructs. Covers guide RNA design, off-target assessment, and specialized editing strategies including knockouts, base editing, and HDR knockins. Use when designing complete CRISPR editing experiments for gene knockout, correction, or tagging.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: crisprscan
 workflow: true

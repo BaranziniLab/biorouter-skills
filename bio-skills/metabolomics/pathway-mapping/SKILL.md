@@ -1,6 +1,7 @@
 ---
 name: metabolomics-pathway-mapping
 description: Map metabolites to biological pathways using KEGG, Reactome, and MetaboAnalyst. Perform pathway enrichment and topology analysis. Use when interpreting metabolomics results in the context of biochemical pathways.
+license: Apache-2.0
 tool_type: r
 primary_tool: MetaboAnalystR
 user-invocable: false

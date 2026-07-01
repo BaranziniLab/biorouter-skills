@@ -1,6 +1,7 @@
 ---
 name: epidemiological-genomics-amr-surveillance
 description: Detect and track antimicrobial resistance genes using AMRFinderPlus and ResFinder with epidemiological context. Monitor resistance trends and identify emerging resistance patterns. Use when screening genomes for AMR genes or tracking resistance in surveillance programs.
+license: Apache-2.0
 tool_type: cli
 primary_tool: AMRFinderPlus
 user-invocable: false

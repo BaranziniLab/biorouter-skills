@@ -1,6 +1,7 @@
 ---
 name: workflows-clip-pipeline
 description: End-to-end CLIP-seq analysis from FASTQ to binding sites and motif enrichment. Use when analyzing protein-RNA interactions from CLIP-based methods.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: CLIPper
 user-invocable: false

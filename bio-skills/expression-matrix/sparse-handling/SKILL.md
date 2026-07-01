@@ -1,6 +1,7 @@
 ---
 name: expression-matrix-sparse-handling
 description: Work with sparse matrices for memory-efficient storage of count data. Use when dealing with single-cell data or large bulk RNA-seq datasets where most values are zero.
+license: Apache-2.0
 tool_type: python
 primary_tool: scipy.sparse
 user-invocable: false

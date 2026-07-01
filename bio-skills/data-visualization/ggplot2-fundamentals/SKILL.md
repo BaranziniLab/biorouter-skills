@@ -1,6 +1,7 @@
 ---
 name: data-visualization-ggplot2-fundamentals
 description: Create publication-quality scientific figures with ggplot2 including scatter plots, boxplots, heatmaps, and multi-panel layouts. Use when creating static figures for papers, presentations, or reports in R.
+license: Apache-2.0
 tool_type: r
 primary_tool: ggplot2
 user-invocable: false

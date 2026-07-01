@@ -1,6 +1,7 @@
 ---
 name: pathway-enrichment-visualization
 description: Visualize enrichment results using enrichplot package functions. Use when creating publication-quality figures from clusterProfiler results. Covers dotplot, barplot, cnetplot, emapplot, gseaplot2, ridgeplot, and treeplot.
+license: Apache-2.0
 tool_type: r
 primary_tool: enrichplot
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: single-cell-lineage-tracing
 description: Reconstruct cell lineage trees from CRISPR barcode tracing or mitochondrial mutations. Use when studying clonal dynamics, cell fate decisions, or developmental trajectories.
+license: Apache-2.0
 tool_type: python
 primary_tool: Cassiopeia
 user-invocable: false

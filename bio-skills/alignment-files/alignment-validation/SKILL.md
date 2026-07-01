@@ -1,6 +1,7 @@
 ---
 name: alignment-validation
 description: Validate alignment quality with insert size distribution, proper pairing rates, GC bias, strand balance, and other post-alignment metrics. Use when verifying alignment data quality before variant calling or quantification.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: samtools
 user-invocable: false

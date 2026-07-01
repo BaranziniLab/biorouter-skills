@@ -1,6 +1,7 @@
 ---
 name: clip-seq-binding-site-annotation
 description: Annotate CLIP-seq binding sites to genomic features including 3'UTR, 5'UTR, CDS, introns, and ncRNAs. Use when characterizing where an RBP binds in transcripts.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: ChIPseeker
 user-invocable: false

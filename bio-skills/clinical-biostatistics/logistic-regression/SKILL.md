@@ -1,6 +1,7 @@
 ---
 name: clinical-biostatistics-logistic-regression
 description: Performs logistic regression for clinical trial outcomes including binary, ordinal, and multinomial models. Extracts odds ratios with confidence intervals, handles covariate adjustment, and provides Firth penalized regression for rare events or separation. Use when modeling binary or ordinal endpoints from clinical data.
+license: Apache-2.0
 tool_type: python
 primary_tool: statsmodels
 user-invocable: false

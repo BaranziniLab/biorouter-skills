@@ -1,6 +1,7 @@
 ---
 name: alignment-trimming
 description: Trim multiple sequence alignments using ClipKIT, trimAl, BMGE, Divvier, or HMMcleaner with mode selection guidance per downstream goal. Use when removing unreliable columns or contaminating residues before phylogenetic inference, HMM building, or selection analysis.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: ClipKIT
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: batch-processing
 description: Process multiple sequence files in batch using Biopython. Use when working with many files, merging/splitting sequences, or automating file operations across directories.
+license: Apache-2.0
 tool_type: python
 primary_tool: Bio.SeqIO
 user-invocable: false

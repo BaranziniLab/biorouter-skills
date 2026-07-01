@@ -21,6 +21,7 @@ Access NCBI and UniProt databases, download sequences, query SRA/GEO, and run BL
 | sequence-similarity | PSI-BLAST, HMMER, reciprocal best hits for remote homologs |
 | uniprot-access | Query UniProt protein database, ID mapping, batch retrieval |
 | interaction-databases | Query STRING, BioGRID, IntAct protein interaction databases |
+| open-literature-discovery | Search and verify scholarly literature through PubMed, Crossref, OpenAlex, preprint servers, and stable identifiers |
 
 ## Example Prompts
 
@@ -43,6 +44,7 @@ Access NCBI and UniProt databases, download sequences, query SRA/GEO, and run BL
 - "Map these gene symbols to UniProt IDs"
 - "Get protein-protein interactions for my gene list from STRING"
 - "Build an interaction network from BioGRID and IntAct"
+- "Find current papers and return only citations with verified identifiers"
 
 ## Requirements
 

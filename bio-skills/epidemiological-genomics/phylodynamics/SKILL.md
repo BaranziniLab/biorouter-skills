@@ -1,6 +1,7 @@
 ---
 name: epidemiological-genomics-phylodynamics
 description: Construct time-scaled phylogenies and infer evolutionary dynamics using TreeTime and BEAST2 for outbreak analysis. Estimate divergence times, molecular clock rates, and ancestral states. Use when dating outbreak origins, estimating transmission rates, or building time-calibrated trees.
+license: Apache-2.0
 tool_type: python
 primary_tool: TreeTime
 user-invocable: false

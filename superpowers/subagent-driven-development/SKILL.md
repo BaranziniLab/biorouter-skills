@@ -1,6 +1,7 @@
 ---
 name: subagent-driven-development
 description: Use when executing implementation plans with independent tasks in the current session
+license: Apache-2.0
 user-invocable: true
 ---
 

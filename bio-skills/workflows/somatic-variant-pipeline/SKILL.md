@@ -1,6 +1,7 @@
 ---
 name: workflows-somatic-variant-pipeline
 description: End-to-end somatic variant calling from tumor-normal paired samples using Mutect2 or Strelka2. Covers preprocessing, variant calling, filtering, and annotation for cancer genomics. Use when calling somatic mutations from tumor-normal pairs.
+license: Apache-2.0
 tool_type: cli
 primary_tool: GATK Mutect2
 user-invocable: false

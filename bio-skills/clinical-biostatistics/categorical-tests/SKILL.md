@@ -1,6 +1,7 @@
 ---
 name: clinical-biostatistics-categorical-tests
 description: Tests associations between categorical variables in clinical data using chi-square, Fisher's exact, and Cochran-Mantel-Haenszel tests. Computes effect sizes and post-hoc pairwise comparisons. Use when analyzing categorical outcomes or testing treatment-outcome independence in clinical trials.
+license: Apache-2.0
 tool_type: python
 primary_tool: scipy
 user-invocable: false

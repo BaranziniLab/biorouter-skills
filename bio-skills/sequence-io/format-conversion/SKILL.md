@@ -1,6 +1,7 @@
 ---
 name: format-conversion
 description: Convert between sequence file formats (FASTA, FASTQ, GenBank, EMBL) using Biopython Bio.SeqIO. Use when changing file formats or preparing data for different tools.
+license: Apache-2.0
 tool_type: python
 primary_tool: Bio.SeqIO
 user-invocable: false

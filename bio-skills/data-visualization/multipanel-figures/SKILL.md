@@ -1,6 +1,7 @@
 ---
 name: data-visualization-multipanel-figures
 description: Combine multiple plots into publication-ready multi-panel figures using patchwork, cowplot, or matplotlib GridSpec with shared legends and panel labels. Use when combining multiple plots into publication figures.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: patchwork
 user-invocable: false

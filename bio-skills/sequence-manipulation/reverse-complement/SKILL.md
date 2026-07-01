@@ -1,6 +1,7 @@
 ---
 name: reverse-complement
 description: Generate reverse complements and complements of DNA/RNA sequences using Biopython. Use when working with opposite strands, primer design, or converting between template and coding strands.
+license: Apache-2.0
 tool_type: python
 primary_tool: Bio.Seq
 user-invocable: false

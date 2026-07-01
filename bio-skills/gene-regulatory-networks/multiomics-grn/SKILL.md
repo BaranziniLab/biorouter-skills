@@ -1,6 +1,7 @@
 ---
 name: gene-regulatory-networks-multiomics-grn
 description: Build enhancer-driven gene regulatory networks by integrating single-cell RNA-seq and ATAC-seq data using SCENIC+ to identify eRegulons linking transcription factors to enhancers and target genes. Use when analyzing 10x multiome or paired scRNA+scATAC data to infer cis-regulatory GRNs.
+license: Apache-2.0
 tool_type: python
 primary_tool: SCENIC+
 user-invocable: false

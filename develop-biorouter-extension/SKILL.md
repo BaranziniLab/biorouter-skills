@@ -1,6 +1,7 @@
 ---
 name: develop-biorouter-extension
 description: Guide for building a BioRouter extension (.brxt file) — covers required structure, manifest schema, Python MCP server setup, and optional bundled skills.
+license: Apache-2.0
 user-invocable: true
 ---
 

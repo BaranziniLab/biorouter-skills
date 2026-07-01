@@ -1,6 +1,7 @@
 ---
 name: hi-c-analysis-contact-pairs
 description: Process Hi-C read pairs using pairtools. Parse alignments, filter duplicates, classify pairs, and generate contact statistics from Hi-C sequencing data. Use when processing raw Hi-C read pairs.
+license: Apache-2.0
 tool_type: cli
 primary_tool: pairtools
 user-invocable: false

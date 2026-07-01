@@ -1,6 +1,7 @@
 ---
 name: phasing-imputation-haplotype-phasing
 description: Phase genotypes into haplotypes using Beagle or SHAPEIT. Resolves which alleles are inherited together on each chromosome. Use when preparing VCF files for imputation, HLA typing, or population genetic analyses requiring phased haplotypes.
+license: Apache-2.0
 tool_type: cli
 primary_tool: beagle
 user-invocable: false

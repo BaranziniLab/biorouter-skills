@@ -1,6 +1,7 @@
 ---
 name: single-cell-preprocessing
 description: Quality control, filtering, and normalization for single-cell RNA-seq using Seurat (R) and Scanpy (Python). Use for calculating QC metrics, filtering cells and genes, normalizing counts, identifying highly variable genes, and scaling data. Use when filtering, normalizing, and selecting features in single-cell data.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: Seurat
 user-invocable: false

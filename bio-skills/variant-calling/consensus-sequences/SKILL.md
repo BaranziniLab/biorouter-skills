@@ -1,6 +1,7 @@
 ---
 name: consensus-sequences
 description: Generate consensus FASTA sequences by applying VCF variants to a reference using bcftools consensus. Use when creating sample-specific reference sequences or reconstructing haplotypes.
+license: Apache-2.0
 tool_type: cli
 primary_tool: bcftools
 user-invocable: false

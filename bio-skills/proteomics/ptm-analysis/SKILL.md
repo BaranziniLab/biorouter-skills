@@ -1,6 +1,7 @@
 ---
 name: proteomics-ptm-analysis
 description: Post-translational modification analysis including phosphorylation, acetylation, and ubiquitination. Covers site localization, motif analysis, and quantitative PTM analysis. Use when analyzing phosphoproteomic data or other modification-enriched samples.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: pyOpenMS
 user-invocable: false

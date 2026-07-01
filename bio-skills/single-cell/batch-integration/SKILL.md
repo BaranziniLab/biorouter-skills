@@ -1,6 +1,7 @@
 ---
 name: single-cell-batch-integration
 description: Integrate multiple scRNA-seq samples/batches using Harmony, scVI, Seurat anchors, and fastMNN. Remove technical variation while preserving biological differences. Use when integrating multiple scRNA-seq batches or datasets.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: Harmony
 user-invocable: false

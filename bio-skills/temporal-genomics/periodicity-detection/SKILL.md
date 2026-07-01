@@ -1,6 +1,7 @@
 ---
 name: temporal-genomics-periodicity-detection
 description: Discovers periodic signals of unknown period in time-series omics data using Lomb-Scargle periodograms (scipy), autocorrelation, and wavelet time-frequency decomposition (pywt). Identifies dominant frequencies, handles irregularly sampled data, and detects transient periodicity. Use when searching for periodic patterns of unknown period length, analyzing cell cycle oscillations, or processing unevenly spaced time-series. Not for testing known 24-hour rhythms (see temporal-genomics/circadian-rhythms).
+license: Apache-2.0
 tool_type: python
 primary_tool: scipy
 user-invocable: false

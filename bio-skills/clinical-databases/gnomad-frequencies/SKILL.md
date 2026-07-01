@@ -1,6 +1,7 @@
 ---
 name: clinical-databases-gnomad-frequencies
 description: Query gnomAD for population allele frequencies to assess variant rarity. Use when filtering variants by population frequency for rare disease analysis or determining if a variant is common in the general population.
+license: Apache-2.0
 tool_type: python
 primary_tool: requests
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: long-read-sequencing-clair3-variants
 description: Deep learning-based variant calling from long reads using Clair3 for SNPs and small indels. Use when calling germline variants from ONT or PacBio alignments, particularly when high accuracy is needed for clinical or research applications.
+license: Apache-2.0
 tool_type: cli
 primary_tool: Clair3
 user-invocable: false

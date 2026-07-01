@@ -1,6 +1,7 @@
 ---
 name: genome-engineering-prime-editing-design
 description: Design pegRNAs for prime editing using PrimeDesign algorithms. Generate spacer, PBS, and RT template sequences for precise genomic modifications without double-strand breaks. Use when designing prime editing experiments for precise insertions, deletions, or point mutations.
+license: Apache-2.0
 tool_type: python
 primary_tool: PrimeDesign
 user-invocable: false

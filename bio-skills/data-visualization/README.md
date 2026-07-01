@@ -22,6 +22,7 @@ Publication-quality data visualization for bioinformatics using ggplot2 and matp
 | volcano-customization | Customized volcano plots with labels and thresholds |
 | genome-browser-tracks | Genome browser figures with pyGenomeTracks, IGV |
 | network-visualization | Biological network diagrams with NetworkX, PyVis, Cytoscape |
+| scientific-python-visualization | Publication-quality matplotlib/seaborn/plotly figures with claim-to-figure consistency checks |
 
 ## Example Prompts
 
@@ -38,6 +39,7 @@ Publication-quality data visualization for bioinformatics using ggplot2 and matp
 - "Generate genome browser figures for my ChIP-seq peaks"
 - "Visualize my protein interaction network with degree-based sizing"
 - "Create an interactive HTML network from my GRN results"
+- "Make a publication-ready Python figure and verify it supports the stated claim"
 
 ## Requirements
 

@@ -1,6 +1,7 @@
 ---
 name: workflows-gwas-pipeline
 description: End-to-end GWAS workflow from VCF to association results. Covers PLINK QC, population structure correction, and association testing for case-control or quantitative traits. Use when running genome-wide association studies.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: PLINK2
 workflow: true

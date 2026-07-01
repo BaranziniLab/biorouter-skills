@@ -1,6 +1,7 @@
 ---
 name: entrez-link
 description: Find cross-references between NCBI databases using Biopython Bio.Entrez. Use when navigating from genes to proteins, sequences to publications, finding related records, or discovering database relationships.
+license: Apache-2.0
 tool_type: python
 primary_tool: Bio.Entrez
 user-invocable: false

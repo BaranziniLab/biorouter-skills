@@ -1,6 +1,7 @@
 ---
 name: genome-annotation-annotation-transfer
 description: Transfer gene annotations between genome assemblies using Liftoff for same-species annotation liftover and MiniProt for cross-species protein-to-genome alignment. Enables rapid annotation of new assemblies using existing reference annotations. Use when annotating a new assembly of a species with an existing reference annotation or mapping annotations across related species.
+license: Apache-2.0
 tool_type: cli
 primary_tool: Liftoff
 user-invocable: false

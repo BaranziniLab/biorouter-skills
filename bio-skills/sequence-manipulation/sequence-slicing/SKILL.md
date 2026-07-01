@@ -1,6 +1,7 @@
 ---
 name: sequence-slicing
 description: Slice, extract, and concatenate biological sequences using Biopython. Use when extracting subsequences, joining sequences, or manipulating sequence regions by position.
+license: Apache-2.0
 tool_type: python
 primary_tool: Bio.Seq
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: pathway-wikipathways
 description: WikiPathways enrichment using clusterProfiler and rWikiPathways. Use when analyzing gene lists against community-curated open-source pathways. Performs over-representation analysis and GSEA for 30+ species.
+license: Apache-2.0
 tool_type: r
 primary_tool: clusterProfiler
 user-invocable: false

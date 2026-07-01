@@ -1,6 +1,7 @@
 ---
 name: machine-learning-prediction-explanation
 description: Explains machine learning predictions on omics data using SHAP values and LIME for feature attribution. Identifies which genes or features drive classifier decisions. Use when interpreting biomarker classifiers or understanding model predictions.
+license: Apache-2.0
 tool_type: python
 primary_tool: shap
 user-invocable: false

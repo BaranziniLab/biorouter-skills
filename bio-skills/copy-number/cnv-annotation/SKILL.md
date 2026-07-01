@@ -1,6 +1,7 @@
 ---
 name: copy-number-cnv-annotation
 description: Annotate CNVs with genes, pathways, and clinical significance. Use when interpreting CNV calls or identifying affected genes from copy number analysis.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: bedtools
 user-invocable: false

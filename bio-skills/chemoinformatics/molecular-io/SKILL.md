@@ -1,6 +1,7 @@
 ---
 name: molecular-io
 description: Reads, writes, and converts molecular file formats (SMILES, SDF, MOL2, PDB) using RDKit and Open Babel. Handles structure parsing, canonicalization, and full standardization pipeline including sanitization, normalization, and tautomer canonicalization. Use when loading chemical libraries, converting formats, or preparing molecules for analysis.
+license: Apache-2.0
 tool_type: python
 primary_tool: RDKit
 user-invocable: false

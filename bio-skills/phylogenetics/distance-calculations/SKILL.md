@@ -1,6 +1,7 @@
 ---
 name: phylo-distance-calculations
 description: Compute evolutionary distances and build phylogenetic trees using Biopython Bio.Phylo.TreeConstruction. Use when creating distance matrices from alignments, building NJ/UPGMA trees, generating bootstrap consensus, or needing quick exploratory phylogenies before running full ML analysis.
+license: Apache-2.0
 tool_type: python
 primary_tool: Bio.Phylo.TreeConstruction
 user-invocable: false

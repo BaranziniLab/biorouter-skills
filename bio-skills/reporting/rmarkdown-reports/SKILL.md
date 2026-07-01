@@ -1,6 +1,7 @@
 ---
 name: reporting-rmarkdown-reports
 description: Create reproducible bioinformatics analysis reports with R Markdown including code, results, and visualizations in HTML, PDF, or Word format. Use when generating analysis reports with RMarkdown.
+license: Apache-2.0
 tool_type: r
 primary_tool: rmarkdown
 user-invocable: false

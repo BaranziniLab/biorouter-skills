@@ -1,6 +1,7 @@
 ---
 name: differential-expression-batch-correction
 description: Remove batch effects from RNA-seq data using ComBat, ComBat-Seq, limma removeBatchEffect, and SVA for unknown batch variables. Use when correcting batch effects in expression data.
+license: Apache-2.0
 tool_type: r
 primary_tool: sva
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: genome-assembly-assembly-polishing
 description: Polish genome assemblies to reduce errors using short reads (Pilon), long reads (Racon), or ONT-specific tools (medaka). Essential for improving long-read assembly accuracy. Use when improving assembly accuracy with polishing tools.
+license: Apache-2.0
 tool_type: cli
 primary_tool: Pilon
 user-invocable: false

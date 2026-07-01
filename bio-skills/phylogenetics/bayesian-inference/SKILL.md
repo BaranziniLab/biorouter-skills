@@ -1,6 +1,7 @@
 ---
 name: phylo-bayesian-inference
 description: Run Bayesian phylogenetic analysis with MrBayes, BEAST2, RevBayes, and PhyloBayes including MCMC convergence diagnostics and model comparison. Use when needing posterior probability support, Bayesian model averaging, site-heterogeneous models for deep phylogenies, or formal model comparison via stepping-stone sampling.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: MrBayes
 user-invocable: false

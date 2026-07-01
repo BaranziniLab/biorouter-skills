@@ -1,6 +1,7 @@
 ---
 name: ctdna-mutation-detection
 description: Detects somatic mutations in circulating tumor DNA using variant callers optimized for low allele fractions with UMI-based error suppression. Reliably detects mutations at VAF above 0.5 percent using consensus-based approaches. Use when identifying tumor mutations from plasma DNA or tracking specific variants.
+license: Apache-2.0
 tool_type: python
 primary_tool: VarDict
 user-invocable: false

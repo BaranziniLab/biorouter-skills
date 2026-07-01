@@ -1,6 +1,7 @@
 ---
 name: small-rna-seq-smrna-preprocessing
 description: Preprocess small RNA sequencing data with adapter trimming and size selection optimized for miRNA, piRNA, and other small RNAs. Use when preparing small RNA-seq reads for downstream quantification or discovery analysis.
+license: Apache-2.0
 tool_type: cli
 primary_tool: cutadapt
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: phylo-species-trees
 description: Estimate species trees using coalescent methods including ASTRAL-III, wASTRAL, ASTRAL-Pro, SVDQuartets, and BPP. Use when multi-locus data shows gene tree discordance from incomplete lineage sorting, when in the anomaly zone where concatenation is misleading, or when computing concordance factors to assess topological support.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: ASTRAL-III
 user-invocable: false

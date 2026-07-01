@@ -1,6 +1,7 @@
 ---
 name: data-visualization-heatmaps-clustering
 description: Create clustered heatmaps with row/column annotations using ComplexHeatmap, pheatmap, and seaborn for gene expression and omics data visualization. Use when visualizing expression patterns across samples or identifying co-expressed gene clusters.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: ComplexHeatmap
 user-invocable: false

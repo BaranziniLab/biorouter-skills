@@ -1,6 +1,7 @@
 ---
 name: experimental-design-sample-size
 description: Estimates required sample sizes for differential expression, ChIP-seq, methylation, and proteomics studies. Use when budgeting experiments, writing grant proposals, or determining minimum replicates needed to achieve statistical significance for expected effect sizes.
+license: Apache-2.0
 tool_type: r
 primary_tool: ssizeRNA
 user-invocable: false

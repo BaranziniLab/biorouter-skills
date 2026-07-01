@@ -1,6 +1,7 @@
 ---
 name: workflows-genome-annotation-pipeline
 description: End-to-end genome annotation pipeline from assembled contigs to functional annotation, covering repeat masking, gene prediction, and functional assignment for both prokaryotic and eukaryotic genomes. Use when annotating a newly assembled genome from scratch.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: Bakta
 workflow: true

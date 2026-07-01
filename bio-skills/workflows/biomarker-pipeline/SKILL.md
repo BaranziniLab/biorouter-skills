@@ -1,6 +1,7 @@
 ---
 name: workflows-biomarker-pipeline
 description: End-to-end biomarker discovery workflow from expression data to validated biomarker panels. Covers feature selection with Boruta/LASSO, classifier training with nested CV, and SHAP interpretation. Use when building and validating diagnostic or prognostic biomarker signatures from omics data.
+license: Apache-2.0
 tool_type: python
 primary_tool: sklearn
 workflow: true

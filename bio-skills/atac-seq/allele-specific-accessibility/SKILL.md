@@ -1,6 +1,7 @@
 ---
 name: atac-seq-allele-specific-accessibility
 description: Detect allele-specific chromatin accessibility from ATAC-seq using WASP, GATK ASEReadCounter, or RASQUAL. Use when mapping cis-regulatory genetic variants from heterozygous SNPs, separating cis from trans regulation, building chromatin QTL (caQTL) maps, validating GWAS variant function with allelic imbalance, or detecting reference allele mapping bias before downstream analysis.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: WASP
 user-invocable: false

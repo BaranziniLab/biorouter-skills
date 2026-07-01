@@ -1,6 +1,7 @@
 ---
 name: gene-regulatory-networks-differential-networks
 description: Compare gene regulatory and co-expression networks between biological conditions to identify rewired regulatory relationships using DiffCorr. Detects gained, lost, and reversed gene-gene correlations between conditions. Use when comparing co-expression networks between disease vs control, treatment conditions, or developmental stages.
+license: Apache-2.0
 tool_type: r
 primary_tool: DiffCorr
 user-invocable: false

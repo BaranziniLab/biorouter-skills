@@ -1,6 +1,7 @@
 ---
 name: variant-normalization
 description: Normalize indel representation, decompose MNPs, and split multiallelic variants using bcftools norm. Use when comparing variants from different callers, preparing VCF for database annotation, or merging VCFs from multiple sources.
+license: Apache-2.0
 tool_type: cli
 primary_tool: bcftools
 user-invocable: false

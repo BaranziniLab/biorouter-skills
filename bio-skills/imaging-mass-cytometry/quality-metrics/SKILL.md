@@ -1,6 +1,7 @@
 ---
 name: imaging-mass-cytometry-quality-metrics
 description: Quality metrics for IMC data including signal-to-noise, channel correlation, tissue integrity, and acquisition QC. Use when assessing data quality before analysis or troubleshooting problematic acquisitions.
+license: Apache-2.0
 tool_type: python
 primary_tool: numpy
 user-invocable: false

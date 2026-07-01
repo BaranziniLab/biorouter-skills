@@ -1,6 +1,7 @@
 ---
 name: variant-calling-clinical-interpretation
 description: Clinical variant interpretation using ClinVar, ACMG guidelines, and pathogenicity predictors. Prioritize variants for diagnostic and research applications. Use when interpreting clinical significance of variants.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: InterVar
 user-invocable: false

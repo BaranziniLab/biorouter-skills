@@ -1,6 +1,7 @@
 ---
 name: metabolomics-targeted-analysis
 description: Targeted metabolomics analysis using MRM/SRM with standard curves. Covers absolute quantification, method validation, and quality assessment. Use when quantifying specific metabolites using calibration curves and internal standards.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: skyline
 user-invocable: false

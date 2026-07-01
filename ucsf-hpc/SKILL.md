@@ -1,6 +1,7 @@
 ---
 name: ucsf-hpc
 description: Use when working with the UCSF CHPC HPC cluster — setting up SSH access, transferring files, submitting SLURM jobs, installing software, or exploring cluster resources.
+license: Apache-2.0
 user-invocable: true
 ---
 

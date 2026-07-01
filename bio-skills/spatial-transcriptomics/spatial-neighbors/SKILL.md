@@ -1,6 +1,7 @@
 ---
 name: spatial-transcriptomics-spatial-neighbors
 description: Build spatial neighbor graphs for spatial transcriptomics data using Squidpy. Compute k-nearest neighbors, Delaunay triangulation, and radius-based connectivity for downstream spatial analyses. Use when building spatial neighborhood graphs.
+license: Apache-2.0
 tool_type: python
 primary_tool: squidpy
 user-invocable: false

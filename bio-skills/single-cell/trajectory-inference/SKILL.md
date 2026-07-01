@@ -1,6 +1,7 @@
 ---
 name: single-cell-trajectory-inference
 description: Infer developmental trajectories and pseudotime from single-cell RNA-seq data using Monocle3, Slingshot, and scVelo for RNA velocity analysis. Use when inferring developmental trajectories or pseudotime.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: Monocle3
 user-invocable: false

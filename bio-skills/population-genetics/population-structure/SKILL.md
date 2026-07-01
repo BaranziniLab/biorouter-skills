@@ -1,6 +1,7 @@
 ---
 name: population-genetics-population-structure
 description: Analyze population structure using PCA and admixture analysis with PLINK and ADMIXTURE. Identify population clusters, assess ancestry proportions, visualize genetic structure, and choose optimal K for admixture models. Use when analyzing population stratification with PCA or admixture.
+license: Apache-2.0
 tool_type: cli
 primary_tool: plink2
 user-invocable: false

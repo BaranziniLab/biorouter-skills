@@ -1,6 +1,7 @@
 ---
 name: crispr-screens-crispresso-editing
 description: CRISPResso2 for analyzing CRISPR gene editing outcomes. Quantifies indels, HDR efficiency, and generates comprehensive editing reports. Use when analyzing amplicon sequencing data from CRISPR editing experiments to assess editing efficiency.
+license: Apache-2.0
 tool_type: cli
 primary_tool: CRISPResso2
 user-invocable: false

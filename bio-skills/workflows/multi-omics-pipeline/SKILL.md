@@ -1,6 +1,7 @@
 ---
 name: workflows-multi-omics-pipeline
 description: End-to-end multi-omics integration workflow. Orchestrates data harmonization, MOFA/mixOmics integration, factor interpretation, and downstream analysis across transcriptomics, proteomics, metabolomics, and other modalities. Use when integrating multiple omics datasets.
+license: Apache-2.0
 tool_type: r
 primary_tool: MOFA2
 workflow: true

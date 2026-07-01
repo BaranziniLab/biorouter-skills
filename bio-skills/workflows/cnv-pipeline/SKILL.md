@@ -1,6 +1,7 @@
 ---
 name: workflows-cnv-pipeline
 description: End-to-end copy number variant detection workflow from BAM files. Covers CNVkit analysis for exome/targeted sequencing with visualization and annotation. Use when detecting copy number alterations from sequencing data.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: CNVkit
 workflow: true

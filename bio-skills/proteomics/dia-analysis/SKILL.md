@@ -1,6 +1,7 @@
 ---
 name: proteomics-dia-analysis
 description: Data-independent acquisition (DIA) proteomics analysis with DIA-NN and other tools. Use when analyzing DIA mass spectrometry data with library-free or library-based workflows for deep proteome profiling.
+license: Apache-2.0
 tool_type: cli
 primary_tool: diann
 user-invocable: false

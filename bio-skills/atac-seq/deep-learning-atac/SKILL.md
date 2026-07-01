@@ -1,6 +1,7 @@
 ---
 name: atac-seq-deep-learning-atac
 description: Sequence-based deep learning for ATAC-seq using chromBPNet, BPNet, scBasset, or EnFormer. Use when correcting Tn5 bias with neural networks beyond k-mer models, predicting per-base accessibility profiles, scoring in silico variant effects at GWAS or rare-variant SNPs, discovering motifs via DeepLIFT/TF-MoDISco from a trained model, or generating cell-type-specific accessibility predictions for unobserved cell states.
+license: Apache-2.0
 tool_type: python
 primary_tool: chrombpnet
 user-invocable: false

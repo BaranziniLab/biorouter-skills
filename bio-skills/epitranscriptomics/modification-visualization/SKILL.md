@@ -1,6 +1,7 @@
 ---
 name: epitranscriptomics-modification-visualization
 description: Create metagene plots and browser tracks for RNA modification data. Use when visualizing m6A distribution patterns around genomic features like stop codons.
+license: Apache-2.0
 tool_type: r
 primary_tool: Guitar
 user-invocable: false

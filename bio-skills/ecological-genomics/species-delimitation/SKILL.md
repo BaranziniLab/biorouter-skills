@@ -1,6 +1,7 @@
 ---
 name: ecological-genomics-species-delimitation
 description: Delimits species boundaries from molecular data using distance-based (ASAP), tree-based (bPTP, GMYC), and coalescent (BPP) methods. Compares multiple delimitation results with delimtools. Use when delineating putative species from DNA barcoding data, resolving cryptic species complexes, or validating taxonomic assignments. Emphasizes multi-method consensus following integrative taxonomy best practice.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: ASAP
 user-invocable: false

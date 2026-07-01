@@ -1,6 +1,7 @@
 ---
 name: chipseq-differential-binding
 description: Identifies differentially bound ChIP-seq regions between conditions using DiffBind (from BAMs), DESeq2, or PyDESeq2 (from count matrices). Handles normalization, statistical testing, and fold-change estimation with ChIP-seq-specific considerations. Use when comparing ChIP-seq binding between experimental conditions.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: DiffBind
 user-invocable: false

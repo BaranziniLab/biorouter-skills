@@ -1,6 +1,7 @@
 ---
 name: small-rna-seq-mirge3-analysis
 description: Fast miRNA quantification with isomiR detection and A-to-I editing analysis using miRge3. Use when quantifying known miRNAs quickly or analyzing isomiR variants and RNA editing.
+license: Apache-2.0
 tool_type: python
 primary_tool: miRge3
 user-invocable: false

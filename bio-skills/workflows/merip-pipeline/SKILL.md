@@ -1,6 +1,7 @@
 ---
 name: workflows-merip-pipeline
 description: End-to-end MeRIP-seq analysis from FASTQ to m6A peaks and differential methylation. Use when analyzing epitranscriptomic m6A modifications from immunoprecipitation data.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: exomePeak2
 user-invocable: false

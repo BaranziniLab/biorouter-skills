@@ -1,6 +1,7 @@
 ---
 name: python-scripting
 description: Python scripting conventions. Apply whenever writing, editing, or reviewing any Python code.
+license: Apache-2.0
 user-invocable: false
 ---
 

@@ -1,6 +1,7 @@
 ---
 name: rna-structure-structure-probing
 description: Analyzes experimental RNA structure probing data from SHAPE-MaP and DMS-MaPseq experiments using ShapeMapper2. Converts mutation rates to per-nucleotide reactivity profiles that constrain structure prediction. Use when processing SHAPE-MaP or DMS-MaPseq sequencing data to obtain experimental RNA structure information.
+license: Apache-2.0
 tool_type: cli
 primary_tool: ShapeMapper2
 user-invocable: false

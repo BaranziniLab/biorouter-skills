@@ -1,6 +1,7 @@
 ---
 name: methylation-methylkit
 description: DNA methylation analysis with methylKit in R. Import Bismark coverage files, filter by coverage, normalize samples, and perform statistical comparisons. Use when analyzing single-base methylation patterns, comparing samples, or preparing data for DMR detection.
+license: Apache-2.0
 tool_type: r
 primary_tool: methylKit
 user-invocable: false

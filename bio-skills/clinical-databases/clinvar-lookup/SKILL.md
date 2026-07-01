@@ -1,6 +1,7 @@
 ---
 name: clinical-databases-clinvar-lookup
 description: Query ClinVar for variant pathogenicity classifications, review status, and disease associations via REST API or local VCF. Use when determining clinical significance of variants for diagnostic or research purposes.
+license: Apache-2.0
 tool_type: python
 primary_tool: requests
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: compressed-files
 description: Read and write compressed sequence files (gzip, bzip2, BGZF) using Biopython. Use when working with .gz or .bz2 sequence files. Use BGZF for indexable compressed files.
+license: Apache-2.0
 tool_type: python
 primary_tool: Bio.bgzf
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: genome-engineering-base-editing-design
 description: Design guides for cytosine and adenine base editing using editing window optimization and BE-Hive outcome prediction. Select optimal positions for C-to-T or A-to-G conversions without double-strand breaks. Use when designing base editor experiments for precise nucleotide changes.
+license: Apache-2.0
 tool_type: python
 primary_tool: BE-Hive
 user-invocable: false

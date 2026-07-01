@@ -1,6 +1,7 @@
 ---
 name: metagenomics-strain-tracking
 description: Track bacterial strains using MASH, sourmash, fastANI, and inStrain. Compare genomes, detect contamination, and monitor strain-level variation. Use when needing sub-species resolution for outbreak tracking, transmission analysis, or within-host strain dynamics.
+license: Apache-2.0
 tool_type: cli
 primary_tool: MASH
 user-invocable: false

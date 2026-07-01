@@ -1,6 +1,7 @@
 ---
 name: phasing-imputation-reference-panels
 description: Download, prepare, and manage reference panels for phasing and imputation. Covers 1000 Genomes, HRC, and TOPMed panels. Use when setting up imputation infrastructure or selecting appropriate reference panels for target populations.
+license: Apache-2.0
 tool_type: cli
 primary_tool: bcftools
 user-invocable: false

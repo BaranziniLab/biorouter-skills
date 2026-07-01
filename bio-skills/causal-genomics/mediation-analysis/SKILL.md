@@ -1,6 +1,7 @@
 ---
 name: causal-genomics-mediation-analysis
 description: Decompose total effects into direct and indirect paths through mediators using mediation, CMAverse 4-way, HIMA/HIMA2 high-dimensional, BAMA, two-step / MVMR mediation, or double-ML medDML. Use when testing whether a molecular phenotype (expression, methylation, protein) mediates a treatment-outcome relationship, decomposing exposure-mediator interaction via VanderWeele 4-way, screening high-dimensional EWAS mediators, or running MR-based mediation when sequential ignorability is implausible.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: mediation
 user-invocable: false

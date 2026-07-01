@@ -1,6 +1,7 @@
 ---
 name: chipseq-peak-annotation
 description: Annotate ChIP-seq peaks to genomic features and nearest genes. Classify peaks as promoter, exon, intron, or intergenic using ChIPseeker (R), HOMER annotatePeaks.pl (CLI), or Python (pandas/pyranges). Supports pre-built annotation databases and custom GTF files. Handles promoter definition, feature priority, category collapsing, and signed distance-to-TSS. Use when assigning genomic context to ChIP-seq peaks or linking peaks to target genes.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: ChIPseeker
 user-invocable: false

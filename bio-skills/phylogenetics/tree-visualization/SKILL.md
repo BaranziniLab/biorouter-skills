@@ -1,6 +1,7 @@
 ---
 name: phylo-tree-visualization
 description: Draw and export phylogenetic trees using Biopython Bio.Phylo with matplotlib and modern alternatives. Use when creating tree figures, customizing colors and labels, exporting to image formats, or choosing between Bio.Phylo, ggtree, ETE4, and iTOL for publication.
+license: Apache-2.0
 tool_type: python
 primary_tool: Bio.Phylo
 user-invocable: false

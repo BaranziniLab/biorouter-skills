@@ -1,6 +1,7 @@
 ---
 name: workflows-longread-sv-pipeline
 description: End-to-end workflow for detecting structural variants from long-read sequencing data. Covers ONT/PacBio alignment with minimap2 and SV calling with Sniffles or cuteSV. Use when detecting structural variants from long reads.
+license: Apache-2.0
 tool_type: cli
 primary_tool: Sniffles
 workflow: true

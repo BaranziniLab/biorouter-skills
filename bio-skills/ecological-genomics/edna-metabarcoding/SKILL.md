@@ -1,6 +1,7 @@
 ---
 name: ecological-genomics-edna-metabarcoding
 description: Processes environmental DNA metabarcoding data from raw amplicon reads to species occurrence tables using OBITools3, DADA2, and taxonomic assignment against BOLD, MIDORI2, or MitoFish databases. Handles COI, 12S, rbcL, and ITS barcode regions with primer removal, denoising, chimera detection, and contamination filtering via decontam. Includes occupancy modeling (occumb) for detection probability correction. Use when analyzing eDNA from water, soil, or bulk samples for biodiversity monitoring. Not for 16S human microbiome (see microbiome/amplicon-processing).
+license: Apache-2.0
 tool_type: mixed
 primary_tool: obitools3
 user-invocable: false

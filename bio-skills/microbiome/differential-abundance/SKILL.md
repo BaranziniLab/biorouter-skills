@@ -1,6 +1,7 @@
 ---
 name: microbiome-differential-abundance
 description: Differential abundance testing for microbiome data using compositionally-aware methods like ALDEx2, ANCOM-BC2, and MaAsLin2. Use when identifying taxa that differ between experimental groups while accounting for the compositional nature of microbiome data.
+license: Apache-2.0
 tool_type: r
 primary_tool: ALDEx2
 user-invocable: false

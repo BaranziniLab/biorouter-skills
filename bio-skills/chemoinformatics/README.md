@@ -15,6 +15,8 @@ Computational chemistry for drug discovery covering molecular representations, p
 | admet-prediction | Predict ADMET properties and drug-likeness |
 | virtual-screening | Dock compounds against protein targets |
 | reaction-enumeration | Generate virtual libraries via reaction SMARTS |
+| datamol-medchem | Standardize, deduplicate, filter, and audit compound libraries before modeling or docking |
+| deepchem-drug-discovery | Build molecular ML workflows with careful splitting, baselines, and uncertainty-aware hit ranking |
 
 ## Example Prompts
 - "Load my compound library from SDF and standardize structures"
@@ -23,6 +25,8 @@ Computational chemistry for drug discovery covering molecular representations, p
 - "Filter my library for Lipinski rule-of-5 compliant compounds"
 - "Predict ADMET properties for my hit compounds"
 - "Dock my library against this protein structure"
+- "Clean and deduplicate this vendor SMILES library before QSAR"
+- "Train a DeepChem model with scaffold splits and report applicability-domain warnings"
 
 ## Requirements
 ```bash

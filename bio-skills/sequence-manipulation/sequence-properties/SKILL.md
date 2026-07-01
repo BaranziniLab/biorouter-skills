@@ -1,6 +1,7 @@
 ---
 name: sequence-properties
 description: Calculate sequence properties like GC content, molecular weight, isoelectric point, and GC skew using Biopython. Use when analyzing sequence composition, computing physical properties, or comparing sequences.
+license: Apache-2.0
 tool_type: python
 primary_tool: Bio.SeqUtils
 user-invocable: false

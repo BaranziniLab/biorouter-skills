@@ -1,6 +1,7 @@
 ---
 name: longread-structural-variants
 description: Detect structural variants from long-read alignments using Sniffles, cuteSV, and SVIM. Use when detecting deletions, insertions, inversions, translocations, or complex rearrangements from ONT or PacBio data, especially those missed by short-read methods.
+license: Apache-2.0
 tool_type: cli
 primary_tool: sniffles
 user-invocable: false

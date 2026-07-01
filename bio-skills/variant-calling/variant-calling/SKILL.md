@@ -1,6 +1,7 @@
 ---
 name: variant-calling
 description: Call SNPs and indels from aligned reads using bcftools mpileup and call. Use when detecting variants from BAM files or generating VCF from alignments.
+license: Apache-2.0
 tool_type: cli
 primary_tool: bcftools
 user-invocable: false

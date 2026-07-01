@@ -1,6 +1,7 @@
 ---
 name: machine-learning-omics-classifiers
 description: Builds classification models for omics data using RandomForest, XGBoost, and logistic regression with sklearn-compatible APIs. Includes proper preprocessing and evaluation metrics for biomarker classifiers. Use when building diagnostic or prognostic classifiers from expression or variant data.
+license: Apache-2.0
 tool_type: python
 primary_tool: sklearn
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: alignment-indexing
 description: Create and use BAI/CSI indices for BAM/CRAM files using samtools and pysam. Use when enabling random access to alignment files or fetching specific genomic regions.
+license: Apache-2.0
 tool_type: cli
 primary_tool: samtools
 user-invocable: false

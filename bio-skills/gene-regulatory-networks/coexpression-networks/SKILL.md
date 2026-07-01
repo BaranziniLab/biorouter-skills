@@ -1,6 +1,7 @@
 ---
 name: gene-regulatory-networks-coexpression-networks
 description: Build weighted gene co-expression networks to identify modules of co-regulated genes and relate them to phenotypes using WGCNA and CEMiTool. Detects hub genes and module-trait relationships from bulk or single-cell expression data. Use when finding co-expression modules, identifying hub genes, or relating gene networks to clinical or experimental variables.
+license: Apache-2.0
 tool_type: r
 primary_tool: WGCNA
 user-invocable: false

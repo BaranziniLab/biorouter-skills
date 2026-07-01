@@ -1,6 +1,7 @@
 ---
 name: workflows-grn-pipeline
 description: End-to-end gene regulatory network inference pipeline from processed single-cell data to regulon discovery and perturbation simulation. Supports RNA-only (pySCENIC) and multiome (SCENIC+) paths. Use when building gene regulatory networks from single-cell transcriptomic or multiome data.
+license: Apache-2.0
 tool_type: python
 primary_tool: pySCENIC
 workflow: true

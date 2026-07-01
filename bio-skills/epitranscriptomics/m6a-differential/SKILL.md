@@ -1,6 +1,7 @@
 ---
 name: epitranscriptomics-m6a-differential
 description: Identify differential m6A methylation between conditions from MeRIP-seq. Use when comparing epitranscriptomic changes between treatment groups or cell states.
+license: Apache-2.0
 tool_type: r
 primary_tool: exomePeak2
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: comparative-genomics-ancestral-reconstruction
 description: Reconstruct ancestral sequences at phylogenetic nodes using PAML and IQ-TREE marginal likelihood methods. Infer ancient protein sequences and trace evolutionary trajectories through sequence history. Use when inferring ancestral states for protein resurrection or tracing evolutionary history.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: PAML
 user-invocable: false

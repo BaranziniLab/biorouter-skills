@@ -1,6 +1,7 @@
 ---
 name: spatial-transcriptomics-spatial-data-io
 description: Load spatial transcriptomics data from Visium, Xenium, MERFISH, Slide-seq, and other platforms using Squidpy and SpatialData. Read Space Ranger outputs, convert formats, and access spatial coordinates. Use when loading Visium, Xenium, MERFISH, or other spatial data.
+license: Apache-2.0
 tool_type: python
 primary_tool: squidpy
 user-invocable: false

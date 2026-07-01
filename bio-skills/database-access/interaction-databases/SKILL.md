@@ -1,6 +1,7 @@
 ---
 name: interaction-databases
 description: Query protein-protein and gene interaction databases including STRING, BioGRID, and IntAct via their REST APIs and Python clients. Retrieve interaction networks, confidence scores, and functional enrichment. Use when building protein interaction networks, contextualizing gene lists with known interactions, or retrieving pathway-level interaction data.
+license: Apache-2.0
 tool_type: python
 primary_tool: STRINGdb
 user-invocable: false

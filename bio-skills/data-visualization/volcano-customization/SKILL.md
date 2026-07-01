@@ -1,6 +1,7 @@
 ---
 name: data-visualization-volcano-customization
 description: Create publication-ready volcano plots with custom thresholds, gene labels, and highlighting using ggplot2, EnhancedVolcano, or matplotlib. Use when visualizing differential expression or association results with gene annotations.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: ggplot2
 user-invocable: false

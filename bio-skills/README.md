@@ -1,6 +1,6 @@
 # BioSkills — Bioinformatics Skill Bundle
 
-A comprehensive collection of bioinformatics skills for BioRouter, integrated from [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT-licensed). Covers sequence I/O, alignment, variant calling, single-cell, ATAC/ChIP-seq, proteomics, metabolomics, machine learning, workflow management, and 50+ more categories.
+A comprehensive collection of bioinformatics skills for BioRouter, integrated from [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT-origin upstream) and distributed in this repository under Apache-2.0 with provenance preserved. Covers sequence I/O, alignment, variant calling, single-cell, ATAC/ChIP-seq, proteomics, metabolomics, machine learning, workflow management, and 50+ more categories.
 
 ## Install
 
@@ -49,6 +49,7 @@ Each `SKILL.md` carries YAML frontmatter:
 ---
 name: <kebab-case-name>
 description: <one-line "Use when ..." trigger>
+license: Apache-2.0
 tool_type: <python | r | cli | mixed>
 primary_tool: <main package or CLI tool>
 user-invocable: false
@@ -57,10 +58,11 @@ user-invocable: false
 
 ## Attribution & License
 
-Upstream content authored by the GPTomics community. Licensed under MIT. See [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) for contributing guidelines and full attribution.
+Upstream content authored by the GPTomics community originated under MIT. The BioRouter-distributed bundle is licensed under Apache-2.0 and keeps upstream provenance in the top-level attribution table. See [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) for contributing guidelines and full upstream attribution.
 
-Only two changes were made for the BioRouter integration:
+The BioRouter integration changes are:
 1. Stripped the `bio-` prefix from the `name:` field so directory name matches skill name (matches the `superpowers/` bundle convention).
 2. Added `user-invocable: false` and the uv tip banner described above.
+3. Added `license: Apache-2.0` frontmatter for registry and installer visibility.
 
 All skill content, examples, and command sequences are preserved as authored.

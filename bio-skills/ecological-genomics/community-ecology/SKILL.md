@@ -1,6 +1,7 @@
 ---
 name: ecological-genomics-community-ecology
 description: Analyzes community composition using constrained ordination (CCA, RDA, db-RDA), variance partitioning (varpart), indicator species analysis (indicspecies multipatt), and distance-based environmental gradient methods with vegan. Links species composition to environmental explanatory variables. Use when testing how environmental gradients structure species communities, identifying habitat indicator taxa, or partitioning explained variation among predictors. Not for basic unconstrained ordination and PERMANOVA (see microbiome/diversity-analysis).
+license: Apache-2.0
 tool_type: r
 primary_tool: vegan
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: ggplot-visualization
 description: ggplot2 visualization style rules. Apply whenever writing or modifying any ggplot2 plotting code in R.
+license: Apache-2.0
 user-invocable: false
 ---
 

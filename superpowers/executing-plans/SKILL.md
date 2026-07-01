@@ -1,6 +1,7 @@
 ---
 name: executing-plans
 description: Use when you have a written implementation plan to execute in a session with review checkpoints
+license: Apache-2.0
 user-invocable: true
 ---
 

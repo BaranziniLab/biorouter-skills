@@ -1,6 +1,7 @@
 ---
 name: pathway-reactome
 description: Reactome pathway enrichment using ReactomePA package. Use when analyzing gene lists against Reactome's curated peer-reviewed pathway database. Performs over-representation analysis and GSEA with visualization and pathway hierarchy exploration.
+license: Apache-2.0
 tool_type: r
 primary_tool: ReactomePA
 user-invocable: false

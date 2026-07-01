@@ -1,6 +1,7 @@
 ---
 name: data-visualization-upset-plots
 description: Create UpSet plots to visualize set intersections as an alternative to Venn diagrams using UpSetR or upsetplot. Use when comparing overlapping gene sets, peak sets, or sample groups with more than 3 sets.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: UpSetR
 user-invocable: false

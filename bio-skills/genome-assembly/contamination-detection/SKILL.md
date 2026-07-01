@@ -1,6 +1,7 @@
 ---
 name: genome-assembly-contamination-detection
 description: Detect contamination and assess genome quality using CheckM, CheckM2, GTDB-Tk, and GUNC for metagenome-assembled genomes and isolate assemblies. Use when checking assemblies for contamination.
+license: Apache-2.0
 tool_type: cli
 primary_tool: CheckM2
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: hi-c-analysis-hic-differential
 description: Compare Hi-C contact matrices between conditions to identify differential chromatin interactions. Compute log2 fold changes, statistical significance, and visualize differential contact maps. Use when comparing Hi-C contacts between conditions.
+license: Apache-2.0
 tool_type: python
 primary_tool: cooltools
 user-invocable: false

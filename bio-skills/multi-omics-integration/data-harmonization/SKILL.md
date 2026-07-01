@@ -1,6 +1,7 @@
 ---
 name: multi-omics-data-harmonization
 description: Preprocessing and harmonization of multi-omics data before integration. Covers normalization, batch correction, feature alignment, and missing value handling across data types. Use when preparing multi-omics datasets for integration analysis.
+license: Apache-2.0
 tool_type: r
 primary_tool: MultiAssayExperiment
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: expression-matrix-gene-id-mapping
 description: Convert between gene identifier systems including Ensembl, Entrez, HGNC symbols, and UniProt. Use when mapping IDs for pathway analysis or matching different data sources.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: biomaRt
 user-invocable: false

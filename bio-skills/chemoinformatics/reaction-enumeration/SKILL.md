@@ -1,6 +1,7 @@
 ---
 name: reaction-enumeration
 description: Enumerates chemical libraries through reaction SMARTS transformations using RDKit. Generates virtual compound libraries from building blocks using defined chemical reactions with product validation. Use when creating combinatorial libraries or enumerating products from synthetic routes.
+license: Apache-2.0
 tool_type: python
 primary_tool: RDKit
 user-invocable: false

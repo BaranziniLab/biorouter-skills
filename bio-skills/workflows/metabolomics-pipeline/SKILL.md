@@ -1,6 +1,7 @@
 ---
 name: workflows-metabolomics-pipeline
 description: End-to-end metabolomics workflow from raw MS data to pathway analysis. Orchestrates XCMS preprocessing, annotation, normalization, statistical analysis, and pathway mapping. Use when processing LC-MS metabolomics data.
+license: Apache-2.0
 tool_type: r
 primary_tool: XCMS
 workflow: true

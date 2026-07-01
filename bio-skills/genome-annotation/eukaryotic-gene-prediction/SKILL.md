@@ -1,6 +1,7 @@
 ---
 name: genome-annotation-eukaryotic-gene-prediction
 description: Predict protein-coding genes in eukaryotic genomes using BRAKER3 for combined RNA-seq and protein evidence, or GALBA for protein-only evidence. Runs Augustus with trained parameters for accurate gene models. Use when annotating a newly assembled eukaryotic genome or improving existing gene predictions.
+license: Apache-2.0
 tool_type: cli
 primary_tool: BRAKER3
 user-invocable: false

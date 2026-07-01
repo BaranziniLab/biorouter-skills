@@ -1,6 +1,7 @@
 ---
 name: copy-number-cnvkit-analysis
 description: Detect copy number variants from targeted/exome sequencing using CNVkit. Supports tumor-normal pairs, tumor-only, and germline CNV calling. Use when detecting CNVs from WES or targeted panel sequencing data.
+license: Apache-2.0
 tool_type: cli
 primary_tool: cnvkit
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: workflows-edna-pipeline
 description: End-to-end eDNA metabarcoding from raw amplicons to community ecology. Covers QC, primer removal, denoising with OBITools3 or DADA2, contamination filtering, taxonomy assignment, Hill number diversity, and constrained ordination. Use when processing environmental DNA samples for biodiversity assessment or ecological surveys.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: obitools3
 workflow: true

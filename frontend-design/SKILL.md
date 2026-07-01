@@ -1,6 +1,7 @@
 ---
 name: frontend-design
 description: Create distinctive, production-grade frontend interfaces with high design quality. Use when the user asks to build web components, pages, or applications. Generates creative, polished code that avoids generic AI aesthetics.
+license: Apache-2.0
 ---
 
 <!-- Adapted for BioRouter from anthropics/claude-plugins-official/plugins/frontend-design (Apache License 2.0). -->

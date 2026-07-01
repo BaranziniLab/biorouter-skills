@@ -1,6 +1,7 @@
 ---
 name: crispr-screens-batch-correction
 description: Batch effect correction for CRISPR screens. Covers normalization across batches, technical replicate handling, and batch-aware analysis. Use when combining screens from multiple batches or correcting systematic technical variation.
+license: Apache-2.0
 tool_type: python
 primary_tool: scipy
 user-invocable: false

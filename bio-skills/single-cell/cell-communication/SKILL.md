@@ -1,6 +1,7 @@
 ---
 name: single-cell-cell-communication
 description: Infer cell-cell communication networks from scRNA-seq data using CellChat, NicheNet, and LIANA for ligand-receptor interaction analysis. Use when inferring ligand-receptor interactions between cell types.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: CellChat
 user-invocable: false

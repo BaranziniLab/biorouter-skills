@@ -1,6 +1,7 @@
 ---
 name: rna-quantification-alignment-free-quant
 description: Quantify transcript expression using pseudo-alignment with Salmon or kallisto. Use when quantifying transcripts with Salmon or kallisto.
+license: Apache-2.0
 tool_type: cli
 primary_tool: salmon
 user-invocable: false

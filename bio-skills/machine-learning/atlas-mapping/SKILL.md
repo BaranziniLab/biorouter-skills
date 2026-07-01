@@ -1,6 +1,7 @@
 ---
 name: machine-learning-atlas-mapping
 description: Maps query single-cell data to reference atlases using scArches transfer learning with scVI and scANVI models. Transfers cell type labels without retraining on combined data. Use when annotating new single-cell datasets using pre-trained reference models.
+license: Apache-2.0
 tool_type: python
 primary_tool: scvi-tools
 user-invocable: false

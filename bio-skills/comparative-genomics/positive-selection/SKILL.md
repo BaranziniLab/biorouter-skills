@@ -1,6 +1,7 @@
 ---
 name: comparative-genomics-positive-selection
 description: Detect positive selection using dN/dS (omega) tests with PAML codeml and HyPhy. Identify sites and branches under adaptive evolution through codon models and branch-site tests. Use when testing for adaptive evolution in gene families or identifying positively selected sites.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: PAML
 user-invocable: false

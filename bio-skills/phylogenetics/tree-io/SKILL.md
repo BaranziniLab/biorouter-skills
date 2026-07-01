@@ -1,6 +1,7 @@
 ---
 name: phylo-tree-io
 description: Read, write, and convert phylogenetic tree files using Biopython Bio.Phylo. Use when parsing Newick, Nexus, PhyloXML, or NeXML tree formats, converting between formats, or handling multiple trees.
+license: Apache-2.0
 tool_type: python
 primary_tool: Bio.Phylo
 user-invocable: false

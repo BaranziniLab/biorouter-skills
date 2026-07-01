@@ -1,6 +1,7 @@
 ---
 name: workflows-outbreak-pipeline
 description: End-to-end outbreak investigation from pathogen isolates to transmission networks. Orchestrates MLST typing, AMR surveillance, phylodynamic dating, and transmission inference with TransPhylo. Use when investigating disease outbreaks or tracking pathogen transmission chains.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: mlst
 workflow: true

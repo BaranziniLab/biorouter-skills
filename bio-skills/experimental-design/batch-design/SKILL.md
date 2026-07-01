@@ -1,6 +1,7 @@
 ---
 name: experimental-design-batch-design
 description: Designs experiments to minimize and account for batch effects using balanced layouts and blocking strategies. Use when planning multi-batch experiments, assigning samples to sequencing lanes, or designing studies where technical variation could confound biological signals.
+license: Apache-2.0
 tool_type: r
 primary_tool: sva
 user-invocable: false

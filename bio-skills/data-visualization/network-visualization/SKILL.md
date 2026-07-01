@@ -1,6 +1,7 @@
 ---
 name: data-visualization-network-visualization
 description: Visualize biological networks including gene regulatory networks, protein interaction networks, and co-expression modules using NetworkX, PyVis, and Cytoscape automation. Produces interactive and publication-quality network figures. Use when creating network diagrams from interaction data, GRN results, or co-expression modules.
+license: Apache-2.0
 tool_type: python
 primary_tool: NetworkX
 user-invocable: false

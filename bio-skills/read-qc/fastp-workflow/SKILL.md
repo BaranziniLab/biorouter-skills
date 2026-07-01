@@ -1,6 +1,7 @@
 ---
 name: read-qc-fastp-workflow
 description: All-in-one read preprocessing with fastp including adapter trimming, quality filtering, deduplication, base correction, and HTML report generation. Use when preprocessing Illumina data and wanting a single fast tool instead of separate Cutadapt, Trimmomatic, and FastQC steps.
+license: Apache-2.0
 tool_type: cli
 primary_tool: fastp
 user-invocable: false

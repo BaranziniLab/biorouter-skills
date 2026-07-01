@@ -1,6 +1,7 @@
 ---
 name: workflows-timecourse-pipeline
 description: End-to-end time-course analysis from expression matrix to temporal patterns and enrichment. Covers temporal DE, Mfuzz soft clustering, optional rhythm detection, GAM trajectory fitting, and per-cluster pathway enrichment. Use when analyzing bulk time-series expression experiments from any omics platform.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: Mfuzz
 workflow: true

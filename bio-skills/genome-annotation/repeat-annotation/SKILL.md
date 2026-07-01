@@ -1,6 +1,7 @@
 ---
 name: genome-annotation-repeat-annotation
 description: Identify and classify repetitive elements and transposable elements using RepeatModeler for de novo repeat library construction and RepeatMasker for genome-wide repeat annotation. Quantify TE expression from RNA-seq with TEtranscripts. Use when masking repeats before gene prediction or analyzing transposable element activity.
+license: Apache-2.0
 tool_type: cli
 primary_tool: RepeatMasker
 user-invocable: false

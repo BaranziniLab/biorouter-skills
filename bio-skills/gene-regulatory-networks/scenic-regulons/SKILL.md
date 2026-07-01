@@ -1,6 +1,7 @@
 ---
 name: gene-regulatory-networks-scenic-regulons
 description: Infer gene regulatory networks and identify transcription factor regulons from single-cell RNA-seq data using pySCENIC. Discovers co-expression modules with GRNBoost2, prunes by cis-regulatory motif enrichment, and scores regulon activity per cell with AUCell. Use when identifying transcription factor regulons, scoring TF activity in single cells, or finding master regulators of cell identity.
+license: Apache-2.0
 tool_type: python
 primary_tool: pySCENIC
 user-invocable: false

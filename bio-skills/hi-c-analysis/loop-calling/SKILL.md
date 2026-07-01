@@ -1,6 +1,7 @@
 ---
 name: hi-c-analysis-loop-calling
 description: Detect chromatin loops and point interactions from Hi-C data using cooltools, chromosight, and HiCCUPS-like methods. Identify CTCF-mediated loops and enhancer-promoter contacts. Use when detecting chromatin loops from Hi-C data.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: cooltools
 user-invocable: false

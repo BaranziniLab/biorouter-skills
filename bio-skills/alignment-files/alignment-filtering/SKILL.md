@@ -1,6 +1,7 @@
 ---
 name: alignment-filtering
 description: Filter alignments by flags, mapping quality, and regions using samtools view and pysam. Use when extracting specific reads, removing low-quality alignments, or subsetting to target regions.
+license: Apache-2.0
 tool_type: cli
 primary_tool: samtools
 user-invocable: false

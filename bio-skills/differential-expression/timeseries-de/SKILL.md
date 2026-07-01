@@ -1,6 +1,7 @@
 ---
 name: differential-expression-timeseries-de
 description: Analyze time-series RNA-seq data using limma voom with splines, maSigPro, and ImpulseDE2. Identify genes with dynamic expression patterns. Use when analyzing time-series or longitudinal expression data.
+license: Apache-2.0
 tool_type: r
 primary_tool: limma
 user-invocable: false

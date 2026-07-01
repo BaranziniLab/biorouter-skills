@@ -1,6 +1,7 @@
 ---
 name: reporting-figure-export
 description: Exports publication-ready figures in various formats with proper resolution, sizing, and typography. Use when preparing figures for journal submission, creating vector graphics for presentations, or ensuring consistent figure styling across analyses.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: matplotlib
 user-invocable: false

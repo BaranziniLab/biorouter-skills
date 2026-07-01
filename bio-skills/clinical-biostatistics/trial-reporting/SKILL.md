@@ -1,6 +1,7 @@
 ---
 name: clinical-biostatistics-trial-reporting
 description: Prepares statistical tables and reports for clinical trials following regulatory standards. Generates Table 1 baseline characteristics, defines analysis populations (ITT, per-protocol, safety), performs multiple imputation for missing data, and follows CONSORT and ICH E9 guidelines. Use when creating analysis reports, handling missing data, or preparing regulatory submissions from clinical trials.
+license: Apache-2.0
 tool_type: python
 primary_tool: tableone
 user-invocable: false

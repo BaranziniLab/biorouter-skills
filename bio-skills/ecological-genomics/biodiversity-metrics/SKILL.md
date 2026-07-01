@@ -1,6 +1,7 @@
 ---
 name: ecological-genomics-biodiversity-metrics
 description: Calculates species richness, diversity, and turnover using the Hill number framework with iNEXT coverage-based rarefaction/extrapolation, asymptotic diversity estimation, and beta diversity partitioning (betapart turnover vs nestedness). Compares assemblages using coverage-standardized rather than size-standardized rarefaction. Use when quantifying biodiversity from species abundance or incidence data, comparing diversity across sites, or constructing rarefaction curves. Not for clinical 16S microbiome alpha/beta diversity (see microbiome/diversity-analysis).
+license: Apache-2.0
 tool_type: r
 primary_tool: iNEXT
 user-invocable: false

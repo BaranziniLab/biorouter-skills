@@ -1,6 +1,7 @@
 ---
 name: clinical-biostatistics-cdisc-data
 description: Reads and prepares CDISC SDTM clinical trial data for analysis. Handles domain tables (DM, AE, EX, VS, LB), USUBJID-based joins, event-to-subject aggregation, and SUPPQUAL pivoting. Use when working with clinical trial datasets in CDISC/SDTM format or .xpt files.
+license: Apache-2.0
 tool_type: python
 primary_tool: pyreadstat
 user-invocable: false

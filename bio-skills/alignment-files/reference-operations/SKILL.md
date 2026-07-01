@@ -1,6 +1,7 @@
 ---
 name: reference-operations
 description: Generate consensus sequences and manage reference files using samtools. Use when creating consensus from alignments, indexing references, or creating sequence dictionaries.
+license: Apache-2.0
 tool_type: cli
 primary_tool: samtools
 user-invocable: false

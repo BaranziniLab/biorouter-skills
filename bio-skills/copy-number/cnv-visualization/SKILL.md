@@ -1,6 +1,7 @@
 ---
 name: copy-number-cnv-visualization
 description: Visualize copy number profiles, segments, and compare across samples. Create publication-quality plots of CNV data from CNVkit, GATK, or other callers. Use when creating genome-wide CNV plots, sample heatmaps, or chromosome-level visualizations.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: matplotlib
 user-invocable: false

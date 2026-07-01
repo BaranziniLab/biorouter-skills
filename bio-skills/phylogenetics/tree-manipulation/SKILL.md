@@ -1,6 +1,7 @@
 ---
 name: phylo-tree-manipulation
 description: Modify phylogenetic tree structure using Biopython Bio.Phylo. Use when rooting trees with outgroups, midpoint, or MAD methods, pruning taxa, collapsing clades, ladderizing branches, or extracting subtrees. Includes rooting method decision guidance.
+license: Apache-2.0
 tool_type: python
 primary_tool: Bio.Phylo
 user-invocable: false

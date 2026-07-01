@@ -1,6 +1,7 @@
 ---
 name: workflows-atacseq-pipeline
 description: End-to-end ATAC-seq workflow from FASTQ files to differential accessibility and TF footprinting. Covers alignment, peak calling with MACS3, QC metrics, and optional TOBIAS footprinting. Use when running end-to-end ATAC-seq analysis from FASTQ to differential accessibility.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: MACS3
 workflow: true

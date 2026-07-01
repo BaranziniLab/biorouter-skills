@@ -1,6 +1,7 @@
 ---
 name: long-read-sequencing-nanopore-methylation
 description: Calls DNA methylation from Oxford Nanopore sequencing data using signal-level analysis. Use when detecting 5mC or 6mA modifications directly from nanopore reads without bisulfite conversion.
+license: Apache-2.0
 tool_type: cli
 primary_tool: modkit
 user-invocable: false

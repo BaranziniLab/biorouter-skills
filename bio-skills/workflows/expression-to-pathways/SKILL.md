@@ -1,6 +1,7 @@
 ---
 name: workflows-expression-to-pathways
 description: Workflow from differential expression results to functional enrichment analysis. Covers GO, KEGG, Reactome enrichment with clusterProfiler and visualization. Use when taking DE results to pathway enrichment.
+license: Apache-2.0
 tool_type: r
 primary_tool: clusterProfiler
 workflow: true

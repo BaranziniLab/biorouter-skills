@@ -1,6 +1,7 @@
 ---
 name: workflow-management-wdl-workflows
 description: Create portable bioinformatics pipelines with Workflow Description Language (WDL) using Cromwell or miniwdl execution engines. Use when running GATK best practices pipelines, working with Terra/AnVIL platforms, or building workflows for cloud execution on Google Cloud or AWS.
+license: Apache-2.0
 tool_type: cli
 primary_tool: cromwell
 user-invocable: false

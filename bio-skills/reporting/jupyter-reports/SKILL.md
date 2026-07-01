@@ -1,6 +1,7 @@
 ---
 name: reporting-jupyter-reports
 description: Creates reproducible Jupyter notebooks for bioinformatics analysis with parameterization using papermill. Use when generating automated analysis reports, running notebook-based pipelines, or creating shareable computational notebooks.
+license: Apache-2.0
 tool_type: python
 primary_tool: papermill
 user-invocable: false

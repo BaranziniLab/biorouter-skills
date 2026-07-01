@@ -1,6 +1,7 @@
 ---
 name: metabolomics-msdial-preprocessing
 description: MS-DIAL-based metabolomics preprocessing as alternative to XCMS. Covers peak detection, alignment, annotation, and export for downstream analysis. Use when processing MS-DIAL output files for R/Python analysis or when preferring GUI-based preprocessing.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: msdial
 user-invocable: false

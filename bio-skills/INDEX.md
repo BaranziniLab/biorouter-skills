@@ -1,6 +1,6 @@
 # BioSkills Index
 
-All 456 skills organized by category. Each link points to the SKILL.md within this bundle.
+All 466 skills organized by category. Each link points to the SKILL.md within this bundle.
 
 ## Alignment (7)
 _Multiple sequence alignment and pairwise alignment_
@@ -71,10 +71,12 @@ _Mendelian randomization and genetic inference_
 - [causal-genomics-proteome-mr-drug-target](causal-genomics/proteome-mr-drug-target/SKILL.md) — Runs cis-pQTL Mendelian randomization for drug-target validation using UKB-PPP (Olink), deCODE (SomaScan), Fenland, INTERVAL, ARIC, and F…
 - [causal-genomics-transcriptome-wide-association](causal-genomics/transcriptome-wide-association/SKILL.md) — Performs gene-level association from GWAS summary statistics via genetically predicted tissue expression using FUSION, PrediXcan, S-Predi…
 
-## Chemoinformatics (7)
+## Chemoinformatics (9)
 _Molecular structure and drug discovery tools_
 
 - [admet-prediction](chemoinformatics/admet-prediction/SKILL.md) — Predicts ADMET properties using ADMETlab 3.0 API or DeepChem models.
+- [chemoinformatics-datamol-medchem](chemoinformatics/datamol-medchem/SKILL.md) — Standardize, deduplicate, filter, and audit compound libraries before modeling or docking.
+- [chemoinformatics-deepchem-drug-discovery](chemoinformatics/deepchem-drug-discovery/SKILL.md) — Build molecular ML workflows with careful splitting, baselines, and uncertainty-aware hit ranking.
 - [molecular-descriptors](chemoinformatics/molecular-descriptors/SKILL.md) — Calculates molecular descriptors and fingerprints using RDKit.
 - [molecular-io](chemoinformatics/molecular-io/SKILL.md) — Reads, writes, and converts molecular file formats (SMILES, SDF, MOL2, PDB) using RDKit and Open Babel.
 - [reaction-enumeration](chemoinformatics/reaction-enumeration/SKILL.md) — Enumerates chemical libraries through reaction SMARTS transformations using RDKit.
@@ -155,7 +157,7 @@ _Pooled genetic screening analysis_
 - [crispr-screens-mageck-analysis](crispr-screens/mageck-analysis/SKILL.md) — MAGeCK (Model-based Analysis of Genome-wide CRISPR-Cas9 Knockout) for pooled CRISPR screen analysis.
 - [crispr-screens-screen-qc](crispr-screens/screen-qc/SKILL.md) — Quality control for pooled CRISPR screens.
 
-## Data Visualization (12)
+## Data Visualization (13)
 _Publication-quality figure generation_
 
 - [data-visualization-circos-plots](data-visualization/circos-plots/SKILL.md) — Create circular genome visualizations with Circos and pyCircos.
@@ -167,11 +169,12 @@ _Publication-quality figure generation_
 - [data-visualization-interactive-visualization](data-visualization/interactive-visualization/SKILL.md) — Create interactive HTML plots with plotly and bokeh for exploratory data analysis and web-based sharing of omics visualizations.
 - [data-visualization-multipanel-figures](data-visualization/multipanel-figures/SKILL.md) — Combine multiple plots into publication-ready multi-panel figures using patchwork, cowplot, or matplotlib GridSpec with shared legends an…
 - [data-visualization-network-visualization](data-visualization/network-visualization/SKILL.md) — Visualize biological networks including gene regulatory networks, protein interaction networks, and co-expression modules using NetworkX,…
+- [data-visualization-scientific-python](data-visualization/scientific-python-visualization/SKILL.md) — Create publication-quality matplotlib, seaborn, and plotly figures with claim-to-figure consistency checks.
 - [data-visualization-specialized-omics-plots](data-visualization/specialized-omics-plots/SKILL.md) — Reusable plotting functions for common omics visualizations.
 - [data-visualization-upset-plots](data-visualization/upset-plots/SKILL.md) — Create UpSet plots to visualize set intersections as an alternative to Venn diagrams using UpSetR or upsetplot.
 - [data-visualization-volcano-customization](data-visualization/volcano-customization/SKILL.md) — Create publication-ready volcano plots with custom thresholds, gene labels, and highlighting using ggplot2, EnhancedVolcano, or matplotlib.
 
-## Database Access (11)
+## Database Access (12)
 _NCBI, UniProt, and biological database queries_
 
 - [batch-downloads](database-access/batch-downloads/SKILL.md) — Download large datasets from NCBI efficiently using history server, batching, and rate limiting.
@@ -182,11 +185,12 @@ _NCBI, UniProt, and biological database queries_
 - [geo-data](database-access/geo-data/SKILL.md) — Query NCBI Gene Expression Omnibus (GEO) for expression datasets using Biopython Bio.Entrez.
 - [interaction-databases](database-access/interaction-databases/SKILL.md) — Query protein-protein and gene interaction databases including STRING, BioGRID, and IntAct via their REST APIs and Python clients.
 - [local-blast](database-access/local-blast/SKILL.md) — Run local BLAST searches using BLAST+ command-line tools.
+- [database-access-open-literature-discovery](database-access/open-literature-discovery/SKILL.md) — Discover and verify scholarly literature through PubMed, Crossref, OpenAlex, preprint servers, and stable identifiers.
 - [sequence-similarity](database-access/sequence-similarity/SKILL.md) — Find homologous sequences using iterative BLAST (PSI-BLAST), profile HMMs (HMMER), and reciprocal best hit analysis.
 - [sra-data](database-access/sra-data/SKILL.md) — Download sequencing data from NCBI SRA using the SRA toolkit.
 - [uniprot-access](database-access/uniprot-access/SKILL.md) — Access UniProt protein database for sequences, annotations, and functional information.
 
-## Differential Expression (6)
+## Differential Expression (7)
 _RNA-seq statistical testing_
 
 - [differential-expression-batch-correction](differential-expression/batch-correction/SKILL.md) — Remove batch effects from RNA-seq data using ComBat, ComBat-Seq, limma removeBatchEffect, and SVA for unknown batch variables.
@@ -194,6 +198,7 @@ _RNA-seq statistical testing_
 - [de-visualization](differential-expression/de-visualization/SKILL.md) — Visualize differential expression results using DESeq2/edgeR built-in functions.
 - [de-deseq2-basics](differential-expression/deseq2-basics/SKILL.md) — Perform differential expression analysis using DESeq2 in R/Bioconductor.
 - [de-edger-basics](differential-expression/edger-basics/SKILL.md) — Perform differential expression analysis using edgeR in R/Bioconductor.
+- [differential-expression-pydeseq2](differential-expression/pydeseq2/SKILL.md) — Run DESeq2-style bulk RNA-seq differential expression in Python with PyDESeq2 and explicit contrast checks.
 - [differential-expression-timeseries-de](differential-expression/timeseries-de/SKILL.md) — Analyze time-series RNA-seq data using limma voom with splines, maSigPro, and ImpulseDE2.
 
 ## Ecological Genomics (6)
@@ -357,11 +362,13 @@ _Nanopore and PacBio read processing_
 - [long-read-sequencing-nanopore-methylation](long-read-sequencing/nanopore-methylation/SKILL.md) — Calls DNA methylation from Oxford Nanopore sequencing data using signal-level analysis.
 - [longread-structural-variants](long-read-sequencing/structural-variants/SKILL.md) — Detect structural variants from long-read alignments using Sniffles, cuteSV, and SVIM.
 
-## Machine Learning (6)
+## Machine Learning (8)
 _Biomarker discovery and model validation_
 
 - [machine-learning-atlas-mapping](machine-learning/atlas-mapping/SKILL.md) — Maps query single-cell data to reference atlases using scArches transfer learning with scVI and scANVI models.
 - [machine-learning-biomarker-discovery](machine-learning/biomarker-discovery/SKILL.md) — Selects informative features for biomarker discovery using Boruta all-relevant selection, mRMR minimum redundancy, and LASSO regularization.
+- [machine-learning-causal-ml-dml](machine-learning/causal-ml-dml/SKILL.md) — Estimate causal effects with double machine learning, orthogonal scores, cross-fitting, and CATE/meta-learners.
+- [machine-learning-model-explainability-shap](machine-learning/model-explainability-shap/SKILL.md) — Explain predictive biomedical models with SHAP while checking leakage, background data, and causal overinterpretation.
 - [machine-learning-model-validation](machine-learning/model-validation/SKILL.md) — Implements nested cross-validation and stratified splits for unbiased model evaluation on biomedical datasets.
 - [machine-learning-omics-classifiers](machine-learning/omics-classifiers/SKILL.md) — Builds classification models for omics data using RandomForest, XGBoost, and logistic regression with sklearn-compatible APIs.
 - [machine-learning-prediction-explanation](machine-learning/prediction-explanation/SKILL.md) — Explains machine learning predictions on omics data using SHAP values and LIME for feature attribution.
@@ -603,12 +610,14 @@ _Tissue imaging and location-based expression_
 - [spatial-transcriptomics-spatial-statistics](spatial-transcriptomics/spatial-statistics/SKILL.md) — Compute spatial statistics for spatial transcriptomics data using Squidpy.
 - [spatial-transcriptomics-spatial-visualization](spatial-transcriptomics/spatial-visualization/SKILL.md) — Visualize spatial transcriptomics data using Squidpy and Scanpy.
 
-## Structural Biology (6)
+## Structural Biology (8)
 _PDB parsing and protein structure prediction_
 
 - [structural-biology-alphafold-predictions](structural-biology/alphafold-predictions/SKILL.md) — Access and analyze AlphaFold protein structure predictions.
 - [pdb-geometric-analysis](structural-biology/geometric-analysis/SKILL.md) — Perform geometric calculations on protein structures using Biopython Bio.PDB.
+- [structural-biology-molecular-docking-diffdock](structural-biology/molecular-docking-diffdock/SKILL.md) — Run or plan DiffDock-style learned molecular docking workflows with pose confidence and preparation checks.
 - [structural-biology-modern-structure-prediction](structural-biology/modern-structure-prediction/SKILL.md) — Predict protein structures using modern ML models including AlphaFold3, ESMFold, Chai-1, and Boltz-1.
+- [structural-biology-protein-language-models](structural-biology/protein-language-models/SKILL.md) — Use ESM-style protein language model embeddings for sequence representation and variant-effect features.
 - [pdb-structure-io](structural-biology/structure-io/SKILL.md) — Parse and write protein structure files using Biopython Bio.PDB.
 - [pdb-structure-modification](structural-biology/structure-modification/SKILL.md) — Modify protein structures using Biopython Bio.PDB.
 - [pdb-structure-navigation](structural-biology/structure-navigation/SKILL.md) — Navigate protein structure hierarchy using Biopython Bio.PDB SMCRA model.
@@ -657,10 +666,11 @@ _SNP, indel, and structural variant detection_
 - [vcf-manipulation](variant-calling/vcf-manipulation/SKILL.md) — Merge, concatenate, sort, intersect, and subset VCF files using bcftools.
 - [vcf-statistics](variant-calling/vcf-statistics/SKILL.md) — Generate variant statistics, sample concordance, and quality metrics using bcftools stats and gtcheck.
 
-## Workflow Management (4)
+## Workflow Management (5)
 _Snakemake and Nextflow pipeline frameworks_
 
 - [workflow-management-cwl-workflows](workflow-management/cwl-workflows/SKILL.md) — Create portable, standards-based bioinformatics pipelines with Common Workflow Language (CWL).
+- [workflow-management-nextflow-nfcore](workflow-management/nextflow-nfcore/SKILL.md) — Design, run, and review Nextflow/nf-core biomedical workflows with profiles, containers, reports, and reproducibility checks.
 - [workflow-management-nextflow-pipelines](workflow-management/nextflow-pipelines/SKILL.md) — Create scalable, containerized bioinformatics pipelines with Nextflow DSL2 supporting Docker, Singularity, and cloud execution.
 - [workflow-management-snakemake-workflows](workflow-management/snakemake-workflows/SKILL.md) — Build reproducible bioinformatics pipelines with Snakemake using rules, wildcards, and automatic dependency resolution.
 - [workflow-management-wdl-workflows](workflow-management/wdl-workflows/SKILL.md) — Create portable bioinformatics pipelines with Workflow Description Language (WDL) using Cromwell or miniwdl execution engines.

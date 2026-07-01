@@ -1,6 +1,7 @@
 ---
 name: workflows-riboseq-pipeline
 description: End-to-end Ribo-seq analysis from FASTQ to translation efficiency and ORF detection. Use when analyzing ribosome profiling data to study translation.
+license: Apache-2.0
 tool_type: mixed
 primary_tool: Plastid
 user-invocable: false

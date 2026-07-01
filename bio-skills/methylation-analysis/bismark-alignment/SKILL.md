@@ -1,6 +1,7 @@
 ---
 name: methylation-bismark-alignment
 description: Bisulfite sequencing read alignment using Bismark with bowtie2/hisat2. Handles genome preparation and produces BAM files with methylation information. Use when aligning WGBS, RRBS, or other bisulfite-converted sequencing reads to a reference genome.
+license: Apache-2.0
 tool_type: cli
 primary_tool: bismark
 user-invocable: false

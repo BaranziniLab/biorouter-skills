@@ -1,6 +1,7 @@
 ---
 name: longread-alignment
 description: Align long reads using minimap2 for Oxford Nanopore and PacBio data. Supports various presets for different read types and applications. Use when aligning ONT or PacBio reads to a reference genome for variant calling, SV detection, or coverage analysis.
+license: Apache-2.0
 tool_type: cli
 primary_tool: minimap2
 user-invocable: false

@@ -1,6 +1,7 @@
 ---
 name: entrez-search
 description: Search NCBI databases using Biopython Bio.Entrez. Use when finding records by keyword, building complex search queries, discovering database structure, or getting global query counts across databases.
+license: Apache-2.0
 tool_type: python
 primary_tool: Bio.Entrez
 user-invocable: false

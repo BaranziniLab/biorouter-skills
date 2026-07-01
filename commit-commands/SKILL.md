@@ -1,6 +1,7 @@
 ---
 name: commit-commands
 description: Git commit workflows — create one focused commit; commit, push and open a PR; or clean up local branches whose remote is gone. Use when asked to commit, push and PR, or prune stale branches.
+license: Apache-2.0
 user-invocable: true
 ---
 

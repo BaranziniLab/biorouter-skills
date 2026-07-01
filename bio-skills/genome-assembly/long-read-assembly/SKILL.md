@@ -1,6 +1,7 @@
 ---
 name: genome-assembly-long-read-assembly
 description: De novo genome assembly from Oxford Nanopore or PacBio long reads using Flye and Canu. Produces highly contiguous assemblies suitable for complete bacterial genomes and resolving complex regions. Use when assembling genomes from ONT or PacBio reads.
+license: Apache-2.0
 tool_type: cli
 primary_tool: Flye
 user-invocable: false
