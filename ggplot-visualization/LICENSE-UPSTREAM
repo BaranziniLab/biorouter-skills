@@ -1,0 +1,98 @@
+Third-party material in this skill
+==================================
+
+This skill includes material adapted from the projects listed below. Each is used
+under its own licence, reproduced in full under its entry. Biorouter's own text and
+changes are licensed under Apache-2.0 (the LICENSE file of
+BaranziniLab/biorouter-skills). The skill's `license` line is the SPDX expression of
+everything in this folder.
+
+------------------------------------------------------------------------------
+Broccolito/ggplot-skills
+Source: https://github.com/Broccolito/ggplot-skills (SKILL_ggplot.md)
+Commit: 7f430d5
+Licence: MIT
+Changes: became references/publication-guide.md and the source of SKILL.md's type, colour, mark, label and export rules; frontmatter removed; the custom theme written with =.
+
+Lab-owned. The file's frontmatter names Wanjun Gu as author and MIT as its licence; the repository has no LICENSE file, so the standard MIT text is reproduced below with that author.
+
+MIT License
+
+Copyright (c) 2026 Wanjun Gu
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+------------------------------------------------------------------------------
+jsperger/llm-r-skills
+Source: https://github.com/jsperger/llm-r-skills (skills/ggplot2/SKILL.md)
+Commit: 7a10126fafd6d19b340da2661c7559b120264ffb
+Licence: MIT
+Changes: became references/ggplot2-4-features.md; frontmatter removed.
+
+MIT License
+
+Copyright (c) 2026 John Sperger
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+------------------------------------------------------------------------------
+GPTomics/bioSkills
+Source: https://github.com/GPTomics/bioSkills (data-visualization/ggplot2-fundamentals/SKILL.md)
+Commit: d91ed3d
+Licence: MIT
+Changes: became references/ggplot2-technique.md (text exported by WP-15 from the archived final commit); frontmatter removed; its Related Skills list points at the Biomedical data-visualization bundle.
+
+MIT License
+
+Copyright (c) 2026 GPTomics
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
