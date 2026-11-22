@@ -1,54 +1,94 @@
 ---
 name: geospatial-science
-description: Handle geospatial research workflows with GeoPandas, raster/vector data, coordinate reference systems, spatial joins, maps, and spatial statistics. Use when data has locations, regions, polygons, rasters, tracks, or environmental/geographic covariates.
+description: Work with vector and raster geospatial data in Python, from coordinate reference systems, spatial joins and overlays in GeoPandas to satellite imagery, terrain, STAC catalogs, spatial statistics and Earth-observation machine learning. Use when data has coordinates, addresses, shapefiles, GeoPackage or GeoParquet, GeoTIFF or other rasters, when someone needs maps, distances, areas, buffers, zonal statistics, NDVI, reprojection, or spatial analysis of health, environmental or field data.
 user-invocable: true
-license: Apache-2.0
+license: Apache-2.0 AND MIT
+metadata:
+  version: "1.1.0"
+  origin: adapted
+  upstream: "K-Dense-AI/scientific-agent-skills@ec59a29a03d5c40f73ab40878df04860bc00e876 (skills/geopandas, skills/geomaster)"
 ---
 
 # Geospatial Science
 
-Source adaptation: BioRouter-original synthesis inspired by broad Scientific Agent Skills and Auto-Empirical Research Skills capability patterns, rewritten under Apache-2.0. Do not copy upstream text; use this as a native BioRouter routing and quality-control checklist.
+Most geospatial errors are silent: a distance computed in degrees, two layers in different
+coordinate systems, a join that drops the features on a border. This skill makes the spatial
+assumptions explicit before analysis. The two guides under `references/` are adapted from K-Dense
+Scientific Agent Skills (MIT; see `LICENSE-UPSTREAM`).
 
-## When to Use
+## First questions
 
-Use this skill when the user asks for Geospatial. Load more specific BioSkills, BRXT extensions, or language skills when the task touches a concrete dataset, file format, package, or platform.
+1. **What is the geometry?** Points (sites, patients, samples), lines (roads, rivers),
+   polygons (counties, census tracts, catchments) or a raster grid (imagery, elevation,
+   climate). Vector work goes through GeoPandas; raster work through Rasterio and Xarray.
+2. **Which coordinate reference system (CRS) is each layer in?** Read it from the file
+   (`gdf.crs`, `rasterio.open(path).crs`); never assume WGS84. A layer without a CRS needs one
+   from its documentation before anything else.
+3. **What will be measured?** Distances and areas need a projected CRS in metres suited to the
+   region (a UTM zone, a national grid, or an equal-area projection for areas). Latitude and
+   longitude are for storage and display, not measurement.
+4. **Are the locations sensitive?** Home addresses, patient residences and endangered-species
+   sites are identifying. Aggregate to an area, jitter with a documented radius, or keep the
+   analysis inside the approved environment; the GeoPandas guide has a checklist
+   (`references/geopandas/scripts/sensitive_coordinates_checklist.py`).
 
-## Intake
+## Choose the path
 
-Collect the minimum context before acting:
+| Task | Use | Guide |
+| --- | --- | --- |
+| Read, clean, reproject and join vector layers; buffers, overlays, dissolve, nearest features | GeoPandas with Shapely 2 and pyproj | `references/geopandas.md` |
+| Satellite and aerial imagery, band maths (NDVI), cloud masks, terrain derivatives, resampling | Rasterio, rioxarray, Xarray | `references/geomaster.md` |
+| Search and stream imagery from STAC catalogs or Earth Engine | pystac-client, odc-stac, Earth Engine API | `references/geomaster.md`, `references/geomaster/references/remote-sensing.md` |
+| Spatial statistics: autocorrelation, hot spots, spatial regression, interpolation | PySAL (esda, spreg), scikit-gstat or pykrige | `references/geomaster/references/advanced-gis.md` |
+| Land-cover classification and other Earth-observation ML | scikit-learn or deep learning on tiled rasters, with spatially blocked validation | `references/geomaster/references/machine-learning.md` |
+| Very large vector or raster data, cloud-native formats | GeoParquet, Cloud-Optimized GeoTIFF, Zarr; Dask-GeoPandas | `references/geomaster/references/big-data.md` |
 
-- Research question or operational goal.
-- Data source, file format, platform, package, or API involved.
-- Unit of analysis and expected output.
-- Privacy, credential, licensing, and compute constraints.
-- Whether the user wants a plan, executable code, review, or installed-tool workflow.
+## Rules that prevent the common errors
 
-## Native BioRouter Routing
+- **Reproject explicitly**, once, to a CRS chosen for the question, and log it. Compare CRS
+  objects with `==` before any overlay or join; GeoPandas only warns on a mismatch, and a
+  warning in a long log is easy to miss.
+- **Validate geometry** before overlays and dissolves (`make_valid`, then check for empty or
+  collapsed shapes). Invalid polygons produce wrong areas without errors.
+- **Name the join predicate.** `intersects`, `within` and `contains` give different answers on
+  boundaries; count unmatched and multiply matched features after every `sjoin`.
+- **Rasters need the same grid.** Before combining rasters, align CRS, resolution, extent and
+  pixel origin; resample with a method that suits the variable (nearest for categories,
+  bilinear or average for continuous values).
+- **Nodata is not zero.** Read and propagate the nodata value and masks through every step.
+- **Antimeridian and poles.** Global data crossing 180 degrees longitude needs splitting or a
+  suitable projection; the GeoPandas guide covers the checks.
+- **Spatial autocorrelation inflates confidence.** Nearby observations are not independent:
+  use spatially blocked cross-validation for models and spatial error or lag models, or
+  cluster-robust errors by area, for inference.
 
-Prefer these BioRouter-native routes before writing new glue code:
+## Health and environmental data
 
-- Use relevant BRXT extensions when platform/API access is needed.
-- Use `scientific-research` for broad research orchestration.
-- Use `citation-temporal-integrity` and `claim-evidence-integrity` for evidence-heavy deliverables.
-- Use `replication-package-audit` when outputs must be reproducible.
-- Use `python-scripting`, `r-scripting`, or BioSkills for package-specific code style.
+For exposure studies (air quality, greenspace, distance to care), document the geocoding
+source and match rate, the buffer sizes and why, the temporal alignment between exposure and
+outcome, and the areal unit. Results that change with the choice of areal unit (the modifiable
+areal unit problem) should be shown at a second unit. Statistical modelling of the linked data
+goes through `statistical-modeling-bayes` or `econometrics-toolkit`; interactive maps for
+sharing through `interactive-dashboards`.
 
-## Quality Gates
+## In Biorouter
 
-Before presenting results as final:
+- Run analyses with the Developer shell; the GeoPandas guide ships local audit tools
+  (`references/geopandas/scripts/geometry_validity_report.py`,
+  `references/geopandas/scripts/spatial_join_audit.py`,
+  `references/geopandas/scripts/crs_reprojection_plan.py`) and GeoMaster ships raster recipes
+  (`references/geomaster/scripts/raster_workflows.py`).
+- Large rasters and storage layout decisions: `scientific-data-engineering`.
+- Static maps follow `python-visualization` or `ggplot-visualization` (with sf in R); check
+  legends, scale bars and colour maps with `figure-qa`.
 
-1. State the data provenance and tool/package versions.
-2. Separate exploratory output from confirmatory evidence.
-3. Check that identifiers, coordinates, sample ids, citations, or run ids are preserved.
-4. Identify assumptions that could change the conclusion.
-5. Provide a rerunnable command, notebook cell, or workflow outline when execution is involved.
-6. Mark anything requiring credentials, proprietary data, or external services as unverified unless it was actually checked.
+## Guides in this skill
 
-## Output Pattern
+| Guide | Covers |
+| --- | --- |
+| `references/geopandas.md` | GeoSeries and GeoDataFrame, CRS rules, validity, joins and overlays, I/O (GeoParquet, PostGIS), plotting, privacy |
+| `references/geomaster.md` | Remote sensing, raster recipes (NDVI, terrain, classification), STAC and Earth Engine, networks, storage |
 
-Return a compact work plan first, then the implementation or review. For each result, include:
-
-- Decision made.
-- Evidence or file/API source.
-- Failure modes.
-- Next verification step.
+The GeoMaster folder (`references/geomaster/references/`) adds deep notes on coordinate systems,
+data sources, GIS software, spatial statistics, big data, and other languages (R, Julia,
+JavaScript).

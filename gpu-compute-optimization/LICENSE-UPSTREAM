@@ -1,0 +1,44 @@
+Third-party notices for the Biorouter skill "gpu-compute-optimization"
+============================================================
+
+SKILL.md is Biorouter-original text, Copyright 2026 Baranzini Lab, University of
+California, San Francisco, licensed under the Apache License, Version 2.0.
+
+The folders and guides under references/ are adapted from the upstream projects
+below. Each upstream SKILL.md became references/<name>.md: its frontmatter was
+replaced by an attribution note, its citation and related-skill sections were
+removed, and its relative paths were rewritten to start at the skill root. Other
+files were copied unchanged unless a line below says otherwise. Files listed as
+excluded were not copied.
+
+- references/optimize-for-gpu.md and references/optimize-for-gpu/
+  Source: https://github.com/K-Dense-AI/scientific-agent-skills/tree/ec59a29a03d5c40f73ab40878df04860bc00e876/skills/optimize-for-gpu
+  Licence: MIT
+  Copyright: Copyright (c) 2025 K-Dense Inc.
+
+Attribution requested by upstream authors:
+  Scientific Agent Skills: Kassis, T., Agarwal, V., He, Y., Patel, D., and Brueckner, A. M. (2026). Scientific Agent Skills: A Library of Procedural Knowledge for Research Agents. arXiv:2609.00065.
+
+------------------------------------------------------------
+MIT licence (applies to: optimize-for-gpu)
+------------------------------------------------------------
+
+Copyright (c) 2025 K-Dense Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
