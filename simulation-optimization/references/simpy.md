@@ -241,19 +241,19 @@ execute user Python, import plugins, or call a network service.
 
 ```bash
 # Inspect all options.
-python skills/simpy/scripts/bounded_queue_scenario.py --help
-python skills/simpy/scripts/replication_runner.py --help
-python skills/simpy/scripts/event_trace_summary.py --help
-python skills/simpy/scripts/validate_simulation_config.py --help
+python references/simpy/scripts/bounded_queue_scenario.py --help
+python references/simpy/scripts/replication_runner.py --help
+python references/simpy/scripts/event_trace_summary.py --help
+python references/simpy/scripts/validate_simulation_config.py --help
 
 # Deterministic built-in scenario.
-python skills/simpy/scripts/bounded_queue_scenario.py
+python references/simpy/scripts/bounded_queue_scenario.py
 
 # Independent replications with replication-level Student-t intervals.
-python skills/simpy/scripts/replication_runner.py
+python references/simpy/scripts/replication_runner.py
 
 # Validate only; no simulation runs.
-python skills/simpy/scripts/validate_simulation_config.py config.json
+python references/simpy/scripts/validate_simulation_config.py config.json
 ```
 
 The replication runner refuses one-replication intervals. Its intervals quantify

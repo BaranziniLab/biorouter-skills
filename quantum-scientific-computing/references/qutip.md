@@ -282,11 +282,11 @@ imports are lazy, so every `--help` works without QuTiP installed.
 Example:
 
 ```bash
-python skills/qutip/scripts/two_level_simulation.py --help
-python skills/qutip/scripts/two_level_simulation.py \
+python references/qutip/scripts/two_level_simulation.py --help
+python references/qutip/scripts/two_level_simulation.py \
   --decay-rate 0.2 --t-final 10 --time-points 201 \
   --output two-level.json
-python skills/qutip/scripts/result_audit.py two-level.json
+python references/qutip/scripts/result_audit.py two-level.json
 ```
 
 ## Completion checklist

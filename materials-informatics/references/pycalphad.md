@@ -56,9 +56,9 @@ From the collection root:
 
 ```bash
 uv run --no-project --python 3.12 --with pycalphad==0.11.2 --with numpy==2.5.3 \
-  python skills/pycalphad/scripts/equilibrate.py \
-  skills/pycalphad/assets/ideal-cu-ni.tdb \
-  skills/pycalphad/assets/equilibrium.json equilibrium-result
+  python references/pycalphad/scripts/equilibrate.py \
+  references/pycalphad/assets/ideal-cu-ni.tdb \
+  references/pycalphad/assets/equilibrium.json equilibrium-result
 ```
 
 Tested on Python 3.12, pycalphad 0.11.2, and NumPy 2.5.3. Use a new output directory.

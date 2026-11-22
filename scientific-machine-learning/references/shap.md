@@ -263,7 +263,7 @@ Run a deterministic, self-contained tabular example that writes importance data,
 
 ```bash
 uv run --no-project --python 3.12 --with "shap[plots]==0.52.0" \
-  skills/shap/scripts/tabular_report.py --output-dir /tmp/shap-report
+  references/shap/scripts/tabular_report.py --output-dir /tmp/shap-report
 ```
 
 The script labels the default output as **benign probability**, retains the requested background up to the training-set size, and rejects non-finite validation tolerances. Its synthetic software checks and built-in dataset demo do not validate causal or clinical claims. Some SHAP 0.52.0 forest configurations fail explicit reconstruction (including seed 3 with 150 background rows); the script rejects those without writing report artifacts. See [references/shap/references/troubleshooting.md](references/shap/references/troubleshooting.md).
