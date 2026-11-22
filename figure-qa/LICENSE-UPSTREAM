@@ -1,0 +1,115 @@
+figure-qa 1.0.0: upstream notices
+
+Biorouter's own additions and changes in this folder are licensed under the Apache License 2.0 (see the LICENSE file of BaranziniLab/biorouter-skills).
+
+========================================================================
+figure-qa includes material from neuromechanist/research-skills (plugins/figures/skills/figure-qa/references/figure-qa-procedure.md, plugins/figures/agents/figure-qa-scripts/check_raster.py, plugins/figures/agents/figure-qa-scripts/check_svg.py, plugins/figures/agents/figure-qa-scripts/check_plot_script.py, commit 1bbc8382711216a39cee05e6e096acbf6b1b6d65),
+Copyright (c) 2026, Seyed (Yahya) Shirazi, licensed under BSD-3-Clause. Changes: the figure-qa procedure and three check scripts copied; the script location rewritten for Biorouter and a note added about the plugin's image-generation tools, which are not shipped here.
+Neither the name of the copyright holder nor the names of its contributors are used to endorse or promote Biorouter.
+
+BSD 3-Clause License
+
+Copyright (c) 2026, Seyed (Yahya) Shirazi
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+========================================================================
+figure-qa includes material from Haojae/scipilot-figure-skill (references/publication_checklist.md, references/journal_specs.md, scripts/check_figure.py, scripts/visual_qa.py, commit 43098ddb9e6a6d142218540c114f9ed38922fc42),
+Copyright (c) 2026 Haojae, licensed under MIT. Changes: translated from Chinese to English; references to scipilot scripts not shipped here replaced with plain matplotlib settings; check_figure.py reads the font descriptor of Type0 composite fonts from their descendant font, so subset-embedded TrueType fonts are no longer reported as not embedded.
+
+MIT License
+
+Copyright (c) 2026 Haojae
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+========================================================================
+figure-qa includes material from K-Dense-AI/scientific-agent-skills (skills/scientific-visualization/scripts/palette_audit.py, skills/scientific-visualization/scripts/image_metadata.py, skills/scientific-visualization/scripts/_common.py, commit ec59a29a03d5c40f73ab40878df04860bc00e876),
+Copyright (c) 2025 K-Dense Inc., licensed under MIT. Changes: palette_audit.py, image_metadata.py and _common.py copied unchanged.
+
+MIT License
+
+Copyright (c) 2025 K-Dense Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+========================================================================
+figure-qa includes material from posit-dev/skills (alt-text/SKILL.md, alt-text/references/pkgdown.md, alt-text/references/quarto.md, commit 951959403f4ecc9d0274adf35538fc67153b6f31),
+Copyright (c) 2025 Posit PBC, licensed under MIT. Changes: alt-text copied as references; frontmatter removed.
+
+MIT License
+
+Copyright (c) 2025 Posit PBC
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
