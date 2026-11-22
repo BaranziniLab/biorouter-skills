@@ -1,13 +1,17 @@
 ---
 name: requesting-code-review
 description: Use when completing tasks, implementing major features, or before merging to verify work meets requirements
-license: Apache-2.0
+license: Apache-2.0 AND MIT
 user-invocable: true
+metadata:
+  version: "1.1.0"
+  origin: adapted
+  upstream: "obra/superpowers/skills/requesting-code-review@22f0b463e7a5e579904dd6211a520321035526f7 (v7.0.2)"
 ---
 
 # Requesting Code Review
 
-Dispatch a code reviewer subagent to catch issues before they cascade. The reviewer gets precisely crafted context for evaluation — never your session's history. This keeps the reviewer focused on the work product, not your thought process.
+Dispatch a code reviewer subagent to catch issues before they cascade. The reviewer gets precisely crafted context for evaluation — never your session's history.
 
 **Core principle:** Review early, review often.
 
@@ -27,17 +31,19 @@ Dispatch a code reviewer subagent to catch issues before they cascade. The revie
 
 **1. Get git SHAs:**
 ```bash
-BASE_SHA=$(git rev-parse HEAD~1)  # or origin/main
+BASE_SHA=$(git rev-parse HEAD~1)  # or: git merge-base origin/main HEAD
 HEAD_SHA=$(git rev-parse HEAD)
 ```
 
-**2. Dispatch a code reviewer subagent** using the template in `code-reviewer.md` in this directory.
+**2. Dispatch code reviewer subagent:**
+
+Dispatch a `general-purpose` subagent, filling the template at [code-reviewer.md](code-reviewer.md)
 
 **Placeholders:**
-- `{DESCRIPTION}` — Brief summary of what you built
-- `{PLAN_OR_REQUIREMENTS}` — What it should do
-- `{BASE_SHA}` — Starting commit
-- `{HEAD_SHA}` — Ending commit
+- `{DESCRIPTION}` - Brief summary of what you built
+- `{PLAN_OR_REQUIREMENTS}` - What it should do
+- `{BASE_SHA}` - Starting commit
+- `{HEAD_SHA}` - Ending commit
 
 **3. Act on feedback:**
 - Fix Critical issues immediately
@@ -45,19 +51,39 @@ HEAD_SHA=$(git rev-parse HEAD)
 - Note Minor issues for later
 - Push back if reviewer is wrong (with reasoning)
 
-## Integration with Workflows
+## Example
 
-**Subagent-Driven Development:**
-- Review after EACH task
-- Catch issues before they compound
-- Fix before moving to next task
+```
+[Just completed Task 2: Add verification function]
 
-**Executing Plans:**
-- Review after each task or at natural checkpoints
+You: Let me request code review before proceeding.
 
-**Ad-Hoc Development:**
-- Review before merge
-- Review when stuck
+BASE_SHA=$(git log --oneline | grep "Task 1" | head -1 | cut -d' ' -f1)
+HEAD_SHA=$(git rev-parse HEAD)
+
+[Dispatch code reviewer subagent]
+  DESCRIPTION: Added verifyIndex() and repairIndex() with 4 issue types
+  PLAN_OR_REQUIREMENTS: Task 2 from docs/superpowers/plans/deployment-plan.md
+  BASE_SHA: a7981ec
+  HEAD_SHA: 3df7661
+
+[Subagent returns]:
+  Strengths: Clean architecture, real tests
+  Issues:
+    Important: Missing progress indicators
+    Minor: Magic number (100) for reporting interval
+  Assessment: Ready to proceed
+
+You: [Fix progress indicators]
+[Continue to Task 3]
+```
+
+## Common Rationalizations
+
+| Excuse | Reality |
+|--------|---------|
+| "I'll just review the diff myself instead of dispatching a reviewer" | You're the coordinator — reviewing the diff inline burns the context window you need to keep driving the work. Dispatch a reviewer subagent: the diff and the evaluation live in its context, and only the findings come back to you. |
+| "The reviewer needs my whole session history to understand the change" | Hand it precisely crafted context, never your session's history. That keeps the reviewer on the work product, not your thought process. |
 
 ## Red Flags
 
@@ -65,9 +91,15 @@ HEAD_SHA=$(git rev-parse HEAD)
 - Skip review because "it's simple"
 - Ignore Critical issues
 - Proceed with unfixed Important issues
+- Argue with valid technical feedback
 
 **If reviewer wrong:**
 - Push back with technical reasoning
 - Show code/tests that prove it works
+- Request clarification
 
-See template at: `requesting-code-review/code-reviewer.md`
+See template at: [code-reviewer.md](code-reviewer.md)
+
+## Biorouter note
+
+When the thing to review is a pull request or a finished branch diff, run Biorouter's `code-review` skill (its passes cover bugs, security, silent failures and project instructions, and it validates every finding). Use the reviewer prompt here for the quick between-task reviews during development.

@@ -68,6 +68,7 @@ Project.create('name', context.tempDir); // Accessed before beforeEach!
 When you can't trace manually, add instrumentation:
 
 ```typescript
+// Before the problematic operation
 async function gitInit(directory: string) {
   const stack = new Error().stack;
   console.error('DEBUG git init:', {
@@ -88,15 +89,43 @@ async function gitInit(directory: string) {
 npm test 2>&1 | grep 'DEBUG git init'
 ```
 
+**Analyze stack traces:**
+- Look for test file names
+- Find the line number triggering the call
+- Identify the pattern (same test? same parameter?)
+
 ## Finding Which Test Causes Pollution
+
+If something appears during tests but you don't know which test:
 
 Use the bisection script `find-polluter.sh` in this directory:
 
 ```bash
-./find-polluter.sh '.git' 'src/**/*.test.ts'
+bash ./find-polluter.sh '.git' 'src/**/*.test.ts'
 ```
 
-Runs tests one-by-one, stops at first polluter.
+Runs tests one-by-one, stops at first polluter. See script for usage.
+
+## Real Example: Empty projectDir
+
+**Symptom:** `.git` created in `packages/core/` (source code)
+
+**Trace chain:**
+1. `git init` runs in `process.cwd()` ← empty cwd parameter
+2. WorktreeManager called with empty projectDir
+3. Session.create() passed empty string
+4. Test accessed `context.tempDir` before beforeEach
+5. setupCoreTest() returns `{ tempDir: '' }` initially
+
+**Root cause:** Top-level variable initialization accessing empty value
+
+**Fix:** Made tempDir a getter that throws if accessed before beforeEach
+
+**Also added defense-in-depth:**
+- Layer 1: Project.create() validates directory
+- Layer 2: WorkspaceManager validates not empty
+- Layer 3: NODE_ENV guard refuses git init outside tmpdir
+- Layer 4: Stack trace logging before git init
 
 ## Key Principle
 
@@ -130,3 +159,11 @@ digraph principle {
 **Before operation:** Log before the dangerous operation, not after it fails
 **Include context:** Directory, cwd, environment variables, timestamps
 **Capture stack:** `new Error().stack` shows complete call chain
+
+## Real-World Impact
+
+From debugging session (2025-10-03):
+- Found root cause through 5-level trace
+- Fixed at source (getter validation)
+- Added 4 layers of defense
+- 1847 tests passed, zero pollution

@@ -3,11 +3,17 @@ name: ucsf-hpc
 description: Use when working with the UCSF CHPC HPC cluster — setting up SSH access, transferring files, submitting SLURM jobs, installing software, or exploring cluster resources.
 license: Apache-2.0
 user-invocable: true
+metadata:
+  version: "1.1.0"
+  origin: lab
+  upstream: "none (lab-original; section 11 from BaranziniLab/UCSFHPCAgent skills/ucsf-hpc-compute@01b6bbeadc515663223409c8696e72bd71b748ae, Apache-2.0, lab)"
 ---
 
 # UCSF CHPC HPC Cluster
 
 Verified May 2026. Confirm live state with `sinfo` and `scontrol show partition` before submitting large jobs.
+
+This skill is the one home for UCSF CHPC work. It replaces the `ucsf-hpc-compute` skill that the UCSFHPCAgent extension bundled; if that extension is still installed, its skill is an earlier, shorter version of section 11 below and should yield to this one. Run every command through the Developer extension's shell.
 
 ---
 
@@ -73,6 +79,8 @@ cat ~/.ssh/id_ed25519_ucsf.pub | ssh ucsf-bastion \
 ssh -o BatchMode=yes ucsf-bastion "ssh-keyscan chpc-ucsf-login-vm1 2>/dev/null" >> ~/.ssh/known_hosts
 ssh -o BatchMode=yes ucsf-bastion "ssh-keyscan chpc-ucsf-login-vm1.corehpc.ucsf.edu 2>/dev/null" >> ~/.ssh/known_hosts
 ```
+
+`ssh-keyscan` trusts whatever key the host presents. Before appending, show the person the fingerprint (`ssh-keygen -lf <(ssh -o BatchMode=yes ucsf-bastion "ssh-keyscan chpc-ucsf-login-vm1 2>/dev/null")`) and have them confirm it against the cluster's documentation or administrators.
 
 ---
 
@@ -470,3 +478,18 @@ Confirmed hardware caps as of May 2026. Always check `scontrol show node` for cu
 | Slow file I/O in jobs | Writing to `/mnt/home` | Use `/mnt/scratch/$USER/` for job working files |
 | GPU not detected in job | Forgot `--gres=gpu:N` | Add `--gres=gpu:1` (or more) to SBATCH headers |
 | `nvidia-smi` not found | CUDA module not loaded | Add `module load nvidia/cuda/12.9.1` to SBATCH script |
+
+---
+
+## 11. Working Safely From an Agent
+
+These rules come from the UCSFHPCAgent extension's `ucsf-hpc-compute` skill, which this section replaces.
+
+- **Look before you act.** Start read-only: `sinfo`, `squeue -u $USER`, `sacct`, `quota -s`, `ls`. Inspect accounts, partitions and paths before building a command that changes anything.
+- **Plan, show, then run.** Before you submit, cancel or move anything, show the person the exact command, its arguments, the host it runs on, the working directory and the expected side effect (jobs queued or killed, files written, copied or deleted). Run it only after they approve that exact command.
+- **Treat these as side effects that need approval:** `sbatch`, `srun`, `salloc`, `scancel` (and never `scancel -u $USER` without an explicit request to cancel everything), `rsync`/`scp` into the cluster or back, `rm` on `/mnt/home` or `/mnt/scratch`, `module` installs or `conda` environment changes in shared locations, and edits to `~/.ssh/config` or `authorized_keys`.
+- **Keep the record.** Preserve job IDs, array indices, partitions, node names, full paths, command lines, module versions and timestamps in what you report back, so a run can be found and repeated. Report a job's state from `sacct`, not from memory.
+- **Never print secrets.** Do not print or paste passwords, Duo codes, SSH private keys, API tokens, bearer headers, cookies or session secrets, and do not write them into job scripts or logs. Leave the Duo push and any password prompt to the person.
+- **Protected data.** Do not move PHI or other restricted data onto the cluster, or off it, unless the person confirms the data's approval covers that location.
+
+GPU workloads: `gpu-compute-optimization` covers making code fast on a GPU and points back to the GPU templates in section 6.

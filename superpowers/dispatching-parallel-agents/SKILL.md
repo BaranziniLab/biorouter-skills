@@ -1,8 +1,12 @@
 ---
 name: dispatching-parallel-agents
 description: Use when facing 2+ independent tasks that can be worked on without shared state or sequential dependencies
-license: Apache-2.0
+license: Apache-2.0 AND MIT
 user-invocable: true
+metadata:
+  version: "1.1.0"
+  origin: adapted
+  upstream: "obra/superpowers/skills/dispatching-parallel-agents@22f0b463e7a5e579904dd6211a520321035526f7 (v7.0.2)"
 ---
 
 # Dispatching Parallel Agents
@@ -55,7 +59,7 @@ Group failures by what's broken:
 - File B tests: Batch completion behavior
 - File C tests: Abort functionality
 
-Each domain is independent — fixing tool approval doesn't affect abort tests.
+Each domain is independent - fixing tool approval doesn't affect abort tests.
 
 ### 2. Create Focused Agent Tasks
 
@@ -67,7 +71,16 @@ Each agent gets:
 
 ### 3. Dispatch in Parallel
 
-Dispatch multiple subagents simultaneously, one per independent domain. All run concurrently.
+Issue all three subagent dispatches in the same response — they run in parallel:
+
+```text
+Subagent (general-purpose): "Fix agent-tool-abort.test.ts failures"
+Subagent (general-purpose): "Fix batch-completion-behavior.test.ts failures"
+Subagent (general-purpose): "Fix tool-approval-race-conditions.test.ts failures"
+# All three run concurrently.
+```
+
+Multiple dispatch calls in one response = parallel execution. One per response = sequential.
 
 ### 4. Review and Integrate
 
@@ -135,7 +148,7 @@ Return: Summary of what you found and what you fixed.
 - batch-completion-behavior.test.ts: 2 failures (tools not executing)
 - tool-approval-race-conditions.test.ts: 1 failure (execution count = 0)
 
-**Decision:** Independent domains — abort logic separate from batch completion separate from race conditions
+**Decision:** Independent domains - abort logic separate from batch completion separate from race conditions
 
 **Dispatch:**
 ```
@@ -158,3 +171,7 @@ After agents return:
 2. **Check for conflicts** - Did agents edit same code?
 3. **Run full suite** - Verify all fixes work together
 4. **Spot check** - Agents can make systematic errors
+
+## Biorouter note
+
+Use Biorouter's `subagent` tool for the dispatches; "general-purpose" means an ordinary subagent. If the tool is not offered in this chat, work through the problems one at a time instead.

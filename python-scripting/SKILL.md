@@ -1,8 +1,12 @@
 ---
 name: python-scripting
-description: Python scripting conventions. Apply whenever writing, editing, or reviewing any Python code.
+description: "Python house style: uv for environments and packages, a project-local .venv, minimal comments; routes packaging, testing, documentation, plotting and code-hardening work to their own skills. Apply whenever writing, editing or reviewing Python code."
 license: Apache-2.0
 user-invocable: false
+metadata:
+  version: "1.1.0"
+  origin: lab
+  upstream: "none (lab-original)"
 ---
 
 # Python Scripting Conventions
@@ -23,3 +27,9 @@ Always use `uv` for package management unless it is genuinely infeasible (e.g., 
 - Keep comments minimal — one short inline comment at most per logical block
 - Only add a comment if the logic is genuinely non-obvious; omit otherwise
 - Do not write block comments or multi-line comment headers
+
+## Where other Python work goes
+
+- Packaging, testing and documenting a Python project (`pyproject.toml`, pytest, linters and type checkers, Sphinx or MkDocs, pixi): load `scientific-python-development`.
+- Scientific plots with matplotlib or seaborn: load `python-visualization`.
+- Hardening analysis code for others to run (input checks, tests on real data, determinism): load `research-code-hardening`.
