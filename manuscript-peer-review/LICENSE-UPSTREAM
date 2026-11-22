@@ -1,0 +1,55 @@
+manuscript-peer-review 1.0.0: upstream notices
+
+Biorouter's own additions and changes in this folder are licensed under the Apache License 2.0 (see the LICENSE file of BaranziniLab/biorouter-skills).
+
+========================================================================
+manuscript-peer-review includes material from K-Dense-AI/scientific-agent-skills (skills/peer-review, commit ec59a29a03d5c40f73ab40878df04860bc00e876),
+Copyright (c) 2025 K-Dense Inc., licensed under MIT. Changes: renamed from peer-review; frontmatter rewritten for Biorouter; a Biorouter section appended.
+
+MIT License
+
+Copyright (c) 2025 K-Dense Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+========================================================================
+manuscript-peer-review includes material from Aperivue/medsci-skills (skills/self-review/references/phases/phase2_systematic_check.md, skills/revise/references/r2r_voice.md, commit 7e9d133dd0216c29b0e030729e3719c3db5e0973),
+Copyright (c) 2026 Aperivue (https://aperivue.com), licensed under MIT. Changes: two reference files copied (the self-review systematic check and the response-letter voice guide); references to medsci-skills commands and scripts not shipped here marked as such.
+
+MIT License
+
+Copyright (c) 2026 Aperivue (https://aperivue.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
