@@ -55,7 +55,7 @@
       "release": {
         "tag": "skill-scientific-research",
         "asset": "scientific-research.zip",
-        "sha256": null
+        "sha256": "376fe09a21eb9b0628b801e3484fe7b07dafaf211e5277f2fe81871d366e1f3b"
       },
       "components": null,
       "history": [
@@ -127,7 +127,7 @@
       "release": {
         "tag": "skill-empirical-research-router",
         "asset": "empirical-research-router.zip",
-        "sha256": null
+        "sha256": "d1cc39a3aad01bacc939a6d87423dcbfc67b464afb4f4cc81118102b52b96aa9"
       },
       "components": null,
       "history": [
@@ -188,7 +188,7 @@
       "release": {
         "tag": "skill-causal-identification-gates",
         "asset": "causal-identification-gates.zip",
-        "sha256": null
+        "sha256": "c5e2bcf59d024b66c8da44d82e4d079a6d43afb4bceda53cf8469b35003333d6"
       },
       "components": null,
       "history": [
@@ -282,7 +282,7 @@
       "release": {
         "tag": "skill-replication-package-audit",
         "asset": "replication-package-audit.zip",
-        "sha256": null
+        "sha256": "4bf5bc94e534f8edaa6cf4d9aacb54f0062674e27d3e1821ae25e27473900fcb"
       },
       "components": null,
       "history": [
@@ -369,7 +369,7 @@
       "release": {
         "tag": "skill-claim-evidence-integrity",
         "asset": "claim-evidence-integrity.zip",
-        "sha256": null
+        "sha256": "762ec206e0e755c52e7b5305a2d0e1105623cad41a1c861830de94bb4a4ae24c"
       },
       "components": null,
       "history": [
@@ -421,7 +421,7 @@
       "release": {
         "tag": "skill-citation-temporal-integrity",
         "asset": "citation-temporal-integrity.zip",
-        "sha256": "959f99f9dd398089b7a095a46b02348c702ae263a5bf9c53afc0077bd619da98"
+        "sha256": "96b42a214e9dbd320b793b009941fc22af6a2c6582ff248ee4de0f33ca52ca84"
       },
       "components": null,
       "history": [
@@ -476,7 +476,7 @@
       "release": {
         "tag": "skill-empirical-benchmark-harness",
         "asset": "empirical-benchmark-harness.zip",
-        "sha256": null
+        "sha256": "88563eff8d4abb2fb13dd44f2b478f515bfa0b7ae082b4382a4202d1314c4631"
       },
       "components": null,
       "history": [
@@ -583,7 +583,7 @@
       "release": {
         "tag": "skill-scientific-artifacts",
         "asset": "scientific-artifacts.zip",
-        "sha256": null
+        "sha256": "133e21923c7e2d066c08b91d72dd81857118fca60d39813edcaa896a032c0090"
       },
       "components": null,
       "history": [
@@ -637,7 +637,7 @@
       "release": {
         "tag": "skill-open-science-review",
         "asset": "open-science-review.zip",
-        "sha256": "76ebac364ae29778b8fa518291e2e0f835bfcbd9811ed15d4db082b8c0be0987"
+        "sha256": "42e71c6ff62da861b7714c5045e181f6ce8a2da29c0b01b026a413b3ccb71467"
       },
       "components": null,
       "history": [
@@ -754,7 +754,7 @@
       "release": {
         "tag": "skill-scientific-data-engineering",
         "asset": "scientific-data-engineering.zip",
-        "sha256": null
+        "sha256": "187f79e645993d4890e34782ecf5a936ceb36e316e458a7fb9e56ccd0bc2e960"
       },
       "components": null,
       "history": [
@@ -864,7 +864,7 @@
       "release": {
         "tag": "skill-statistical-modeling-bayes",
         "asset": "statistical-modeling-bayes.zip",
-        "sha256": null
+        "sha256": "5951683a690b3af4c3997902d89756770b02ead78684e24f9941219215e2d47c"
       },
       "components": null,
       "history": [
@@ -973,7 +973,7 @@
       "release": {
         "tag": "skill-scientific-machine-learning",
         "asset": "scientific-machine-learning.zip",
-        "sha256": null
+        "sha256": "b1d7c22d2444857fd59f4e4039f7bad014b3992d71ad435826db6a85eae32552"
       },
       "components": null,
       "history": [
@@ -1046,7 +1046,7 @@
       "release": {
         "tag": "skill-geospatial-science",
         "asset": "geospatial-science.zip",
-        "sha256": null
+        "sha256": "5fc3dda3e71c4a1e65f41a8071964c0809bf718ba5b28e7fb4e1d5184935cdb3"
       },
       "components": null,
       "history": [
@@ -1133,7 +1133,7 @@
       "release": {
         "tag": "skill-neurophysiology-analysis",
         "asset": "neurophysiology-analysis.zip",
-        "sha256": null
+        "sha256": "35b72826c6330d8b967837984d21a8bf753daa104db1c7022717e4c071651a2d"
       },
       "components": null,
       "history": [
@@ -1223,7 +1223,7 @@
       "release": {
         "tag": "skill-quantum-scientific-computing",
         "asset": "quantum-scientific-computing.zip",
-        "sha256": null
+        "sha256": "468e87bf4921bd1404fbd0826782f08bb6c695274387737dda30405e42073bcb"
       },
       "components": null,
       "history": [
@@ -1300,7 +1300,7 @@
       "release": {
         "tag": "skill-materials-informatics",
         "asset": "materials-informatics.zip",
-        "sha256": null
+        "sha256": "ec87c0fc416ea786aa0f27c1bb5daefd896524304919f54b6f76efb55e143951"
       },
       "components": null,
       "history": [
@@ -1399,7 +1399,7 @@
       "release": {
         "tag": "skill-biomedical-imaging-pathology",
         "asset": "biomedical-imaging-pathology.zip",
-        "sha256": null
+        "sha256": "81e05f9b4a340ac3d6f5fe60d9527567c5d923c4ab3ecf658ae7ff83b98a0e10"
       },
       "components": null,
       "history": [
@@ -1480,7 +1480,7 @@
       "release": {
         "tag": "skill-citation-library-management",
         "asset": "citation-library-management.zip",
-        "sha256": null
+        "sha256": "d7099ebc1ba0268a1d7e49c49410c2658ab1253d17b50f30435b05a87ae49f11"
       },
       "components": null,
       "history": [
@@ -1558,7 +1558,7 @@
       "release": {
         "tag": "skill-laboratory-automation-planning",
         "asset": "laboratory-automation-planning.zip",
-        "sha256": null
+        "sha256": "6cc5d594884e47db665ccb5f62c3637d9c53f088d54302a0abf11375afa13244"
       },
       "components": null,
       "history": [
@@ -1646,7 +1646,7 @@
       "release": {
         "tag": "skill-econometrics-toolkit",
         "asset": "econometrics-toolkit.zip",
-        "sha256": null
+        "sha256": "bab9a78ee47abb956f019cc15efbe804f7f72ca5fd88ff9004eebbed5f38d937"
       },
       "components": null,
       "history": [
@@ -1749,7 +1749,7 @@
       "release": {
         "tag": "skill-systematic-review-prisma",
         "asset": "systematic-review-prisma.zip",
-        "sha256": null
+        "sha256": "f0bd710c573d7e0a489a99df46539621211735c5c13a8fb54e20f13dac921be8"
       },
       "components": null,
       "history": [
@@ -1813,7 +1813,7 @@
       "release": {
         "tag": "skill-taste-skill",
         "asset": "taste-skill.zip",
-        "sha256": "79d464882cd2bcb2fd40cb0e58de24809b575f66b510b0c75e102cf50267b035"
+        "sha256": "7c20fef8a49f7d138b9daa05c9be1f52292a20af7d135612e70bf995ca9ca827"
       },
       "components": null,
       "history": [
@@ -1890,7 +1890,7 @@
       "release": {
         "tag": "skill-simulation-optimization",
         "asset": "simulation-optimization.zip",
-        "sha256": null
+        "sha256": "26b0bf2e77fb51ee14fc5799155baf749cf107c2edc541549ce43014e1ab6349"
       },
       "components": null,
       "history": [
@@ -1976,7 +1976,7 @@
       "release": {
         "tag": "skill-physical-science-computing",
         "asset": "physical-science-computing.zip",
-        "sha256": null
+        "sha256": "aa97f78a2f3d8be37a9780b7795a12568c30d96f2b3cd3354ae8b9db654676eb"
       },
       "components": null,
       "history": [
@@ -2029,7 +2029,7 @@
       "release": {
         "tag": "skill-metabolic-modeling-cobrapy",
         "asset": "metabolic-modeling-cobrapy.zip",
-        "sha256": "63ffbbf5e099738ad9b4c4c02e1335a9f3bb2a9582fa120cf996986853d89053"
+        "sha256": "51e12345deaff706d49deae367e410ef49be44caa12ca725dbad87315868bd8b"
       },
       "components": null,
       "history": [
@@ -2082,7 +2082,7 @@
       "release": {
         "tag": "skill-drug-discovery-benchmarks",
         "asset": "drug-discovery-benchmarks.zip",
-        "sha256": "69771961f3d74ad13d917cff8d1e2bb62af4ace1dbf5ed622096bc011a2dc237"
+        "sha256": "a3ed749103139ffdcff525ee5bfbdee901d40a6d02949cbd52abc02ca83bd109"
       },
       "components": null,
       "history": [
@@ -2170,7 +2170,7 @@
       "release": {
         "tag": "skill-clinical-decision-support-review",
         "asset": "clinical-decision-support-review.zip",
-        "sha256": null
+        "sha256": "adc0df376572c17c621efbb04f76c53f3366d55b3297eb063843d73a30e40408"
       },
       "components": null,
       "history": [
@@ -2223,7 +2223,7 @@
       "release": {
         "tag": "skill-scientific-visual-communication",
         "asset": "scientific-visual-communication.zip",
-        "sha256": "059b38b86a3dff5f09fb50b411492bac539c412b4d34394a8cb3ced147c52b15"
+        "sha256": "16929ab3ed6e6b98eaa2430ecd152d3c6b076bc19beb89e7c4843351439b69e1"
       },
       "components": null,
       "history": [
@@ -2301,7 +2301,7 @@
       "release": {
         "tag": "skill-grant-funding-strategy",
         "asset": "grant-funding-strategy.zip",
-        "sha256": null
+        "sha256": "53ef0a7ddb951dae04d0c5181c7262154e7590f5538957873304e28cf1b735c3"
       },
       "components": null,
       "history": [
@@ -2379,7 +2379,7 @@
       "release": {
         "tag": "skill-regulatory-quality-systems",
         "asset": "regulatory-quality-systems.zip",
-        "sha256": null
+        "sha256": "f8a0a3d58c53c45c7f2560eff47305f57bd95d835bc741fed1da93e8068cef48"
       },
       "components": null,
       "history": [
@@ -2447,7 +2447,7 @@
       "release": {
         "tag": "skill-gpu-compute-optimization",
         "asset": "gpu-compute-optimization.zip",
-        "sha256": null
+        "sha256": "77e3d0891ece74a92fc88d357472871cd2f3a7c402cbf35c9f72a6fbcf9d5340"
       },
       "components": null,
       "history": [
@@ -2524,7 +2524,7 @@
       "release": {
         "tag": "skill-research-evaluation-venues",
         "asset": "research-evaluation-venues.zip",
-        "sha256": null
+        "sha256": "d9af14dd0f23c07008874f5305ad36941c5e43515736a8f39096f6ff5bbae82f"
       },
       "components": null,
       "history": [
@@ -2578,7 +2578,7 @@
       "release": {
         "tag": "skill-qualitative-thematic-analysis",
         "asset": "qualitative-thematic-analysis.zip",
-        "sha256": null
+        "sha256": "9bcf67d1a7ac2e18302ea6ed45833c264e153933edf06ab6217df8194c591694"
       },
       "components": null,
       "history": [
@@ -2632,7 +2632,7 @@
       "release": {
         "tag": "skill-financial-accounting-econometrics",
         "asset": "financial-accounting-econometrics.zip",
-        "sha256": "3797f46c799173b30c29fc5b40964fa5114d7dfcf9113f4bffbd6e9b94c6778f"
+        "sha256": "0adfe5d09484f8d2261d33f6559c7d4aaf6e45409b6444cd8eaf8c20d8e8d269"
       },
       "components": null,
       "history": [
@@ -2685,7 +2685,7 @@
       "release": {
         "tag": "skill-stata-research-workbench",
         "asset": "stata-research-workbench.zip",
-        "sha256": "deddc2505fb775a3a9d404458365fa788a787ce1a0597e614a9b324ff5854871"
+        "sha256": "4cdfa082183f53f8c9b357bb6d4285198e7b9838ee1d0591ab563b4da29fb28e"
       },
       "components": null,
       "history": [
@@ -2744,7 +2744,7 @@
       "release": {
         "tag": "skill-survey-weights-complex-samples",
         "asset": "survey-weights-complex-samples.zip",
-        "sha256": null
+        "sha256": "d8c6e5cd25ff6629e7600ba10acb14ad4e2bfb177dd34319388e9537ebac3634"
       },
       "components": null,
       "history": [
@@ -2802,7 +2802,7 @@
       "release": {
         "tag": "skill-psychometrics-sem-measurement",
         "asset": "psychometrics-sem-measurement.zip",
-        "sha256": null
+        "sha256": "907f53728e69723efa2a344d0b174ec7b9ce2f102f9e58bdf836c95ce27675dc"
       },
       "components": null,
       "history": [
@@ -2861,7 +2861,7 @@
       "release": {
         "tag": "skill-social-science-text-as-data",
         "asset": "social-science-text-as-data.zip",
-        "sha256": null
+        "sha256": "d4ce5c5b1ed2f16045a9562ccdb9da6d650408d6593a3f18771db333743ad3fa"
       },
       "components": null,
       "history": [
@@ -2914,7 +2914,7 @@
       "release": {
         "tag": "skill-econ-finance-data-sources",
         "asset": "econ-finance-data-sources.zip",
-        "sha256": "08e075f7d8c44c95b56255aff1bb544ca25802db34690fc51b02048f0d47e666"
+        "sha256": "7bb7d6ba5ba8ac717f42905bf1c05d266b58af5ed9f89ab5fe9bc218fef6a659"
       },
       "components": null,
       "history": [
@@ -2977,7 +2977,7 @@
       "release": {
         "tag": "skill-empirical-paper-submission-rr",
         "asset": "empirical-paper-submission-rr.zip",
-        "sha256": null
+        "sha256": "94a34a4e675919fa59b906e979ee3b75de2ca47e55556665391fbe2c942a21f9"
       },
       "components": null,
       "history": [
@@ -3030,7 +3030,7 @@
       "release": {
         "tag": "skill-structural-economics-theory",
         "asset": "structural-economics-theory.zip",
-        "sha256": "f50dfb80d5250c4a8537271485e32d32f40fa810908baf433f18ba32e0f4fe8b"
+        "sha256": "668fffd0531a695127438e6a4b5a5fa7891c8b6928aa9579e8b919774f835b97"
       },
       "components": null,
       "history": [
@@ -3098,7 +3098,7 @@
       "release": {
         "tag": "skill-causal-heterogeneity-policy-learning",
         "asset": "causal-heterogeneity-policy-learning.zip",
-        "sha256": null
+        "sha256": "69b5d8845e78b30f02ec2aeb0721d60db031885a237369551894f32d722ddeb9"
       },
       "components": null,
       "history": [
@@ -3154,7 +3154,7 @@
       "release": {
         "tag": "skill-autoskill-workflow-discovery",
         "asset": "autoskill-workflow-discovery.zip",
-        "sha256": null
+        "sha256": "0e703929033f843493dc5030118a7aa386ca48e9974ea5e5a411456a2d6a354e"
       },
       "components": null,
       "history": [
@@ -3207,7 +3207,7 @@
       "release": {
         "tag": "skill-arbor-optimization",
         "asset": "arbor-optimization.zip",
-        "sha256": null
+        "sha256": "ad3f9d8d479e525c7db26d76f1824accba6c938d8e13980d97a54309bf3e652c"
       },
       "components": null,
       "history": [
@@ -3262,7 +3262,7 @@
       "release": {
         "tag": "skill-hugging-science-resource-discovery",
         "asset": "hugging-science-resource-discovery.zip",
-        "sha256": null
+        "sha256": "f7506adeef4fe9140f2208e0dafdcb8b19a4fde64cac185eb46449a4067b5b50"
       },
       "components": null,
       "history": [
@@ -3316,7 +3316,7 @@
       "release": {
         "tag": "skill-molecular-dynamics",
         "asset": "molecular-dynamics.zip",
-        "sha256": null
+        "sha256": "7f2fe170c3a07796037f383a439131e0c21d1653a0be1782d8ebfd8509b8653a"
       },
       "components": null,
       "history": [
@@ -3369,7 +3369,7 @@
       "release": {
         "tag": "skill-general-time-series-forecasting",
         "asset": "general-time-series-forecasting.zip",
-        "sha256": null
+        "sha256": "5ab584b44815ab567469e691c8a1120efd1799c6ed85d211b24a95eb832ffdfa"
       },
       "components": null,
       "history": [
@@ -3424,7 +3424,7 @@
       "release": {
         "tag": "skill-bids-neuroimaging",
         "asset": "bids-neuroimaging.zip",
-        "sha256": null
+        "sha256": "c59470eb92bf8b1947b535371c49ee6c9c7a20aa3195b33b2df0de427d3cfe73"
       },
       "components": null,
       "history": [
@@ -3479,7 +3479,7 @@
       "release": {
         "tag": "skill-clinical-ai-modeling",
         "asset": "clinical-ai-modeling.zip",
-        "sha256": null
+        "sha256": "985cadbc78c0b4d2ca8a323166e84f62dea76831b839ab99efe82eed5673cec2"
       },
       "components": null,
       "history": [
@@ -3534,7 +3534,7 @@
       "release": {
         "tag": "skill-computational-fluid-dynamics",
         "asset": "computational-fluid-dynamics.zip",
-        "sha256": null
+        "sha256": "77785cdf436dfc7c298ff73629a012bf7af0288517f5566204923f2046fd6688"
       },
       "components": null,
       "history": [
@@ -3574,7 +3574,7 @@
       "release": {
         "tag": "skill-anti-ai-writing",
         "asset": "anti-ai-writing.zip",
-        "sha256": null
+        "sha256": "87b9447a038e8c07bbd37042f35307b769a3eb7d45a9448f0784f9301e99acb9"
       },
       "components": null,
       "history": [
@@ -3672,7 +3672,7 @@
       "release": {
         "tag": "skill-ggplot-visualization",
         "asset": "ggplot-visualization.zip",
-        "sha256": null
+        "sha256": "4eea8684365c3f4aece03008d4aaf46c9af53f99dc56dfd289b5ae0932fdf723"
       },
       "components": null,
       "history": [
@@ -3724,7 +3724,7 @@
       "release": {
         "tag": "skill-r-scripting",
         "asset": "r-scripting.zip",
-        "sha256": null
+        "sha256": "2da53f90a86ba2628519d43530217a85b79f6a751f2425d8b26d6071a8efbfa2"
       },
       "components": null,
       "history": [
@@ -3780,7 +3780,7 @@
       "release": {
         "tag": "skill-python-scripting",
         "asset": "python-scripting.zip",
-        "sha256": null
+        "sha256": "a68c3b9520368026044214c88ca3b767d06aeeac1a4dd38f1531d2dd78636236"
       },
       "components": null,
       "history": [
@@ -3834,7 +3834,7 @@
       "release": {
         "tag": "skill-ralph",
         "asset": "ralph.zip",
-        "sha256": null
+        "sha256": "ec2b2b2f0fd92b1f4ca3ed69b1e1d16842a0bd29af512c4389dc60d62bc8b224"
       },
       "components": null,
       "history": [
@@ -3900,7 +3900,7 @@
       "release": {
         "tag": "skill-superpowers",
         "asset": "superpowers.zip",
-        "sha256": null
+        "sha256": "b66b1dc722462f8d8d3818fa598aa363dc4155f47237be36a8ea784ea710e70a"
       },
       "components": {
         "brainstorming": {
@@ -4033,7 +4033,7 @@
       "release": {
         "tag": "skill-ucsf-hpc",
         "asset": "ucsf-hpc.zip",
-        "sha256": null
+        "sha256": "a0d7616e591e98ed723d141037827257828dc8d6c94c884794bd05413b7ab155"
       },
       "components": null,
       "history": [
@@ -4126,7 +4126,7 @@
       "release": {
         "tag": "skill-code-review",
         "asset": "code-review.zip",
-        "sha256": null
+        "sha256": "520aa1acdbb02b644c1bf28225d4ebd63b626b5cd60f5dde09a354d307e2e749"
       },
       "components": null,
       "history": [
@@ -4182,7 +4182,7 @@
       "release": {
         "tag": "skill-code-simplifier",
         "asset": "code-simplifier.zip",
-        "sha256": null
+        "sha256": "485a45b980e62140c02372bb04b575fbdf3304ff13bd8ab2573b31795b15360e"
       },
       "components": null,
       "history": [
@@ -4246,7 +4246,7 @@
       "release": {
         "tag": "skill-commit-commands",
         "asset": "commit-commands.zip",
-        "sha256": null
+        "sha256": "e0c73d74724a4b20385a91be51ce2ae93fbb83136c524b77e954bea4822f4380"
       },
       "components": null,
       "history": [
@@ -4352,7 +4352,7 @@
       "release": {
         "tag": "skill-develop-biorouter-extension",
         "asset": "develop-biorouter-extension.zip",
-        "sha256": "146b379ddc7431ecffd9993c09f07494ca50127a325bfbffca3847058026ba1a"
+        "sha256": "3dec9bc114d4afd3b41c64b5ab2bddf304c0685ebb58a2c5496043b1225b63ae"
       },
       "components": null,
       "history": [
@@ -4415,7 +4415,7 @@
       "release": {
         "tag": "skill-hookify",
         "asset": "hookify.zip",
-        "sha256": null
+        "sha256": "03f3567ea0d9efcc838a816b44a879207cff889291cf46b094208d397df94b31"
       },
       "components": null,
       "history": [
@@ -4486,7 +4486,7 @@
       "release": {
         "tag": "skill-code-modernization",
         "asset": "code-modernization.zip",
-        "sha256": null
+        "sha256": "44b22e80b086633b88681cff6d15711e75d65e376b331c793da262162f86c690"
       },
       "components": null,
       "history": [
@@ -4543,7 +4543,7 @@
       "release": {
         "tag": "skill-playground",
         "asset": "playground.zip",
-        "sha256": null
+        "sha256": "9f5cb4f5d099a4966215fe8a85258d99717919646eeb2fa0eb01373283411ef8"
       },
       "components": null,
       "history": [
@@ -4617,7 +4617,7 @@
       "release": {
         "tag": "skill-frontend-design",
         "asset": "frontend-design.zip",
-        "sha256": null
+        "sha256": "2172e1e08d59984362d66462784882efcade27c65c44c33da21f27c0df8a1618"
       },
       "components": null,
       "history": [
@@ -4680,7 +4680,7 @@
       "release": {
         "tag": "skill-alignment",
         "asset": "alignment.zip",
-        "sha256": null
+        "sha256": "b8504aab47e50742383d00cf03b64c0d2c491cc75eee204a2f5356643613eecc"
       },
       "components": {
         "alignment-io": {
@@ -4777,7 +4777,7 @@
       "release": {
         "tag": "skill-alignment-files",
         "asset": "alignment-files.zip",
-        "sha256": null
+        "sha256": "db47b80321d86875a17070a71bfb4024b2708e989690c3153a86a996c2e2fea3"
       },
       "components": {
         "alignment-amplicon-clipping": {
@@ -4892,7 +4892,7 @@
       "release": {
         "tag": "skill-alternative-splicing",
         "asset": "alternative-splicing.zip",
-        "sha256": null
+        "sha256": "10c4639483d192234317903cde32db413321d01a2b87851266a70a78725f4871"
       },
       "components": {
         "differential-splicing": {
@@ -5006,7 +5006,7 @@
       "release": {
         "tag": "skill-atac-seq",
         "asset": "atac-seq.zip",
-        "sha256": null
+        "sha256": "543406509d18f1ff01493b4a162e8693442d2aac8e8b5af497956363d44444aa"
       },
       "components": {
         "allele-specific-accessibility": {
@@ -5133,7 +5133,7 @@
       "release": {
         "tag": "skill-causal-genomics",
         "asset": "causal-genomics.zip",
-        "sha256": null
+        "sha256": "4849a8e4faaa1515a9bbcff07a1d53940c014d42239f3599a64cccc64d83c6c3"
       },
       "components": {
         "colocalization-analysis": {
@@ -5255,7 +5255,7 @@
       "release": {
         "tag": "skill-chemoinformatics",
         "asset": "chemoinformatics.zip",
-        "sha256": null
+        "sha256": "af1492df92c81939d7b3d80176b738ae24e2715959d84259c8e9de76f8b275a7"
       },
       "components": {
         "admet-prediction": {
@@ -5441,7 +5441,7 @@
       "release": {
         "tag": "skill-chip-seq",
         "asset": "chip-seq.zip",
-        "sha256": null
+        "sha256": "5ef14e679807197af961e2cf77a23724406151d07f80eb036a9d0fba05f0c0d3"
       },
       "components": {
         "allele-specific-binding": {
@@ -5595,7 +5595,7 @@
       "release": {
         "tag": "skill-clinical-biostatistics",
         "asset": "clinical-biostatistics.zip",
-        "sha256": null
+        "sha256": "9329af47584eafef234c4c9704544bb3375d1036bc5d7f2648730239c5a07856"
       },
       "components": {
         "adaptive-designs": {
@@ -5740,7 +5740,7 @@
       "release": {
         "tag": "skill-clinical-databases",
         "asset": "clinical-databases.zip",
-        "sha256": null
+        "sha256": "5e99574c43b81268735083e7da1233c60a147021747eeba2fbae50acc4376274"
       },
       "components": {
         "acmg-classification": {
@@ -5875,7 +5875,7 @@
       "release": {
         "tag": "skill-clip-seq",
         "asset": "clip-seq.zip",
-        "sha256": null
+        "sha256": "6ace00ddcb9e0a5507b3171f799081f49f198954dca918359083c984fd0f83ca"
       },
       "components": {
         "ago-clip-mirna-targets": {
@@ -6006,7 +6006,7 @@
       "release": {
         "tag": "skill-comparative-genomics",
         "asset": "comparative-genomics.zip",
-        "sha256": null
+        "sha256": "b9d2300052ca80353f0c14f234a798396bca6bb21d2a021f172ec764697d6c54"
       },
       "components": {
         "ancestral-reconstruction": {
@@ -6139,7 +6139,7 @@
       "release": {
         "tag": "skill-copy-number",
         "asset": "copy-number.zip",
-        "sha256": null
+        "sha256": "7fde80c4119b08c16372684757e4fb43ce2a67af57d02646eda66a3ce9c55de4"
       },
       "components": {
         "allele-specific-copy-number": {
@@ -6259,7 +6259,7 @@
       "release": {
         "tag": "skill-crispr-screens",
         "asset": "crispr-screens.zip",
-        "sha256": null
+        "sha256": "991414ebcc3bffd42a5523dedd6bf3d6056fd24d22ce033c9aa243cd5013060a"
       },
       "components": {
         "bagel-essentiality": {
@@ -6404,7 +6404,7 @@
       "release": {
         "tag": "skill-data-visualization",
         "asset": "data-visualization.zip",
-        "sha256": null
+        "sha256": "cfd4d8e6c20a9dce87bb71b482461d80b0286153f10a64a4ccd843f4cafec299"
       },
       "components": {
         "circos-plots": {
@@ -6612,7 +6612,7 @@
       "release": {
         "tag": "skill-database-access",
         "asset": "database-access.zip",
-        "sha256": null
+        "sha256": "12f1ebf0ab279688869cfa88a130ee3a99d47af0ce3002090ff1fca164a84f54"
       },
       "components": {
         "batch-downloads": {
@@ -6788,7 +6788,7 @@
       "release": {
         "tag": "skill-differential-expression",
         "asset": "differential-expression.zip",
-        "sha256": null
+        "sha256": "34a2ce356dcdca7cb712a13df7c488b093f94fd0bb2e27d6af2463b66266917e"
       },
       "components": {
         "batch-correction": {
@@ -6884,7 +6884,7 @@
       "release": {
         "tag": "skill-ecological-genomics",
         "asset": "ecological-genomics.zip",
-        "sha256": null
+        "sha256": "c78512cc12062f272a42d5e7772ef86cbd91e9ec20406e96d769ff1a25c5b836"
       },
       "components": {
         "biodiversity-metrics": {
@@ -6974,7 +6974,7 @@
       "release": {
         "tag": "skill-epidemiological-genomics",
         "asset": "epidemiological-genomics.zip",
-        "sha256": null
+        "sha256": "498678f2bb9da58c638b52d7764bca9db96e2808271139b27f7d1b8f4fe959ee"
       },
       "components": {
         "amr-surveillance": {
@@ -7059,7 +7059,7 @@
       "release": {
         "tag": "skill-epitranscriptomics",
         "asset": "epitranscriptomics.zip",
-        "sha256": null
+        "sha256": "537014c7ce3db308383b5cc10559059cf257973349abf1de414d63fe82ecda4e"
       },
       "components": {
         "m6a-differential": {
@@ -7143,7 +7143,7 @@
       "release": {
         "tag": "skill-experimental-design",
         "asset": "experimental-design.zip",
-        "sha256": null
+        "sha256": "b874d82a631e98ad52caf264fb481f1bac052de2b602c3650c933ea60cf7fa63"
       },
       "components": {
         "batch-design": {
@@ -7232,7 +7232,7 @@
       "release": {
         "tag": "skill-expression-matrix",
         "asset": "expression-matrix.zip",
-        "sha256": null
+        "sha256": "bba006503dbe8fbc3673e0de34498a9321938ea23092944320991ab2428f03da"
       },
       "components": {
         "counts-ingest": {
@@ -7316,7 +7316,7 @@
       "release": {
         "tag": "skill-flow-cytometry",
         "asset": "flow-cytometry.zip",
-        "sha256": null
+        "sha256": "8893c2b7da0e1a814f6d38551473aa1eba115f0c29d491652b0c26d2868938ec"
       },
       "components": {
         "bead-normalization": {
@@ -7418,7 +7418,7 @@
       "release": {
         "tag": "skill-gene-regulatory-networks",
         "asset": "gene-regulatory-networks.zip",
-        "sha256": null
+        "sha256": "76d86aeedd877acb4edfa43ca2d0d17f95ef1557ea90fccc478b1486c3eb3fff"
       },
       "components": {
         "coexpression-networks": {
@@ -7513,7 +7513,7 @@
       "release": {
         "tag": "skill-genome-annotation",
         "asset": "genome-annotation.zip",
-        "sha256": null
+        "sha256": "d89095f656d044981475535ab3484ca32e89768ca76bd591841ffb0909f2aa60"
       },
       "components": {
         "annotation-qc": {
@@ -7610,7 +7610,7 @@
       "release": {
         "tag": "skill-genome-assembly",
         "asset": "genome-assembly.zip",
-        "sha256": null
+        "sha256": "42310a8ff11c44ff9305320ef3c606b781b0222a2f5a1b36001c0203a0b3dc7f"
       },
       "components": {
         "assembly-polishing": {
@@ -7718,7 +7718,7 @@
       "release": {
         "tag": "skill-genome-engineering",
         "asset": "genome-engineering.zip",
-        "sha256": null
+        "sha256": "2cff5ac2af79208d31a762dd7b79dac44b019e428acf127500901c7fe7d2b7e4"
       },
       "components": {
         "base-editing-design": {
@@ -7802,7 +7802,7 @@
       "release": {
         "tag": "skill-genome-intervals",
         "asset": "genome-intervals.zip",
-        "sha256": null
+        "sha256": "5c0971f5f61f52e1a6ff64c066547677331dda22069dbcc75f3985c22e692cfc"
       },
       "components": {
         "bed-file-basics": {
@@ -7904,7 +7904,7 @@
       "release": {
         "tag": "skill-hi-c-analysis",
         "asset": "hi-c-analysis.zip",
-        "sha256": null
+        "sha256": "8d3138ee014cb6e055538885a547b52183dd123b404e0e68604854a7b7f97776"
       },
       "components": {
         "compartment-analysis": {
@@ -8017,7 +8017,7 @@
       "release": {
         "tag": "skill-imaging-mass-cytometry",
         "asset": "imaging-mass-cytometry.zip",
-        "sha256": null
+        "sha256": "2179721596589e6e74915d2cd183835b2935725b61d7f9503a1e272b237bf6a1"
       },
       "components": {
         "cell-segmentation": {
@@ -8113,7 +8113,7 @@
       "release": {
         "tag": "skill-immunoinformatics",
         "asset": "immunoinformatics.zip",
-        "sha256": null
+        "sha256": "ee380ce5d6de3c17b7994db9f8f8fabd4b9a47c8767740ecdf323b347b9394b3"
       },
       "components": {
         "epitope-prediction": {
@@ -8203,7 +8203,7 @@
       "release": {
         "tag": "skill-liquid-biopsy",
         "asset": "liquid-biopsy.zip",
-        "sha256": null
+        "sha256": "f20a73c1072f08f6920f329b56d20d441cb67659034e1abef4446c1be30fc89d"
       },
       "components": {
         "analytical-validation": {
@@ -8300,7 +8300,7 @@
       "release": {
         "tag": "skill-long-read-sequencing",
         "asset": "long-read-sequencing.zip",
-        "sha256": null
+        "sha256": "f7377161338051e3dde4eca255f8319c9e8a641804aa4adce0e51844212ec84e"
       },
       "components": {
         "basecalling": {
@@ -8414,7 +8414,7 @@
       "release": {
         "tag": "skill-machine-learning",
         "asset": "machine-learning.zip",
-        "sha256": null
+        "sha256": "8f2272bf47c15b567f89b9aa53dd9880367f22dde8780b1f93c422528d011bbf"
       },
       "components": {
         "atlas-mapping": {
@@ -8521,7 +8521,7 @@
       "release": {
         "tag": "skill-metabolomics",
         "asset": "metabolomics.zip",
-        "sha256": null
+        "sha256": "27a92e5d1405d5726b2d0bdf4ef43899331b7f57cfe0b91551e3b5290d07dcae"
       },
       "components": {
         "isotope-tracing": {
@@ -8629,7 +8629,7 @@
       "release": {
         "tag": "skill-metagenomics",
         "asset": "metagenomics.zip",
-        "sha256": null
+        "sha256": "146520d62505f85628a8f68122deacddb3cb61db1003dbe07e2c926a3695591b"
       },
       "components": {
         "abundance-estimation": {
@@ -8731,7 +8731,7 @@
       "release": {
         "tag": "skill-methylation-analysis",
         "asset": "methylation-analysis.zip",
-        "sha256": null
+        "sha256": "994a574e7f8c1f296d8ff1020c112fa9860de2016e57c2d2dfd3f89e61f59438"
       },
       "components": {
         "array-preprocessing": {
@@ -8845,7 +8845,7 @@
       "release": {
         "tag": "skill-microbiome",
         "asset": "microbiome.zip",
-        "sha256": null
+        "sha256": "453c9ed8293dc2badd288d26fcdc8a28b5b25ca761b91f99980e5a162edea863"
       },
       "components": {
         "amplicon-processing": {
@@ -8935,7 +8935,7 @@
       "release": {
         "tag": "skill-multi-omics-integration",
         "asset": "multi-omics-integration.zip",
-        "sha256": null
+        "sha256": "a65c40e68f0b3b85929cd59db127711228dca4ba7284182ef3b6c18cbf2527ce"
       },
       "components": {
         "data-harmonization": {
@@ -9019,7 +9019,7 @@
       "release": {
         "tag": "skill-pathway-analysis",
         "asset": "pathway-analysis.zip",
-        "sha256": null
+        "sha256": "f363c272dad6692857bc6113f2d5443615c132505e2c5d3ca2e7d8f298d35e03"
       },
       "components": {
         "enrichment-visualization": {
@@ -9109,7 +9109,7 @@
       "release": {
         "tag": "skill-phasing-imputation",
         "asset": "phasing-imputation.zip",
-        "sha256": null
+        "sha256": "727da2c6b1a4f8923722bfa4990de59ff95d585d67aa2309ef13a54bdaf4bdf9"
       },
       "components": {
         "genotype-imputation": {
@@ -9187,7 +9187,7 @@
       "release": {
         "tag": "skill-phylogenetics",
         "asset": "phylogenetics.zip",
-        "sha256": null
+        "sha256": "e9c868a6636989ab5773f29972191c6d8a4555ec1d2a82d06485234a2f41991c"
       },
       "components": {
         "bayesian-inference": {
@@ -9289,7 +9289,7 @@
       "release": {
         "tag": "skill-population-genetics",
         "asset": "population-genetics.zip",
-        "sha256": null
+        "sha256": "99037154cd61b0bb2210f9b971fe2a3890a2224ea30b89719c126aed033fcf1f"
       },
       "components": {
         "association-testing": {
@@ -9391,7 +9391,7 @@
       "release": {
         "tag": "skill-primer-design",
         "asset": "primer-design.zip",
-        "sha256": null
+        "sha256": "2f9e2ed355d6ca0cea8830ffc282d72c7f255a903a050181371cd1c0615647ea"
       },
       "components": {
         "primer-basics": {
@@ -9474,7 +9474,7 @@
       "release": {
         "tag": "skill-proteomics",
         "asset": "proteomics.zip",
-        "sha256": null
+        "sha256": "df57d373dc7e7597ddcde0657bd72df0a43c10c7245b427fbec3170a5b3291d7"
       },
       "components": {
         "data-import": {
@@ -9582,7 +9582,7 @@
       "release": {
         "tag": "skill-read-alignment",
         "asset": "read-alignment.zip",
-        "sha256": null
+        "sha256": "a7c269a08a2cd3e9fa47a4969d0607603f1dd6919044ca23051ee66a906a1feb"
       },
       "components": {
         "bowtie2-alignment": {
@@ -9661,7 +9661,7 @@
       "release": {
         "tag": "skill-read-qc",
         "asset": "read-qc.zip",
-        "sha256": null
+        "sha256": "746ecc68ea86b3620fe886dbd415afa796eee171ab500ca32290e3f4f7dc82e5"
       },
       "components": {
         "adapter-trimming": {
@@ -9793,7 +9793,7 @@
       "release": {
         "tag": "skill-reporting",
         "asset": "reporting.zip",
-        "sha256": null
+        "sha256": "3be62d5bae551db71fffdb9f37e27cf84bcdc630903098fa8ba107672f4e05f4"
       },
       "components": {
         "automated-qc-reports": {
@@ -9907,7 +9907,7 @@
       "release": {
         "tag": "skill-restriction-analysis",
         "asset": "restriction-analysis.zip",
-        "sha256": null
+        "sha256": "921fc2561896354d3fced88bb3dcf4d4b04bd7e8368aac3364b114fd64ec8c9b"
       },
       "components": {
         "enzyme-selection": {
@@ -9991,7 +9991,7 @@
       "release": {
         "tag": "skill-ribo-seq",
         "asset": "ribo-seq.zip",
-        "sha256": null
+        "sha256": "8627e33fbf3ef611ffee7def819772fa5dad72a64bfb05ed52acefee06094f5b"
       },
       "components": {
         "initiation-site-mapping": {
@@ -10086,7 +10086,7 @@
       "release": {
         "tag": "skill-rna-quantification",
         "asset": "rna-quantification.zip",
-        "sha256": null
+        "sha256": "5e2fd59dc07ceea1bcfd674d23781b2e597db397e3f755108e52dfa86c5ce161"
       },
       "components": {
         "alignment-free-quant": {
@@ -10164,7 +10164,7 @@
       "release": {
         "tag": "skill-rna-structure",
         "asset": "rna-structure.zip",
-        "sha256": null
+        "sha256": "a56cc7fde3843dd9f94ae982a8883c2799635255c562f4bcc672470ea654b87b"
       },
       "components": {
         "covariation-analysis": {
@@ -10247,7 +10247,7 @@
       "release": {
         "tag": "skill-sequence-io",
         "asset": "sequence-io.zip",
-        "sha256": null
+        "sha256": "6795e00933027806f8619ebc4bb2ae3428dd0b196538a50c2cd6976710a8b119"
       },
       "components": {
         "batch-processing": {
@@ -10355,7 +10355,7 @@
       "release": {
         "tag": "skill-sequence-manipulation",
         "asset": "sequence-manipulation.zip",
-        "sha256": null
+        "sha256": "d9646450d20b0cd000b352cfad7a56b4ac23203a29cebfe109649580763bde5b"
       },
       "components": {
         "codon-usage": {
@@ -10452,7 +10452,7 @@
       "release": {
         "tag": "skill-single-cell",
         "asset": "single-cell.zip",
-        "sha256": null
+        "sha256": "92eb5255fa5bcd0b5bbb9670f100c5e240c80dafe229d3bf7d18f5f6703538f2"
       },
       "components": {
         "batch-integration": {
@@ -10614,7 +10614,7 @@
       "release": {
         "tag": "skill-small-rna-seq",
         "asset": "small-rna-seq.zip",
-        "sha256": null
+        "sha256": "ffe3e1c967fe2cdf0e1e907550b8c5a4d57a52857baa0092f25ea6e76804ed2a"
       },
       "components": {
         "differential-mirna": {
@@ -10704,7 +10704,7 @@
       "release": {
         "tag": "skill-spatial-transcriptomics",
         "asset": "spatial-transcriptomics.zip",
-        "sha256": null
+        "sha256": "f24ff56023f14839b50d7d663959ff38a94b6b4eaad1bfb09adf3eb81bb253cb"
       },
       "components": {
         "high-resolution-binning": {
@@ -10830,7 +10830,7 @@
       "release": {
         "tag": "skill-structural-biology",
         "asset": "structural-biology.zip",
-        "sha256": null
+        "sha256": "3039d98a039b4863bbd65f4f4bf5af7c925e4ebafe8c4266d19b0a2409de7d71"
       },
       "components": {
         "alphafold-predictions": {
@@ -10959,7 +10959,7 @@
       "release": {
         "tag": "skill-systems-biology",
         "asset": "systems-biology.zip",
-        "sha256": null
+        "sha256": "58b0df96c5d0071578b0401a1fb4f573435bd8ca5c467c372fad25819b52da21"
       },
       "components": {
         "community-metabolic-modeling": {
@@ -11055,7 +11055,7 @@
       "release": {
         "tag": "skill-tcr-bcr-analysis",
         "asset": "tcr-bcr-analysis.zip",
-        "sha256": null
+        "sha256": "ed60ebf986bc002c80194f228b5bed45a80a0d626be4f89661ad62fbaa035086"
       },
       "components": {
         "immcantation-analysis": {
@@ -11145,7 +11145,7 @@
       "release": {
         "tag": "skill-temporal-genomics",
         "asset": "temporal-genomics.zip",
-        "sha256": null
+        "sha256": "a40e33b5aac980eb163c8001eb3d663747037e82bf8377c61d195db760b225b7"
       },
       "components": {
         "circadian-rhythms": {
@@ -11236,7 +11236,7 @@
       "release": {
         "tag": "skill-variant-calling",
         "asset": "variant-calling.zip",
-        "sha256": null
+        "sha256": "e0265a4b211bbfdc8babb3875a9112d6286606582c444ebe0f62ee1bdd208721"
       },
       "components": {
         "clinical-interpretation": {
@@ -11377,7 +11377,7 @@
       "release": {
         "tag": "skill-workflow-management",
         "asset": "workflow-management.zip",
-        "sha256": null
+        "sha256": "694c3b5d03a41b49ec5657afcbfbef0948b3f5bb305b10b7e74f850e831421ad"
       },
       "components": {
         "cwl-workflows": {
@@ -11473,7 +11473,7 @@
       "release": {
         "tag": "skill-workflows",
         "asset": "workflows.zip",
-        "sha256": null
+        "sha256": "aac958edbd9ee797908fdd77718bc3071bfcda8afd9adaaad91ba61a7259ba12"
       },
       "components": {
         "atacseq-pipeline": {
@@ -11751,7 +11751,7 @@
       "release": {
         "tag": "skill-exploratory-data-analysis",
         "asset": "exploratory-data-analysis.zip",
-        "sha256": null
+        "sha256": "bd9e219c0d1f5750d9790c8851a37d44753255a66acf1250558c841a1573a502"
       },
       "id": "exploratory-data-analysis",
       "display_name": "Exploratory Data Analysis",
@@ -11838,7 +11838,7 @@
       "release": {
         "tag": "skill-figure-qa",
         "asset": "figure-qa.zip",
-        "sha256": null
+        "sha256": "3879a64fd40bbfb55c0faf482a3687b9619bd1e140934f4ac8aefa441fa3574f"
       },
       "id": "figure-qa",
       "display_name": "Figure QA",
@@ -11955,7 +11955,7 @@
       "release": {
         "tag": "skill-high-performance-r",
         "asset": "high-performance-r.zip",
-        "sha256": null
+        "sha256": "25245663fadbefbb8f47e7482de06585043196b7bdf20ac82e83d8c485af8c61"
       },
       "id": "high-performance-r",
       "display_name": "High-Performance R",
@@ -12065,7 +12065,7 @@
       "release": {
         "tag": "skill-interactive-dashboards",
         "asset": "interactive-dashboards.zip",
-        "sha256": null
+        "sha256": "738be20a44f01709b8c6f9e2e072607b9fdc66fc3bf1872d6369dd02b367b54e"
       },
       "id": "interactive-dashboards",
       "display_name": "Interactive Dashboards",
@@ -12250,7 +12250,7 @@
       "release": {
         "tag": "skill-julia-development",
         "asset": "julia-development.zip",
-        "sha256": null
+        "sha256": "54b53d2d8c9b5d3ef686e1a511782aaa4a5a13e50927658fb573a0be3129178a"
       },
       "id": "julia-development",
       "display_name": "Julia Development",
@@ -12345,7 +12345,7 @@
       "release": {
         "tag": "skill-manuscript-peer-review",
         "asset": "manuscript-peer-review.zip",
-        "sha256": null
+        "sha256": "bcec96c63a45a43949b4b202cb0b932fe0db161aed6d7c35031ac2308c857436"
       },
       "id": "manuscript-peer-review",
       "display_name": "Manuscript Peer Review",
@@ -12440,7 +12440,7 @@
       "release": {
         "tag": "skill-microscopy-image-analysis",
         "asset": "microscopy-image-analysis.zip",
-        "sha256": null
+        "sha256": "fa571b4aecfd4da2268657b4dd04d8ac25163ef7a48224bbc73741a54332303a"
       },
       "id": "microscopy-image-analysis",
       "display_name": "Microscopy Image Analysis",
@@ -12525,7 +12525,7 @@
       "release": {
         "tag": "skill-python-visualization",
         "asset": "python-visualization.zip",
-        "sha256": null
+        "sha256": "15e5ab23121b3ae1b497dc7371855f876041bf09ad826e5d3c08103f88d8c5c2"
       },
       "id": "python-visualization",
       "display_name": "Python Visualization",
@@ -12693,7 +12693,7 @@
       "release": {
         "tag": "skill-r-package-development",
         "asset": "r-package-development.zip",
-        "sha256": null
+        "sha256": "2544bbca1c391edbefff00a290d2ee105d53ec2d81f04d9b29e07178a1555e77"
       },
       "id": "r-package-development",
       "display_name": "R Package Development",
@@ -12784,7 +12784,7 @@
       "release": {
         "tag": "skill-research-code-hardening",
         "asset": "research-code-hardening.zip",
-        "sha256": null
+        "sha256": "251083ee71ba3b7f19bbc0f62df1409d14be50db52408ee132d338c261b2cbeb"
       },
       "id": "research-code-hardening",
       "display_name": "Research Code Hardening",
@@ -12948,7 +12948,7 @@
       "release": {
         "tag": "skill-science-superpowers",
         "asset": "science-superpowers.zip",
-        "sha256": null
+        "sha256": "1f0c69088f8cb17a9ef12f9fdfa963abb5194e68a773267696ea71e4fb8c4af2"
       },
       "id": "science-superpowers",
       "display_name": "Science Superpowers",
@@ -13040,7 +13040,7 @@
       "release": {
         "tag": "skill-scientific-manuscript-writing",
         "asset": "scientific-manuscript-writing.zip",
-        "sha256": null
+        "sha256": "fea48cb87784ed988d4c657026a4104f25a2ac81fb16ba9cb2c9b7c00e344761"
       },
       "id": "scientific-manuscript-writing",
       "display_name": "Scientific Manuscript Writing",
@@ -13135,7 +13135,7 @@
       "release": {
         "tag": "skill-scientific-problem-selection",
         "asset": "scientific-problem-selection.zip",
-        "sha256": null
+        "sha256": "0ea7eb924f2a818200092ff568ed1e6431db8dfd353deb65f2546ae1a2dd8bd5"
       },
       "id": "scientific-problem-selection",
       "display_name": "Scientific Problem Selection",
@@ -13216,7 +13216,7 @@
       "release": {
         "tag": "skill-scientific-prose-review",
         "asset": "scientific-prose-review.zip",
-        "sha256": null
+        "sha256": "0198a8ea9916e1e3debe8c4faace6335ec4a6a94371612a587c741e1d6e62a9d"
       },
       "id": "scientific-prose-review",
       "display_name": "Scientific Prose Review",
@@ -13325,7 +13325,7 @@
       "release": {
         "tag": "skill-scientific-python-development",
         "asset": "scientific-python-development.zip",
-        "sha256": null
+        "sha256": "b485bceac73ee0a0630cbce701a01287013494803cbb613bc9e3a54906fefb10"
       },
       "id": "scientific-python-development",
       "display_name": "Scientific Python Development",
