@@ -121,6 +121,7 @@ test('D4 checks a removed component points at an active component or skill', () 
   const c = (id, status) => item(id, { ref: `component:${id}`, kind: 'component', status });
   assert.deepEqual(ruleD4([c('b/x', 'superseded_by:b/y'), c('b/y', 'active')]), []);
   assert.deepEqual(subjects(ruleD4([c('b/x', 'superseded_by:b/z')])), ['D4:target:component:b/x']);
+  assert.deepEqual(ruleD4([c('b/x', 'superseded_by:b/b-why'), { ...c('b/y', 'active'), name: 'b-why' }]), [], 'by component name too');
 });
 
 test('D5 fails a component name that repeats another component or a single skill', () => {

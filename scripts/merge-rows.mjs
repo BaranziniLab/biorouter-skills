@@ -50,19 +50,34 @@ export function mergeRow(existing, incoming, root = REPO_ROOT) {
   merged.release.asset = `${merged.id}.zip`;
   if (existing && existing.version !== merged.version) merged.release.sha256 = incoming.release?.sha256 ?? null;
   if (merged.kind === 'bundle' && merged.components) {
+    // Components are keyed by folder. A package may key them by component name
+    // instead; map such a key to the folder whose SKILL.md carries that name,
+    // or, for a component whose folder is gone, to the folder the catalog had.
+    const dir = path.join(root, merged.path);
+    const folderOfName = new Map();
+    if (fs.existsSync(dir)) {
+      for (const f of fs.readdirSync(dir)) {
+        const sk = readSkillFile(path.join(dir, f, 'SKILL.md'));
+        if (sk.exists && sk.frontmatter?.name) folderOfName.set(sk.frontmatter.name, f);
+      }
+    }
+    const oldFolderOfName = new Map(Object.entries(base.components ?? {}).map(([f, e]) => [e.name, f]));
     const out = {};
-    for (const [folder, entry] of Object.entries(merged.components)) {
+    for (const [key, entry] of Object.entries(merged.components)) {
+      const onDisk = fs.existsSync(path.join(dir, key, 'SKILL.md'));
+      const folder = onDisk ? key : folderOfName.get(key) ?? oldFolderOfName.get(key) ?? key;
       const old = base.components?.[folder] ?? {};
       const e = { ...entry };
       if (!e.name) {
-        const sk = readSkillFile(path.join(root, merged.path, folder, 'SKILL.md'));
-        e.name = sk.frontmatter?.name ?? old.name ?? folder;
+        const sk = readSkillFile(path.join(dir, folder, 'SKILL.md'));
+        e.name = sk.frontmatter?.name ?? (folder !== key ? key : old.name ?? folder);
       }
+      if (out[folder]) throw new Error(`${merged.id}: two component entries map to folder ${folder}`);
       const boundaries = union(old.distinct_from ?? [], e.distinct_from ?? [], (d) => d.id);
       if (boundaries.length) e.distinct_from = boundaries;
       out[folder] = e;
     }
-    merged.components = out;
+    merged.components = Object.fromEntries(Object.entries(out).sort(([a], [b]) => (a < b ? -1 : 1)));
   }
   return merged;
 }

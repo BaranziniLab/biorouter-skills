@@ -280,7 +280,12 @@ export function ruleD4(items, builtins = {}) {
   const failures = [];
   const rows = items.filter((i) => i.kind !== 'component' && i.kind !== 'bundled-skill');
   const byId = new Map(rows.map((i) => [`${i.catalog}:${i.id}`, i]));
-  const components = new Map(items.filter((i) => i.kind === 'component').map((i) => [i.id, i]));
+  // A component is addressed as <bundle>/<folder> or as <bundle>/<component name>.
+  const components = new Map();
+  for (const i of items.filter((x) => x.kind === 'component')) {
+    components.set(i.id, i);
+    if (i.name) components.set(`${i.id.split('/')[0]}/${i.name}`, i);
+  }
   const builtinSkills = new Set([...(builtins.skills ?? []), ...(builtins.bundles ?? [])]);
   const builtinExtensions = new Set((builtins.extensions ?? []).map(normalizeName));
   for (const item of items) {
