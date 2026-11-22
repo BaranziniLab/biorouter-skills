@@ -1,10 +1,13 @@
 ---
 name: alignment-structural
 description: Align protein structures using Foldseek 3Di, TM-align, US-align, DALI, or Foldmason for structural MSA. Predict, score, and superpose backbone coordinates when sequence identity is below the twilight zone or remote-homology detection is required. Use when sequence MSA fails (<25% identity), when the dark proteome is the target, when AlphaFoldDB / ESM Atlas search is needed, or when structural superposition is the goal.
-license: Apache-2.0
+license: Apache-2.0 AND MIT
 tool_type: mixed
 primary_tool: Foldseek
 user-invocable: false
+metadata:
+  version: "1.1.0"
+  upstream: "GPTomics/bioSkills@d91ed3d"
 ---
 
 ## Version Compatibility
@@ -19,14 +22,14 @@ If code throws ImportError, AttributeError, or TypeError, introspect the install
 
 # Structural Alignment
 
-**"Align two protein structures"** → Compute backbone-aware superposition and a fold-similarity score (TM-score, RMSD, or LDDT).
+**"Align two protein structures"** -> Compute backbone-aware superposition and a fold-similarity score (TM-score, RMSD, or LDDT).
 - CLI pairwise: `TMalign A.pdb B.pdb`, `USalign A.pdb B.pdb`
 - CLI search at scale: `foldseek easy-search query/ AFDB result.m8 tmp/`
 - CLI structural MSA: `foldmason easy-msa structures/*.pdb out tmp/`
 - Python pairwise: `Bio.PDB.Superimposer`, or `subprocess` wrapping `TMalign` / `USalign` (see `examples/tm_align_pairwise.py`)
 - GUI / scripted molecular-graphics superposition: ChimeraX `matchmaker`, PyMOL `super`/`cealign`
 
-**"Find structural homologs of an AlphaFold model"** → Search a structure database by 3Di-encoded structural alphabet (Foldseek) or by full TM-align rotation (DALI, US-align).
+**"Find structural homologs of an AlphaFold model"** -> Search a structure database by 3Di-encoded structural alphabet (Foldseek) or by full TM-align rotation (DALI, US-align).
 
 ## When to Use Structural Alignment
 
@@ -62,7 +65,7 @@ TM-align and US-align report two TM-scores by default: one normalised by chain 1
 | TM-score | > 0.5 | Same fold (Zhang & Skolnick 2004 Proteins; reported by TM-align, US-align, Foldseek, DALI) |
 | TM-score | > 0.8 | Equivalent topology (homologous) |
 | TM-score | < 0.2 | Random structural similarity |
-| DALI Z-score | > 20 | Definitely homologous (Holm 2020 Prot Sci) |
+| DALI Z-score | > 20 | Definitely homologous (Holm 2020 Methods Mol Biol) |
 | DALI Z-score | 8 - 19 | Probable homology |
 | DALI Z-score | 2 - 8 | Candidate; verify with TM-score or biology |
 | DALI Z-score | < 2 | Not significant (random) |
@@ -189,7 +192,7 @@ foldseek createdb --mask-bfactor-threshold 70.0 *.pdb afdb_masked
 
 | Tool | Reference | Best for |
 |------|-----------|----------|
-| Foldmason | Gilchrist et al 2024 (preprint) | Billion-protein-scale structural MSA on AFDB; the structural counterpart to MAFFT |
+| Foldmason | Gilchrist et al 2026 Science 391:485 | Billion-protein-scale structural MSA on AFDB; the structural counterpart to MAFFT |
 | 3D-Coffee / Expresso | Notredame group | <100 chains with mixed PDB and sequence input |
 | mTM-align | Dong et al 2018 Bioinf | Multiple structure alignment; output suitable for tree building. Server: `yanglab.qd.sdu.edu.cn/mTM-align/` (Yang Lab moved from Nankai to Shandong University in 2021; verify URL before use) |
 | PROMALS3D | Pei, Kim & Grishin 2008 NAR | Hybrid sequence-structure profile MSA; uses PSI-BLAST + DALI/SAP templates |
@@ -256,7 +259,7 @@ Run a pLM aligner (TM-Vec, vcMSA, DEDAL, pLM-BLAST) when no structure is availab
 | Tool | Reference | Embedding source |
 |------|-----------|------------------|
 | vcMSA | McWhite, Armour-Garb & Singh 2023 Genome Res | ProtT5 vector clustering for MSA (alpha-stage tool per its repo README; last release Oct 2023; test on representative inputs before pipeline use) |
-| DEDAL | Llinares-Lopez et al 2023 Bioinf | Differentiable end-to-end alignment with pLM features |
+| DEDAL | Llinares-Lopez et al 2023 Nat Methods | Differentiable end-to-end alignment with pLM features |
 | TM-Vec | Hamamsy et al 2024 Nat Biotech | TM-score prediction from ProtT5 embeddings (active fork: `valentynbez/tmvec`; original `tymor22/tm-vec` is in limited maintenance) |
 | pLM-BLAST | Kaminski et al 2023 Bioinf | BLAST-style hits via pLM cosine similarity |
 
@@ -321,12 +324,12 @@ PyMOL `super` performs cycle-fitting for distantly related structures (better th
 ## References
 
 - van Kempen M et al. 2024. Fast and accurate protein structure search with Foldseek. Nat Biotech 42:243-246.
-- Kim W, Mirdita M, Levy Karin E, Gilchrist CLM, Schweke H, Soding J, Levy E, Steinegger M. 2025. Rapid and sensitive protein complex alignment with Foldseek-Multimer. Nat Methods (in press; Foldseek-Multimer release).
+- Kim W, Mirdita M, Levy Karin E, Gilchrist CLM, Schweke H, Soding J, Levy E, Steinegger M. 2025. Rapid and sensitive protein complex alignment with Foldseek-Multimer. Nat Methods 22:469-472.
 - Zhang Y, Skolnick J. 2005. TM-align: a protein structure alignment algorithm based on the TM-score. NAR 33:2302-2309.
 - Zhang C, Shine M, Pyle AM, Zhang Y. 2022. US-align: universal structure alignments of proteins, nucleic acids, and macromolecular complexes. Nat Methods 19:1109-1115.
 - Holm L. 2020. Using Dali for protein structure comparison. Methods Mol Biol 2112:29-42 (Z-score interpretation thresholds).
 - Holm L. 2022. Dali server: structural unification of protein families. NAR 50:W210-W215.
-- Gilchrist CLM et al. 2024. Foldmason: multiple protein structure alignment at scale with 3Di. Preprint.
+- Gilchrist CLM et al. 2026. Foldmason: multiple protein structure alignment at scale with 3Di. Science 391(6784):485-488.
 - Barrio-Hernandez I et al. 2023. Clustering predicted structures at the scale of the known protein universe. Nature 622:637-645.
 - Hamamsy T et al. 2024. Protein remote homology detection and structural alignment using deep learning. Nat Biotech 42:975-985.
 - Xu J, Zhang Y. 2010. How significant is a protein structure similarity with TM-score = 0.5? Bioinf 26:889-895.

@@ -1,10 +1,13 @@
 ---
 name: database-access-open-literature-discovery
 description: Discover and verify scholarly literature through PubMed, Crossref, OpenAlex, Semantic Scholar, arXiv, bioRxiv/medRxiv, Unpaywall, and DOI/PMID identifiers while avoiding fabricated references and stale claims.
+license: Apache-2.0 AND MIT
 tool_type: mixed
 primary_tool: openalex
 user-invocable: false
-license: Apache-2.0
+metadata:
+  version: "1.1.0"
+  source: "Biorouter original"
 ---
 
 # Open Literature Discovery

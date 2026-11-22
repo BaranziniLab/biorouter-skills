@@ -1,4 +1,4 @@
-# Reference: clusterProfiler 4.10+, ggplot2 3.5+, scanpy 1.10+ | Verify API if version differs
+# Reference: MOFA2 1.12+, ggplot2 3.5+ | Verify API if version differs
 library(MOFA2)
 library(ggplot2)
 
@@ -61,11 +61,13 @@ mofa <- run_mofa(mofa, outfile = file.path(output_dir, 'mofa_model.hdf5'), use_b
 # === 6. ANALYZE RESULTS ===
 cat('Analyzing results...\n')
 
-# Variance explained
+# Variance explained per factor per view - the central output (shared = 2+ views, view-specific = 1)
+get_variance_explained(mofa)$r2_per_factor
 plot_variance_explained(mofa, max_r2 = 15)
 ggsave(file.path(output_dir, 'variance_explained.png'), width = 10, height = 6)
 
-# Factor values
+# Factor values; before interpreting, correlate factors with technical covariates and exclude
+# any that track batch/depth (a factor that correlates with batch is a batch factor).
 factors <- get_factors(mofa)[[1]]
 
 # Top weights
@@ -76,8 +78,8 @@ plot_top_weights(mofa, view = 'Protein', factors = 1:3, nfeatures = 10)
 ggsave(file.path(output_dir, 'top_weights_protein.png'), width = 10, height = 8)
 
 # === 7. EXPORT ===
-write.csv(factors, file.path(output_dir, 'factor_values.csv'))
+write.csv(factors, file.path(output_dir, 'mofa_factor_values.csv'))
 weights <- get_weights(mofa, as.data.frame = TRUE)
-write.csv(weights, file.path(output_dir, 'all_weights.csv'), row.names = FALSE)
+write.csv(weights, file.path(output_dir, 'mofa_weights.csv'), row.names = FALSE)
 
 cat('Analysis complete! Results in', output_dir, '\n')

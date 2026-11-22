@@ -1,10 +1,13 @@
 ---
 name: atac-seq-differential-accessibility
 description: Identify differentially accessible chromatin regions across conditions using DiffBind, csaw, DESeq2, or edgeR. Use when comparing ATAC-seq accessibility between treatment groups, choosing between consensus-peak vs sliding-window approaches, picking the correct normalization (full library vs reads-in-peaks), correcting batch with SVA/RUVseq, or interpreting log2FC and FDR thresholds in a chromatin context.
-license: Apache-2.0
+license: Apache-2.0 AND MIT
 tool_type: r
 primary_tool: DiffBind
 user-invocable: false
+metadata:
+  version: "1.1.0"
+  upstream: "GPTomics/bioSkills@d91ed3d"
 ---
 
 ## Version Compatibility
@@ -30,20 +33,20 @@ DiffBind is a wrapper around DESeq2 / edgeR with ATAC-aware defaults. csaw is th
 
 | Tool | Model | Input | Min reps | Strength | Fails when |
 |------|-------|-------|----------|----------|------------|
-| DiffBind 3.x (default DESeq2) | NB GLM via DESeq2 on consensus peaks | BAM + peak files | 2-3 per group | ATAC-aware defaults; native normalization (RiP); built-in QC; blocking factors | Peaks differ dramatically between conditions (closed -> open shifts width); fewer than 2 reps per group |
-| DiffBind with edgeR backend | NB GLM via edgeR-QL on consensus peaks | Same | 2-3 per group | Robust at low replicates (n=2 OK); QL test calibrates dispersion better than DESeq2 at small n | Default normalization can be off for ATAC; specify `normalize=DBA_NORM_NATIVE` |
+| DiffBind 3.x (default DESeq2) | NB GLM via DESeq2 on consensus peaks | BAM + peak files | 2-3 per group | ATAC-aware defaults; built-in QC; blocking factors. Default in 3.x is `normalize=DBA_NORM_LIB` with `library=DBA_LIBSIZE_FULL` (full library size, background-included) | Peaks differ dramatically between conditions (closed -> open shifts width); fewer than 2 reps per group |
+| DiffBind with edgeR backend | NB GLM via edgeR-QL on consensus peaks | Same | 2-3 per group | Robust at low replicates (n=2 OK); QL test calibrates dispersion better than DESeq2 at small n | When global accessibility shifts dominate, switch to spike-in or full-library (library=DBA_LIBSIZE_FULL), never reads-in-peaks |
 | DESeq2 directly on peak counts | NB GLM with shrinkage | featureCounts SAF | 3+ | Maximum control; integrates with apeglm shrinkage; modern interface | Need to manually build consensus peakset; per-region pre-filter required (low counts inflate dispersion) |
 | edgeR QL F-test on peak counts | NB QL (quasi-likelihood) | featureCounts | 2 | Calibrated FDR at low n (n=2 viable); robust to outlier reps | Manual consensus peakset; small library bias unless normalization explicit |
 | csaw (windows) | edgeR-QL on sliding windows | BAM only | 2 | No peak set required; detects diffuse changes peaks miss; merges adjacent windows | Computationally heavy; window size choice biases results; harder to annotate downstream |
 | limma-voom | linear model with mean-variance trend | log2(CPM+offset) | 3 | Fast; good calibration at moderate count | Mis-calibrated at very low counts (atac peaks often have dropouts); needs explicit voom normalization |
 
-Methodology evolves; verify the current consensus practice (Schep & Greenleaf 2017; Reske 2020 benchmark) before locking pipelines.
+Methodology evolves; verify the current consensus practice (Gontarz 2020 DA-strategy benchmark; Reske 2020 normalization comparison) before locking pipelines.
 
 ## Decision Tree by Experimental Scenario
 
 | Scenario | Recommended workflow | Why |
 |----------|---------------------|-----|
-| 3+ reps, similar peak structure across conditions | DiffBind (DESeq2 backend), `summits=250`, `normalize=NATIVE` | Standard pattern; peak-level inference is interpretable |
+| 3+ reps, similar peak structure across conditions | DiffBind (DESeq2 backend), `summits=250`, `normalize=DBA_NORM_NATIVE` | Standard pattern; peak-level inference is interpretable |
 | 2 reps per condition | DiffBind with edgeR backend OR raw edgeR QL | DESeq2 underpowered at n=2; QL is robust |
 | Peak structure differs dramatically (e.g., differentiation, KO of pioneer TF) | csaw windows OR rebuild consensus peakset post-hoc per condition then take union | Stable consensus peakset is invalid when chromatin landscape shifts |
 | Multi-factor design (batch, sex, time) | DiffBind with `dba.contrast(..., design='~Batch + Condition')` | Standard linear model adjustment |
@@ -70,33 +73,37 @@ Refer to atac-seq/consensus-peakset for full coverage of fixed-width re-centerin
 
 ## Normalization: The ATAC-Specific Choice
 
-| Normalization | DiffBind flag | What it normalizes to | When to use |
-|---------------|---------------|------------------------|-------------|
-| DiffBind native (RiP) | `DBA_NORM_NATIVE` | Reads in consensus peaks | Default for ATAC; protects against background drift |
-| Full library size | `DBA_NORM_LIB` | Total mapped reads | When global accessibility shifts must remain visible (e.g., chromatin compaction) |
-| TMM (edgeR) | `DBA_NORM_TMM` | Trimmed mean of M-values | Robust to a few highly-DA peaks dominating |
-| RLE (DESeq2) | `DBA_NORM_RLE` | DESeq2 size factors | DESeq2 default; geometric-mean reference |
-| Spike-in / external | none built-in; pre-scale counts | Exogenous reference (e.g., human spike in mouse) | Required when global scaling is biological |
+DiffBind 3.x conflates two orthogonal choices: the normalization method (`normalize=`) and the library-size definition (`library=`). The defaults are `normalize=DBA_NORM_LIB` with `library=DBA_LIBSIZE_FULL` (full mapped-read total).
+
+| Choice | DiffBind argument | What it does | When to use |
+|--------|-------------------|--------------|-------------|
+| Normalize by library size only | `normalize=DBA_NORM_LIB` (default) | Scale counts by the chosen library size | Standard; pairs with full or RiP library |
+| Reads-in-peaks library size | `library=DBA_LIBSIZE_PEAKREADS` | Library size = reads in consensus peaks (RiP) | When background varies independently of biology (protects against background drift) |
+| Full mapped library size | `library=DBA_LIBSIZE_FULL` (default) | Library size = total mapped reads | When global accessibility shifts must remain visible (e.g., chromatin compaction) |
+| Native per-tool default | `normalize=DBA_NORM_NATIVE` | DESeq2 RLE or edgeR TMM, depending on backend | Use DESeq2/edgeR conventions directly |
+| TMM (edgeR) | `normalize=DBA_NORM_TMM` | Trimmed mean of M-values | Robust to a few highly-DA peaks dominating |
+| RLE (DESeq2) | `normalize=DBA_NORM_RLE` | DESeq2 geometric-mean size factors | DESeq2-conventional analysis |
+| Spike-in / external | not built-in; pre-scale counts | Exogenous reference (e.g., spike-in chromatin) | Required when global scaling is biological |
 
 **Trigger:** Treatment causes global chromatin compaction (e.g., HDAC inhibitor, DNMT inhibitor).
 
-**Mechanism:** RiP normalization assumes ratio of in-peak to total reads is stable. When a treatment globally opens or closes chromatin, RiP normalizes that biology away, producing a near-null differential set.
+**Mechanism:** Full library-size normalization is robust to background but the default still scales background reads in; under uniform global compaction the magnitudes can collapse. RiP scaling (`library=DBA_LIBSIZE_PEAKREADS`) makes the opposite assumption (peak signal is stable, background absorbs the shift) and so erases the very biology of interest.
 
 **Symptom:** Volcano plot is symmetric about zero; PCA shows treatment effect that vanishes after normalization.
 
-**Fix:** Use library-size normalization (`DBA_NORM_LIB`) OR use spike-in normalization (add exogenous chromatin pre-Tn5; scale by spike-in reads). Reske 2020 documented this with HDAC inhibitor.
+**Fix:** Use spike-in normalization (add exogenous chromatin pre-Tn5; scale by spike-in reads), or keep the default `library=DBA_LIBSIZE_FULL` but interpret with the global shift in mind. Reske 2020 documented that the normalization choice materially changes which peaks are called differential under such a global shift.
 
 ## Per-Tool Failure Modes
 
-### DiffBind -- Default normalization confounds global change
+### DiffBind -- Library-size choice confounds global change
 
 **Trigger:** Treatment causes whole-genome accessibility shift; cell-cycle synchronized samples; differentiation timecourse.
 
-**Mechanism:** DiffBind default uses RiP-based normalization (`DBA_NORM_NATIVE`), which assumes total reads-in-peaks is comparable across samples. Global shift breaks this.
+**Mechanism:** Setting `library=DBA_LIBSIZE_PEAKREADS` (RiP-based) assumes total reads-in-peaks is comparable across samples. Global accessibility shifts break this assumption.
 
 **Symptom:** Conditions clearly differ in PCA before normalization; after normalization PC1 is nearly noise.
 
-**Fix:** Set `normalize=DBA_NORM_LIB` and re-run `dba.contrast` and `dba.analyze`. Re-inspect PCA; if treatment now drives PC1, the global-shift biology is preserved.
+**Fix:** Keep the default `library=DBA_LIBSIZE_FULL` (or use spike-in scaling) and re-run `dba.contrast` and `dba.analyze`. Re-inspect PCA; if treatment now drives PC1, the global-shift biology is preserved.
 
 ### DiffBind summits parameter -- Width-driven differential
 
@@ -110,13 +117,13 @@ Refer to atac-seq/consensus-peakset for full coverage of fixed-width re-centerin
 
 ### csaw -- Window size and filter choice dominates results
 
-**Trigger:** Default `width=10` (bp) windows; default `filter.global` cutoff.
+**Trigger:** Default `width=spacing=50` bp windows; default `filter=10` count cutoff.
 
-**Mechanism:** Narrow windows have very low counts and inflated dispersion; default global filter discards too many windows. Results are extremely sensitive to these.
+**Mechanism:** Narrow windows have very low counts and inflated dispersion; the global background filter discards too many windows. Results are extremely sensitive to these.
 
 **Symptom:** Number of significant windows ranges from 200 to 200,000 across reasonable parameter sweeps.
 
-**Fix:** Use `width=150` for ATAC (matches typical NFR fragment); set `filter.global(stat, log2(min.fold))=log2(3)` to discard low-signal windows. Validate by running on technical replicates -- ~0 differential windows is the expected outcome.
+**Fix:** Use `width=150` for ATAC (matches typical NFR fragment); threshold with `filterWindowsGlobal(data, background)$filter > log2(3)` to discard low-signal windows. Validate by running on technical replicates -- ~0 differential windows is the expected outcome.
 
 ### DESeq2 -- Apeglm shrinkage with too few reps
 
@@ -140,7 +147,7 @@ Refer to atac-seq/consensus-peakset for full coverage of fixed-width re-centerin
 
 | Pattern | Likely cause | Action |
 |---------|--------------|--------|
-| DiffBind + DESeq2 differ wildly | Different normalization (DiffBind default = RiP, DESeq2 default = RLE) | Force same normalization; differences should shrink |
+| DiffBind + DESeq2 differ wildly | Different normalization (DiffBind default = full library `DBA_NORM_LIB`/`DBA_LIBSIZE_FULL`, DESeq2 default = RLE) | Force same normalization; differences should shrink |
 | DiffBind + csaw differ | csaw catches diffuse changes peaks miss; DiffBind catches narrow peaks csaw smooths | Both can be correct; report intersection as high-confidence |
 | Top hits in DiffBind have FDR > 0.5 in DESeq2 | DiffBind's blacklist filter or width re-centering changes the per-region count | Re-run DESeq2 on the exact DiffBind consensus matrix (`dba.peakset` extract) |
 | Effect-size ranking differs across reps | One rep is an outlier -- check PCA | Drop or block as covariate; never silently include |
@@ -162,6 +169,10 @@ abs(log2FC) >= 1 is *not* universal. ATAC effects in primary cells (immune subse
 
 ## Hidden Batch with SVA / RUVseq
 
+**Goal:** Recover differential accessibility signal when unknown batch effects swamp the contrast.
+
+**Approach:** Estimate surrogate variables on normalized counts via svaseq, append them to the DESeq2 design, refit the model, and extract the contrast.
+
 ```r
 library(DESeq2); library(sva)
 
@@ -182,11 +193,15 @@ res <- results(dds, contrast=c('condition', 'treated', 'control'))
 
 RUVseq is the alternative when negative-control regions (ChrM peaks NOT changing) or technical replicates are available. SVA is preferred when no controls exist.
 
-## Spike-in Normalization (Reske 2020)
+## Spike-in Normalization
 
 **Trigger:** Treatment causes whole-genome accessibility shift (HDAC inhibitor, DNMT inhibitor); RPM/CPM/RiP normalization erases the global biology.
 
 **Mechanism:** Exogenous chromatin spike-in (Drosophila S2 nuclei) is added at constant cell number ratio pre-Tn5; reads aligning to dm6 quantify the constant exogenous baseline. Sample-level scaling factor = inverse of dm6 reads per sample, applied to human-aligned counts.
+
+**Goal:** Preserve global accessibility shifts that RiP / library-size normalization would erase.
+
+**Approach:** Compute per-sample size factors from inverse spike-in read counts, override DESeq2's default size factors, then run the standard DESeq2 fit and contrast.
 
 ```r
 library(DESeq2)
@@ -201,13 +216,17 @@ dds <- DESeq(dds)
 res <- results(dds, contrast=c('condition', 'treated', 'control'))
 ```
 
-After spike-in normalization, log2FC reflects absolute accessibility change (not just relative redistribution). ENCODE 4 increasingly recommends spike-in for global-shift biology.
+After spike-in normalization, log2FC reflects absolute accessibility change (not just relative redistribution). Spike-in is the most direct control for global-shift biology.
 
 ## Permutation Testing for Low Replicate Designs
 
 **Trigger:** n=2 per condition; parametric NB tests give over-confident p-values.
 
 **Mechanism:** csaw provides a permutation framework: the null is generated by shuffling sample labels; test statistic is the count-difference per window; per-region p is the rank under permutation.
+
+**Goal:** Generate empirical per-region p-values when parametric NB tests are over-confident at low replicate counts.
+
+**Approach:** Fit the observed edgeR QL F statistic, repeatedly shuffle group labels and refit, then compute per-region p as the rank of the observed F under the shuffled null.
 
 ```r
 library(csaw); library(edgeR)
@@ -238,6 +257,10 @@ Permutation requires ~1000 shuffles for stable per-region p; computationally exp
 
 ## DESeq2 Likelihood Ratio Test for Time-Courses
 
+**Goal:** Identify peaks whose accessibility trajectory differs between conditions across a timecourse.
+
+**Approach:** Fit a DESeq2 LRT comparing a full model with a spline-by-condition interaction against a reduced model lacking the interaction; significant peaks have time-dependent condition response.
+
 ```r
 library(DESeq2); library(splines)
 
@@ -256,9 +279,14 @@ The LRT compares the full model (with time:condition interaction) to a reduced m
 
 **Mechanism:** Aggregate peak-level differential signal at HiCCUPS loop anchors (or ABC-predicted enhancer-gene pairs). Combined enhancer + promoter accessibility change has more statistical power than either alone.
 
+**Goal:** Test enhancer-promoter pair-level differential accessibility by aggregating peak-level signal at loop anchors.
+
+**Approach:** Import HiCCUPS loops, map consensus peaks to anchor positions, then aggregate per-peak log2FC across both anchors of each loop to get loop-level effect sizes.
+
 ```r
 # Pseudo-pattern: per loop, sum DESeq2 log2FC at both anchors
-loops <- import('hiccups_loops.bedpe', format='bedpe')
+loops <- makeGenomicInteractionsFromFile('hiccups_loops.bedpe', type='bedpe',
+                                         experiment_name='hiccups', description='HiCCUPS loops')
 peak_to_loop <- findOverlaps(consensus_peaks, c(anchorOne(loops), anchorTwo(loops)))
 
 loop_lfc <- aggregate(res$log2FoldChange[queryHits(peak_to_loop)],
@@ -266,9 +294,13 @@ loop_lfc <- aggregate(res$log2FoldChange[queryHits(peak_to_loop)],
                       FUN=function(x) sum(x, na.rm=TRUE))
 ```
 
-For implementation, use the `InteractionSet` Bioconductor package which preserves loop-pair structure during testing. Reference: Mumbach 2017 Nat Genet and Hwang 2024 (Hi-C loop-aggregated DA).
+For implementation, use the `InteractionSet` Bioconductor package which preserves loop-pair structure during testing. Reference: Mumbach 2017 Nat Genet (HiChIP enhancer connectome).
 
 ## Annotate Differential Peaks
+
+**Goal:** Assign each differentially accessible peak to its nearest gene and feature class for downstream interpretation.
+
+**Approach:** Pull DiffBind / DESeq2 results as GRanges, annotate via ChIPseeker against a TxDb with a custom promoter window, then plot annotation distribution and extract gene IDs for enrichment.
 
 ```r
 library(ChIPseeker); library(TxDb.Hsapiens.UCSC.hg38.knownGene)
@@ -288,7 +320,7 @@ genes <- as.data.frame(peakAnno)$geneId          # for GO enrichment via pathway
 |-----------------|-------|----------|
 | DiffBind very slow | Counting all peaks across all BAMs sequentially | `dba.count(..., bParallel=TRUE)` and provide `BPPARAM` |
 | `unable to use the provided design matrix` (DESeq2) | Confounded design (e.g., batch perfectly aligns with condition) | Replicate in a way that breaks the confound, or drop the batch term |
-| FDR list empty despite obvious differences | Library-size normalization removed global biology | Use spike-in or `DBA_NORM_LIB`; verify with browser tracks |
+| FDR list empty despite obvious differences | RiP scaling (`library=DBA_LIBSIZE_PEAKREADS`) removed global biology | Use spike-in or keep default `library=DBA_LIBSIZE_FULL`; verify with browser tracks |
 | Top peaks all on chrM | chrM not removed from BAM before counting | Always strip chrM upstream |
 | dispersion estimate failure (DESeq2) | Too few peaks pass filter; too few reps | `filterByExpr` less aggressively; check rep count |
 | `Error in if (any(out))`(csaw) | Window count below threshold | Reduce `bin.size`; check BAM is paired-end |
@@ -304,7 +336,8 @@ genes <- as.data.frame(peakAnno)$geneId          # for GO enrichment via pathway
 - Chen Y et al 2016 F1000Res 5:1438 (edgeR-QL framework)
 - Leek JT 2014 NAR 42:e161 (svaseq for hidden batch)
 - Risso D et al 2014 Nat Biotechnol 32:896 (RUVseq)
-- Reske JJ et al 2020 Epigenetics Chromatin 13:22 (ATAC normalization comparison; spike-in case)
+- Reske JJ et al 2020 Epigenetics Chromatin 13:22 (ATAC normalization-method comparison; ARID1A/PIK3CA global-shift case study)
+- Gontarz P et al 2020 Sci Rep 10:10150 (comparison of differential-accessibility analysis strategies for ATAC-seq)
 - Corces MR et al 2018 Science 362:eaav1898 (iterative overlap, fixed-width 501 bp consensus)
 - Yu G et al 2015 Bioinformatics 31:2382 (ChIPseeker)
 

@@ -1,10 +1,13 @@
 ---
 name: causal-genomics-proteome-mr-drug-target
 description: Runs cis-pQTL Mendelian randomization for drug-target validation using UKB-PPP (Olink), deCODE (SomaScan), Fenland, INTERVAL, ARIC, and FinnGen-PPP proteomes plus colocalization triangulation, phenome-wide on-target adverse-effect scans, cross-platform Olink/SomaScan replication, and PAV (protein-altering variant) sensitivity. Use when nominating or de-risking a drug target from plasma-proteome GWAS, mimicking pharmacological inhibition via cis-pQTL instruments, separating shared-causal from LD-confounded signal under the Schmidt 2020 cis-MR framework, screening on-target adverse phenotypes pheWAS-style, or producing publication-grade STROBE-MR plus PP.H4 evidence for a target gene.
-license: Apache-2.0
+license: Apache-2.0 AND MIT
 tool_type: mixed
 primary_tool: TwoSampleMR
 user-invocable: false
+metadata:
+  version: "1.1.0"
+  upstream: "GPTomics/bioSkills@d91ed3d"
 ---
 
 ## Version Compatibility
@@ -32,7 +35,7 @@ If code throws OAuth or rate-limit errors from OpenGWAS, or a missing `dataset$N
 Operational rule: drug-target nomination requires PP.H4 >= 0.8 minimum; industry-grade clinical claim requires PP.H4 >= 0.95 plus the full triangulation panel.
 
 - R (canonical): `TwoSampleMR::mr()` orchestrates the cis-IVW + Egger + median + Wald-ratio panel
-- R (correlated cis-pQTLs in a window): `MendelianRandomization::mr_ivw(model='default', correl=TRUE, correl.x=ld_matrix)`
+- R (correlated cis-pQTLs in a window): `MendelianRandomization::mr_input(..., correlation = ld_matrix)` then `mr_ivw(mr_obj, model='default', correl = TRUE)`
 - R (triangulation): `coloc::coloc.abf()` or `coloc::coloc.susie()` on the same cis-window
 - pheWAS: `ieugwasr::associations()` against the OpenGWAS catalogue, looped over outcomes
 - VEP CLI: annotate every cis-pQTL with `vep --species homo_sapiens --canonical --check_existing` for PAV flagging
@@ -67,11 +70,11 @@ Methodology evolves; check the UKB-PPP portal (ukb-ppp.gwas.eu), deCODE Genetics
 |--------|------------------------|----------------|----------|------------|
 | Single cis-pQTL Wald ratio | Single sentinel SNP within +/-500 kb | 1 | Simplest, transparent point estimate `beta_Y/beta_X` and ratio SE | Confounded by LD-linked eQTL/pQTL of neighbour gene; no heterogeneity test |
 | Cis-IVW (clumped r2 < 0.1) | Multiple weakly-correlated cis-pQTLs | 2 | Pools information, increases precision (Schmidt 2020) | r2 between pQTLs > 0.1 inflates SE under independence assumption |
-| Cis-IVW with correlation `correl=TRUE` | Cis-pQTLs in moderate LD; supply LD matrix | 2 | Correct SE under correlated instruments (Burgess 2017 Am J Epidemiol 186:1006) | LD matrix mismatched to summary-stat ancestry |
+| Cis-IVW with correlation `correl=TRUE` | Cis-pQTLs in moderate LD; supply LD matrix | 2 | Correct SE under correlated instruments (Burgess, Zuber, Valdes-Marquez, Sun, Hopewell 2017 Genet Epidemiol 41:714-725) | LD matrix mismatched to summary-stat ancestry |
 | Cis-MR-Egger | Directional pleiotropy across cis-pQTLs | 3+ (>=10 for power) | Sensitivity for in-window directional pleiotropy | Underpowered <10 cis-pQTLs; NOME violation `I^2_GX < 0.9` |
 | Cis-weighted-median | Up to 50% invalid cis-pQTLs | 3+ | Robust to a minority of bad instruments | >50% invalid cis-pQTLs |
 | MR-PRESSO in cis-window | Outlier cis-pQTLs from LD-confounded neighbours | 4+ | Removes neighbour-eQTL-tagged cis-pQTLs; distortion test (Verbanck 2018) | <4 instruments; underpowered global test |
-| Robust cis-MR (Patel 2024) | Accommodates LD between cis-pQTLs without full LD matrix | 2+ | Methodologically modern alternative when LD reference is uncertain | Newer; benchmarks evolving |
+| Conditional cis-MR with weak genetic factors (Patel 2023 Biometrics 79:3458) | Factor-analysis dimension reduction of correlated cis-pQTLs + weak-factor-robust conditional inference | 2+ | Methodologically modern alternative when instruments are highly correlated | Newer; benchmarks evolving; separate implementation from mr_ivw |
 | Generalized cis-IVW with correlated SNPs | Joint multivariable cis-window | 2+ | Sound under any LD provided matrix supplied | Numerical instability when r2 ~ 1 (collinear) |
 | coloc.susie + Wald-ratio per CS | Multiple independent cis-signals (allelic heterogeneity) | 1+ per credible set | Per-signal MR + per-signal PP.H4 | Requires ancestry-matched LD; spurious CS under mismatch |
 
@@ -98,7 +101,7 @@ Verify against Burgess 2023 *Wellcome Open Res* "Guidelines for performing Mende
 
 **Trigger:** A cis-pQTL effect size or even direction differs between UKB-PPP (Olink antibody) and deCODE/Fenland (SomaScan aptamer) for the same protein.
 
-**Mechanism:** Olink uses paired antibody proximity-extension assay (PEA) binding distinct epitopes; SomaScan uses single-aptamer SOMAmer binding a folded epitope. A missense SNP that alters one epitope produces an apparent pQTL on that platform only (a pseudo-PAVQTL / aptamer-affinity QTL, AAVQTL). Splice/isoform differences also produce platform-specific signal. Pietzner 2021 and Sun 2023 reported ~15-30% protein-level discordance.
+**Mechanism:** Olink uses paired antibody proximity-extension assay (PEA) binding distinct epitopes; SomaScan uses single-aptamer SOMAmer binding a folded epitope. A missense SNP that alters one epitope produces an apparent pQTL on that platform only (a pseudo-PAVQTL / aptamer-affinity QTL, AAVQTL). Splice/isoform differences also produce platform-specific signal. A direct Olink-vs-SomaScan cross-platform comparison reported only modest cross-platform correlation, with roughly half of cis-pQTL signals not shared across platforms (72% of Olink vs 43% of SomaScan assays had a cis-pQTL) (Eldjarn G et al 2023 Nature 622:348).
 
 **Symptom:** Cis-MR significant on one platform, null on the other; or significant on both but opposite direction.
 
@@ -124,7 +127,7 @@ Verify against Burgess 2023 *Wellcome Open Res* "Guidelines for performing Mende
 
 **Symptom:** Observational protein-disease association is large; cis-MR estimate is much smaller, null, or in the opposite direction.
 
-**Fix:** Apply Steiger filtering on each cis-pQTL (`steiger_filtering()`); restrict to pre-symptomatic samples where possible (pediatric or early-adult cohorts); replicate in longitudinal cohorts measuring protein years before disease onset. Note: Steiger has its own caveat under unmeasured confounding (Hemani Tilling 2022 Wellcome Open Res 7:14); cross-validate via bidirectional cis-MR.
+**Fix:** Apply Steiger filtering on each cis-pQTL (`steiger_filtering()`); restrict to pre-symptomatic samples where possible (pediatric or early-adult cohorts); replicate in longitudinal cohorts measuring protein years before disease onset. Note: Steiger has its own caveat under unmeasured confounding (Lutz SM et al 2022 Genet Epidemiol 46:139); cross-validate via bidirectional cis-MR.
 
 ```r
 library(TwoSampleMR)
@@ -274,7 +277,7 @@ cat('PP.H4 =', coloc_res$summary['PP.H4.abf'], '\n')
 
 **Goal:** When several cis-pQTLs in the window are correlated (r2 between 0.1 and 0.7), use the generalized IVW that takes the LD matrix as an explicit parameter.
 
-**Approach:** Compute or load the LD matrix in the cis-window from an ancestry-matched plink reference; supply to `MendelianRandomization::mr_ivw(correl = TRUE, correl.x = ld_matrix)`.
+**Approach:** Compute or load the LD matrix in the cis-window from an ancestry-matched plink reference; build the input with `MendelianRandomization::mr_input(..., correlation = ld_matrix)` then call `mr_ivw(mr_obj, model = 'default', correl = TRUE)`.
 
 ```r
 library(MendelianRandomization); library(ieugwasr)
@@ -283,31 +286,31 @@ ld <- ld_matrix(exposure_dat$SNP, bfile = '1kg_EUR/EUR', plink_bin = genetics.bi
 
 mr_obj <- mr_input(bx = dat$beta.exposure, bxse = dat$se.exposure,
                    by = dat$beta.outcome, byse = dat$se.outcome,
-                   correlation = ld)
+                   corr = ld)
 
 result_correl <- mr_ivw(mr_obj, model = 'default', correl = TRUE)
 ```
 
 Numerical caveat: when any pair of cis-pQTLs has r2 ~ 1 (e.g. perfect proxies), the LD matrix is rank-deficient and the SE explodes. Pre-prune at r2 < 0.95.
 
-**API caveat for `MendelianRandomization::mr_ivw`:** Correlation between cis-pQTLs is supplied at MRInput construction via the `correlation` argument: `mr_input(bx, bxse, by, byse, correlation = ld_matrix)`. `mr_ivw()` then reads the correlation slot directly; passing `correl = TRUE` as an argument is redundant when MRInput already has a non-NA correlation matrix. A common bug is supplying both, which produces inconsistent behaviour across MendelianRandomization versions; prefer the MRInput-slot approach and treat `correl = TRUE` as a legacy flag.
+**API caveat for `MendelianRandomization::mr_ivw`:** Correlation between cis-pQTLs is supplied at MRInput construction via the correlation-matrix argument, whose formal name is `correlation=`; `corr=` also works only as an abbreviation resolved by R partial-matching, so prefer the explicit `correlation=`: `mr_input(bx, bxse, by, byse, correlation = ld_matrix)`. `mr_ivw()` then reads the correlation slot directly; passing `correl = TRUE` as an argument is redundant when MRInput already has a non-NA correlation matrix. A common bug is supplying both, which produces inconsistent behaviour across versions; prefer the MRInput-slot approach and treat `correl = TRUE` as a legacy flag.
 
-### Patel 2024 Robust cis-MR
+### Robust / Penalized cis-IVW as a Correlated-Instrument Sensitivity Estimator
 
-**Goal:** Accommodate LD between cis-pQTLs when the in-sample LD reference is uncertain or when an explicit full LD matrix is not reliably available.
+**Goal:** Provide a robust sensitivity estimate when cis-pQTLs are correlated and a minority may be outliers.
 
-**Approach:** Patel and Burgess et al 2024 Stat Med propose a robust cis-MR estimator that uses correlated-IV principles without requiring the full LD matrix as a known input; the estimator down-weights instruments whose correlation structure is poorly captured.
+**Approach:** `mr_ivw(robust=TRUE, penalized=TRUE)` applies Burgess's robust-regression + penalized-weights IVW, down-weighting heterogeneous/outlying instruments. A distinct, more modern option is Patel, Gill, Newcombe, Burgess 2023 *Biometrics* 79:3458-3471, which reduces the dimension of correlated cis-variants in a single gene region via factor analysis and applies weak-factor-robust conditional inference; it exploits the within-region genetic-correlation (LD) structure rather than avoiding it, and is implemented separately from `mr_ivw`.
 
 ```r
 library(MendelianRandomization)
 
 mr_obj <- mr_input(bx = dat$beta.exposure, bxse = dat$se.exposure,
                    by = dat$beta.outcome, byse = dat$se.outcome,
-                   correlation = ld)
+                   corr = ld)
 robust_res <- mr_ivw(mr_obj, model = 'default', robust = TRUE, penalized = TRUE)
 ```
 
-Decision rule: standard cis-IVW when post-clumped LD r2 < 0.1; correlated-IV cis-IVW (Burgess 2017) when r2 between 0.1 and 0.7 AND ancestry-matched LD matrix is trustworthy; Patel 2024 robust cis-MR when LD persists after clumping AND the LD matrix may be misspecified (e.g. ancestry-mismatched reference, finite-sample noise in panel of < 500 individuals). Benchmarks for Patel 2024 vs Burgess 2017 are still evolving; report both as sensitivity when feasible.
+Decision rule: standard cis-IVW when post-clumped LD r2 < 0.1; correlated-IV cis-IVW (Burgess 2017 Genet Epidemiol) when r2 between 0.1 and 0.7 AND ancestry-matched LD matrix is trustworthy; robust/penalized IVW (above) as a sensitivity check when a minority of instruments may be outliers; Patel 2023 conditional cis-MR when instruments are highly correlated and weak (factor-analysis + conditional inference). Benchmarks for these correlated-IV estimators are still evolving; report more than one as sensitivity when feasible.
 
 ## PAV Annotation via VEP
 
@@ -346,7 +349,7 @@ Pre-specify the window in the methods section; window-width sensitivity is a rec
 | N >= 2 pQTL datasets in agreement | Best-practice (UKB-PPP + deCODE) | Cross-platform replication mandatory for clinical claim |
 | PAV-excluded sensitivity | Sun 2023 supplementary | Required for clinical claim; Olink/SomaScan vulnerable to PAV artifact |
 | Neighbour-gene coloc PP.H4 < 0.5 | Operational | Cis-pQTL must NOT coloc with non-target gene; drop if it does |
-| Steiger p > 0.05 (correct direction) | Hemani 2017 PLoS Genet 13:e1007081 | Directionality check; subject to Hemani Tilling 2022 caveat |
+| Steiger p > 0.05 (correct direction) | Hemani 2017 PLoS Genet 13:e1007081 | Directionality check; subject to Lutz 2022 caveat |
 | Sample-overlap correction if both ends UKB | Burgess 2016 Genet Epidemiol 40:597 | One-sample-equivalent bias correction |
 
 ## Reconciliation: When Evidence Streams Disagree
@@ -374,7 +377,7 @@ The Open Targets Drug platform (Ochoa 2021 Nucleic Acids Res 49:D1302) integrate
 - A licensed drug exists that modulates the target
 - The on-target adverse-effect pheWAS is acceptable
 
-The PCSK9 monoclonal-antibody story is the canonical positive example; the CETP-inhibitor story (Joshi 2020) is a canonical cautionary tale (cis-MR underestimated trial result due to off-target effects).
+The PCSK9 monoclonal-antibody story is the canonical positive example; the CETP-inhibitor story is a canonical cautionary tale (cis-MR underestimated trial result due to off-target effects).
 
 Cross-validate target nominations against the Comparative Toxicogenomics Database (CTD; ctdbase.org) and the Drug-Gene Interaction Database (DGIdb; dgidb.org) for established drug-target evidence and tractability annotations. STROBE-MR (Skrivankova 2021 JAMA 326:1614) provides the 20-item checklist for drug-target MR reporting; see causal-genomics/pleiotropy-detection for the full table.
 
@@ -406,7 +409,7 @@ Cross-validate target nominations against the Comparative Toxicogenomics Databas
 | "Industry-grade threshold?" | PP.H4 >= 0.95 reported for drug-claim grade; >= 0.8 for standard publication; 3-tier ladder pre-specified in methods |
 | "OT L2G concordance?" | Open Targets Platform L2G score >= 0.5 at the disease GWAS lead reported (cross-reference effector-gene-prioritization) |
 | "Cis-window width?" | ±500 kb default (Schmidt 2020) pre-specified; widened to ±1 Mb only with documented distal regulatory rationale |
-| "Patel 2024 vs Burgess 2017?" | Both reported when post-clumped LD r2 > 0.1; Patel 2024 robust estimator preferred when LD reference is ancestry-mismatched |
+| "Patel 2023 vs Burgess 2017?" | Both reported when post-clumped LD r2 > 0.1; Patel 2023 robust estimator preferred when LD reference is ancestry-mismatched |
 
 ## Tool Installation Notes
 
@@ -438,17 +441,17 @@ pQTL data acquisition: UKB-PPP via the UK Biobank pre-published portal (ukb-ppp.
 - Sun BB et al 2018 Nature 558:73 (INTERVAL SomaScan)
 - Zhang J et al 2022 Nat Genet 54:593 (ARIC multi-ancestry pQTL)
 - Emilsson V et al 2018 Science 361:769 (AGES-Reykjavik)
+- Eldjarn G et al 2023 Nature 622:348 (Olink vs SomaScan cross-platform comparison)
 - Schmidt AF et al 2017 Lancet Diabetes Endocrinol 5:97 (PCSK9 -> T2D pheWAS exemplar)
-- Burgess S & Thompson SG 2017 Am J Epidemiol 186:1006 (correlated-IV IVW)
+- Burgess S, Zuber V, Valdes-Marquez E, Sun BB, Hopewell JC 2017 Genet Epidemiol 41:714-725 (correlated-IV IVW)
 - Burgess S et al 2016 Genet Epidemiol 40:597 (sample-overlap correction)
 - Mountjoy E et al 2021 Nat Genet 53:1527 (Open Targets Genetics L2G + coloc)
 - Ochoa D et al 2021 Nucleic Acids Res 49:D1302 (Open Targets Drug platform)
-- Hemani G & Tilling K 2022 Wellcome Open Res 7:14 (Steiger caveat)
-- Joshi PK et al 2020 Eur Heart J 41:e10 (CETP cis-MR cautionary tale)
+- Lutz SM et al 2022 Genet Epidemiol 46:139 (Steiger caveat under unmeasured confounding)
 - Verbanck M et al 2018 Nat Genet 50:693 (MR-PRESSO)
 - Wallace C 2020 PLoS Genet 16:e1008720 (coloc p12 sensitivity)
 - Skrivankova VW et al 2021 JAMA 326:1614 (STROBE-MR)
-- Patel A, Burgess S et al 2024 Stat Med (robust cis-MR with correlated instruments)
+- Patel A, Gill D, Newcombe P, Burgess S 2023 Biometrics 79:3458-3471 (robust cis-MR with correlated instruments)
 - Mounier N & Kutalik Z 2023 Genet Epidemiol 47:314 (MRlap sample-overlap + winner's-curse correction)
 
 ## Related Skills

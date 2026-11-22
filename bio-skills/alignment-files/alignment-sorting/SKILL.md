@@ -1,10 +1,13 @@
 ---
 name: alignment-sorting
 description: Sort alignment files by coordinate or read name using samtools and pysam. Use when preparing BAM files for indexing, variant calling, or paired-end analysis.
-license: Apache-2.0
+license: Apache-2.0 AND MIT
 tool_type: cli
 primary_tool: samtools
 user-invocable: false
+metadata:
+  version: "1.1.0"
+  upstream: "GPTomics/bioSkills@d91ed3d"
 ---
 
 ## Version Compatibility
@@ -22,7 +25,7 @@ package and adapt the example to match the actual API rather than retrying.
 
 Sort alignment files by coordinate or read name using samtools and pysam.
 
-**"Sort a BAM file"** → Reorder reads by genomic coordinate (for indexing/variant calling) or by name (for paired-end processing).
+**"Sort a BAM file"** -> Reorder reads by genomic coordinate (for indexing/variant calling) or by name (for paired-end processing).
 - CLI: `samtools sort -o sorted.bam input.bam`
 - Python: `pysam.sort('-o', 'sorted.bam', 'input.bam')`
 
@@ -114,8 +117,8 @@ samtools collate -O -u in.bam tmp_prefix | \
 | GATK HaplotypeCaller, Mutect2 | coordinate |
 | featureCounts / HTSeq | coordinate or name (`-p` for paired) |
 | umi_tools dedup | coordinate (with index) |
-| fgbio GroupReadsByUmi | queryname (hard requirement) |
-| fgbio CallMolecularConsensusReads | TemplateCoordinate (`fgbio SortBam`) |
+| fgbio GroupReadsByUmi | any order accepted (template-coordinate recommended to avoid an internal re-sort) |
+| fgbio CallMolecularConsensusReads | grouped by MI tag (consumes GroupReadsByUmi output) |
 | Sniffles, cuteSV, Manta, Delly | coordinate (need SA tags) |
 | Salmon alignment-mode | name |
 | RSEM (with STAR `--quantMode TranscriptomeSAM`) | name (hard requirement) |
@@ -132,8 +135,11 @@ samtools view -H input.bam | grep "^@HD"
 
 ### Verify Sorted
 ```bash
-# Check if coordinate sorted (returns 0 if sorted)
-samtools view input.bam | awk '$4 < prev {exit 1} {prev=$4}'
+# Check if coordinate sorted (returns 0 if sorted). Reset the position tracker
+# on each new contig, else the POS reset at every chromosome boundary of a
+# correctly sorted multi-contig BAM would falsely report "unsorted".
+samtools view input.bam | awk '$3!=c {c=$3; prev=0} $4<prev {exit 1} {prev=$4}'
+# Simpler and authoritative: trust the @HD SO: header shown above.
 ```
 
 ## pysam Python Alternative
@@ -196,9 +202,9 @@ for f in *.bam; do samtools view -H "$f" | head -1; done | sort -u
 # Should print exactly ONE line, e.g. "@HD VN:1.6 SO:coordinate"
 ```
 
-### Safe Merge (dedup @PG/@CO and @RG)
+### Safe Merge (dedup @RG and @PG)
 ```bash
-# -c dedups @PG and @CO; -p dedups @RG ID collisions
+# -c deduplicates @RG records; -p deduplicates @PG records (samtools-merge(1))
 samtools merge -c -p -@ 8 merged.bam sample1.bam sample2.bam sample3.bam
 ```
 

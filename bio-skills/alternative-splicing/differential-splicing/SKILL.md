@@ -1,10 +1,13 @@
 ---
 name: differential-splicing
 description: Detects differential alternative splicing between conditions using rMATS-turbo (binomial LRT on junction counts), leafcutter (Dirichlet-multinomial GLM on intron clusters), MAJIQ V3 deltapsi/HET (Bayesian posterior on LSVs), SUPPA2 (empirical-null on TPM-derived PSI), or Shiba (junction-imbalance-corrected, 2025 SOTA at low coverage). Reports FDR-corrected significance and delta PSI effect sizes. Tools differ in statistical model, annotation dependence, calibration regime, and replicate-count requirements. Use when comparing splicing patterns between treatment groups, tissues, or disease states.
-license: Apache-2.0
+license: Apache-2.0 AND MIT
 tool_type: mixed
 primary_tool: rMATS-turbo
 user-invocable: false
+metadata:
+  version: "1.1.0"
+  upstream: "GPTomics/bioSkills@d91ed3d"
 ---
 
 ## Version Compatibility
@@ -29,7 +32,7 @@ Detect splicing changes between conditions. Tool choice is a decision about **st
 |------|-------|-----------------|---------------------|---------------------|------------|
 | rMATS-turbo | Binomial counts with hierarchical PSI variance | LRT on \|ΔPSI\| > `cutoff` (default 0.0001) | n>=3 | Well-calibrated at n>=3 with adequate junction reads | Junction read imbalance; very low coverage; uncorrected for confounders |
 | leafcutter | Dirichlet-multinomial GLM at cluster level | LRT on group factor | n>=2 (n>=3 preferred) | Strong at n>=3; novel-junction-friendly | Undersampled clusters (DM dispersion unstable); cluster topology arbitrariness |
-| MAJIQ deltapsi | Beta-binomial bootstrap → posterior over PSI per LSV | P(\|ΔPSI\| > T) threshold (T=0.2) | n>=3 | Replicate-structured n=3 vs n=3 | Cohorts where between-sample variability dominates between-group |
+| MAJIQ deltapsi | Beta-binomial bootstrap -> posterior over PSI per LSV | P(\|ΔPSI\| > T) threshold (T=0.2) | n>=3 | Replicate-structured n=3 vs n=3 | Cohorts where between-sample variability dominates between-group |
 | MAJIQ HET | Same model, heterogeneity-aware | Per-LSV permutation-based test | n>=10 | n>=10 vs n>=10 cohort designs | Tightly-controlled small replicate experiments |
 | SUPPA2 (empirical) | Empirical null from between-replicate ΔPSI | ECDF on \|ΔPSI\| conditioned on TPM | n>=4 | n>=4 vs n>=4 with paired-end deep sequencing | n<=3 vs n<=3 (sparse null collapses) |
 | SUPPA2 (classical) | Wilcoxon rank-sum on PSI distributions | Wilcoxon p-value | n>=2 | Small samples; non-parametric backup | Cassette events with tight PSI distributions |
@@ -39,7 +42,7 @@ Detect splicing changes between conditions. Tool choice is a decision about **st
 
 The first decision is which **regime** the design falls into: between-group with replicates, heterogeneous cohort, or single-sample-vs-cohort. Within each regime, tool choice is much smaller (1-2 options).
 
-Comprehensive 2023-2026 benchmarks: Olofsson 2023 *Brief Bioinform*; Tran 2025 *WIREs RNA*; Kubota 2025 *NAR*. Methodology evolves — verify benchmarks and tool docs before reporting. Default 2026 recommendation: run **two complementary tools** (rMATS + leafcutter) and require concordance for high-confidence calls.
+Comprehensive 2023-2026 benchmarks: Olofsson 2023 *Biochem Biophys Res Commun*; Tran 2025 *WIREs RNA*; Kubota 2025 *NAR*. Methodology evolves — verify benchmarks and tool docs before reporting. Default 2026 recommendation: run **two complementary tools** (rMATS + leafcutter) and require concordance for high-confidence calls.
 
 ## Decision Tree by Experimental Design
 
@@ -139,13 +142,13 @@ intron_effects <- read.table('ds_results_effect_sizes.txt', header = TRUE, sep =
 sig_clusters <- subset(cluster_sig, p.adjust < 0.05)
 ```
 
-**LeafCutter2** (Quan 2025 *bioRxiv*) extends leafcutter with NMD-aware classification of unproductive splicing — useful when AS-NMD coupling is the question.
+**LeafCutter2** (Buen Abad Najar 2025 *bioRxiv*) extends leafcutter with NMD-aware classification of unproductive splicing — useful when AS-NMD coupling is the question.
 
 ## MAJIQ V3 Differential Analysis
 
 **Goal:** Detect differential LSVs with full posterior distributions over ΔPSI; ideal for complex multi-junction events and heterogeneous cohorts.
 
-**Approach:** Build splice graph → compute coverage per group → run deltapsi (replicate-structured) or heterogen (cohort-style).
+**Approach:** Build splice graph -> compute coverage per group -> run deltapsi (replicate-structured) or heterogen (cohort-style).
 
 ```bash
 majiq build annotation.gff3 -c settings.ini -j 8 -o build_output
@@ -168,7 +171,7 @@ majiq heterogen \
 voila view -p 5000 -j 8 build_output/splicegraph.zarr deltapsi_output/control_treatment.deltapsi.voila -o voila_html
 ```
 
-MAJIQ V3 (Slaff et al *bioRxiv* 2024; public release 2025) uses Zarr storage (`splicegraph.zarr`); V2's SQLite splicegraph is deprecated. MAJIQ reports posterior probability `P(|ΔPSI| > 0.2)`; thresholds are interpreted differently from FDR. Use HET for n>=10 vs n>=10 cohort designs (clinical, GTEx-style); deltapsi for tightly controlled n=3 vs n=3.
+MAJIQ V3 (Aicher, Slaff, Jewell, Barash *bioRxiv* 2024; public release 2025) uses Zarr storage (`splicegraph.zarr`); V2's SQLite splicegraph is deprecated. MAJIQ reports posterior probability `P(|ΔPSI| > 0.2)`; thresholds are interpreted differently from FDR. Use HET for n>=10 vs n>=10 cohort designs (clinical, GTEx-style); deltapsi for tightly controlled n=3 vs n=3.
 
 ## SUPPA2 Differential Analysis
 
@@ -231,7 +234,7 @@ Shiba (Kubota 2025 *NAR*) reportedly outperforms rMATS at n=2 vs n=2 by correcti
 
 **Trigger:** A cluster spans a complex topology (cassette + alternative donor in same cluster).
 
-**Mechanism:** Cluster-level p-value reports "something in this cluster differs" but doesn't tell you which intron drove the change; downstream analysis needs per-intron effect sizes.
+**Mechanism:** Cluster-level p-value reports "something in this cluster differs" but doesn't indicate which intron drove the change; downstream analysis needs per-intron effect sizes.
 
 **Symptom:** Significant cluster, multiple introns with different ΔPSI directions, ambiguous biological interpretation.
 
@@ -251,7 +254,7 @@ Shiba (Kubota 2025 *NAR*) reportedly outperforms rMATS at n=2 vs n=2 by correcti
 
 **Trigger:** n<=3 vs n<=3 with `--method empirical`.
 
-**Mechanism:** Empirical null is ECDF of |ΔPSI| from between-replicate comparisons within each group, binned by transcript expression. Few replicates → few null observations → wide confidence on null distribution.
+**Mechanism:** Empirical null is ECDF of |ΔPSI| from between-replicate comparisons within each group, binned by transcript expression. Few replicates -> few null observations -> wide confidence on null distribution.
 
 **Symptom:** Inflated FDR (15-30%); "significant" hits don't replicate or validate.
 
@@ -377,7 +380,7 @@ top_events = sig.nlargest(50, 'score')
 ```
 
 Cross-reference top hits with:
-- **eCLIP/ENCODE RBP target databases** (POSTAR3, oRNAment, RBP2GO) → candidate trans-regulators
+- **eCLIP/ENCODE RBP target databases** (POSTAR3, oRNAment, RBP2GO) -> candidate trans-regulators
 - **Disease-specific signatures**: SF3B1 cryptic 3'ss for MDS/CLL/UM; TDP-43 cryptic exons (UNC13A, STMN2) for ALS/FTD
 - **Conservation**: VastDB cross-species PSI for evolutionary support
 - **Splice-site predictions**: SpliceAI scores for the involved sites (see splice-variant-prediction)
@@ -409,13 +412,13 @@ Cross-reference top hits with:
 - Shen et al 2014 *PNAS* - rMATS original
 - Wang et al 2024 *Nat Protoc* - rMATS-turbo
 - Li et al 2018 *Nat Genet* - leafcutter (Dirichlet-multinomial GLM)
-- Quan et al 2025 *bioRxiv* - LeafCutter2 (NMD-aware unproductive splicing)
+- Buen Abad Najar et al 2025 *bioRxiv* - LeafCutter2 (NMD-aware unproductive splicing)
 - Vaquero-Garcia et al 2016 *eLife* - MAJIQ LSV framework
-- Norton et al 2023 *Nat Commun* - MAJIQ-HET heterogeneity module
-- Slaff et al 2024 *bioRxiv* - MAJIQ V3
+- Vaquero-Garcia et al 2023 *Nat Commun* - MAJIQ-HET heterogeneity module
+- Aicher, Slaff, Jewell, Barash 2024 *bioRxiv* - MAJIQ V3
 - Trincado et al 2018 *Genome Biol* - SUPPA2
 - Kubota et al 2025 *NAR* - Shiba (junction-imbalance correction)
-- Olofsson et al 2023 *Brief Bioinform* - benchmark across tools
+- Olofsson et al 2023 *Biochem Biophys Res Commun* 653:31-37 - benchmark across tools
 - Tran et al 2025 *WIREs RNA* - methodology review
 - Brown et al 2022 *Nature* - UNC13A cryptic exon (TDP-43 / ALS)
 - Klim et al 2019 *Nat Neurosci* - STMN2 cryptic splicing (ALS)

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Reference: BUSCO 5.5+, HISAT2 2.2.1+, pandas 2.2+, samtools 1.19+ | Verify API if version differs
+# Reference: braker 3.0+, hisat2 2.2.1+, samtools 1.19+, busco 5.5+ | Verify API if version differs
 # Eukaryotic gene prediction with BRAKER3 using RNA-seq and protein evidence
 set -euo pipefail
 
@@ -23,7 +23,7 @@ TOTAL=$(grep -v '^>' $GENOME | tr -cd 'a-zA-Z' | wc -c)
 MASK_PCT=$(echo "scale=2; $LOWER * 100 / $TOTAL" | bc)
 echo "Repeat masking: ${MASK_PCT}%"
 
-if [ $(echo "$MASK_PCT < 1" | bc) -eq 1 ]; then
+if [ "$(echo "$MASK_PCT < 1" | bc)" -eq 1 ]; then
     echo "WARNING: Very low masking (<1%). Run RepeatMasker first."
     echo "Unmasked genomes produce many false positive gene predictions."
     exit 1
