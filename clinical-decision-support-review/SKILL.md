@@ -1,55 +1,86 @@
 ---
 name: clinical-decision-support-review
-description: Review clinical decision support, treatment-plan, and clinical-report workflows for evidence grounding, patient-safety language, scope limits, and no-PHI handling. Use when a task asks for CDS, care pathways, treatment plans, or clinical report drafting.
+description: Prepare and check research documentation for clinical decision support, treatment plans and clinical reports, including GRADE evidence profiles, aggregate cohort and model evaluation tables, decision-logic traceability, clinician-authored treatment-plan records, case, diagnostic and trial report scaffolds, de-identification checks and governance notes. Use with de-identified, synthetic or aggregate data for research, quality improvement or regulatory documentation, never for deciding a real patient's care.
 user-invocable: true
-license: Apache-2.0
+license: Apache-2.0 AND MIT
+metadata:
+  version: "1.1.0"
+  origin: adapted
+  upstream: "K-Dense-AI/scientific-agent-skills@ec59a29a03d5c40f73ab40878df04860bc00e876 (skills/clinical-decision-support, skills/treatment-plans, skills/clinical-reports)"
 ---
 
 # Clinical Decision Support Review
 
-Source adaptation: BioRouter-original synthesis inspired by remaining Scientific Agent Skills and Auto-Empirical Research Skills capability clusters, rewritten under Apache-2.0. This is not copied upstream text; it is a native BioRouter routing and verification checklist.
+This skill structures and checks the documents that surround clinical decision support in
+research: what the evidence says, how a rule or model performs on a cohort, how a decision was
+recorded, and how a report traces back to verified facts. The three guides under `references/`
+are adapted from K-Dense Scientific Agent Skills (MIT; see `LICENSE-UPSTREAM`); each ships
+templates and local, network-free checkers.
 
-## When to Use
+## Hard boundary
 
-Use this skill when the user asks about clinical decision support, care pathways, treatment plans, clinical reports, safety claims, or no-PHI review. Prefer the most specific BioRouter extension, BioSkill, or language style skill whenever a concrete platform, package, or file type appears.
+- **No clinical decisions.** Do not recommend, rank or change treatment for a real patient, and
+  do not interpret an individual's results for care. Treatment-plan work transcribes decisions
+  that licensed clinicians already made and verified; it never infers them.
+- **No identifiable data in this workflow** unless the person confirms it is approved for this
+  environment. Prefer aggregate, synthetic or de-identified inputs. Small cells (counts below
+  the threshold the institution sets, often 11) are suppressed in any output.
+- **Every artefact is a draft for qualified review.** Outputs carry the intended-use header the
+  guides define and are released only after a named reviewer signs off.
 
-## Intake
+## Choose the artefact
 
-Before producing output, capture:
+| Need | Artefact | Guide |
+| --- | --- | --- |
+| Summarise the evidence for a recommendation | GRADE evidence profile with certainty per outcome | `references/clinical-decision-support.md` |
+| Describe a cohort or compare groups | Aggregate cohort table (Table 1) with suppression | `references/clinical-decision-support/references/cohort_evaluation.md` |
+| Evaluate a rule, score, biomarker or model | Aggregate performance (discrimination, calibration, decision curves) with intended use | `references/clinical-decision-support/references/model_biomarker_evaluation.md` |
+| Document how a rule maps inputs to recommendations | Decision-logic traceability record | `references/clinical-decision-support/references/decision_logic_traceability.md` |
+| Plan survival or time-to-event evaluation | Survival analysis plan | `references/clinical-decision-support.md` |
+| Record a clinician-authored treatment plan for research or a handoff | Treatment-plan package with source-fact manifest, goals and checkpoints, shared decision record | `references/treatment-plans.md` |
+| Draft a case report, diagnostic report scaffold, trial results or safety summary | Report template plus source-fact manifest and consistency checks | `references/clinical-reports.md` |
 
-- Research or operational question.
-- Data, platform, package, or source material involved.
-- Unit of analysis, model system, cohort, sample, or artifact.
-- Desired deliverable: plan, code, review, table, figure, protocol, or narrative.
-- Constraints: credentials, privacy, licensing, compute budget, validation standard, or external service availability.
+## Workflow
 
-## BioRouter Routes
+1. **State intended use and audience**: research publication, internal quality improvement,
+   regulatory submission or teaching. This picks the reporting guideline (CARE for case
+   reports, STARD for diagnostic accuracy, TRIPOD+AI for prediction models, CONSORT for
+   trials, DECIDE-AI for early clinical evaluation of AI) and the governance path.
+2. **Confirm the data gate**: what data, from where, under which approval (IRB, QI
+   determination, data use agreement), and its de-identification status.
+3. **Build a source-fact manifest**: every number and statement in the artefact points to a
+   verified source (an analysis output file, a guideline section, a clinician's record).
+4. **Generate the template** from the guide's assets and fill only verified fields; leave the
+   rest visibly empty.
+5. **Run the local checkers** the guide provides (completeness, traceability, consistency,
+   de-identification); fix every failure.
+6. **Human review and release** by a qualified person, recorded in the artefact.
 
-Use these routes when applicable:
+## Evaluation of a rule or model
 
-- Platform/API work: call the relevant BRXT extension first and keep mutation/execution gated.
-- Biomedical or omics data: load the relevant `bio-skills` category.
-- Statistical/causal claims: load `causal-identification-gates`, `statistical-modeling-bayes`, or `econometrics-toolkit`.
-- Evidence/citations: load `citation-temporal-integrity` and `claim-evidence-integrity`.
-- Reproducibility: load `replication-package-audit` before treating the result as final.
+Report discrimination (AUROC with interval), calibration (calibration plot, slope and
+intercept), and clinical usefulness (decision curve analysis or net benefit at clinically
+chosen thresholds), overall and in subgroups where performance could differ (sex, age, race and
+ethnicity, site). Say which population the evaluation covers and how it differs from where the
+tool would be used. Model building itself belongs to `clinical-ai-modeling`; statistics of
+effects and trials to the `clinical-biostatistics` bundle.
 
-## Quality Gates
+## In Biorouter
 
-Do not present final claims until these are true:
+- Aggregate cohort counts from UCSF data can come from UCSFOMOPAgent or CDWAgent in a private
+  chat; keep row-level extracts inside the approved environment and bring only aggregate tables
+  into this workflow.
+- Run the guides' checkers with the Developer shell; they use only the Python standard library
+  and touch only local files (`references/clinical-decision-support/scripts/`,
+  `references/treatment-plans/scripts/`, `references/clinical-reports/scripts/`).
+- Evidence synthesis behind a GRADE profile: `systematic-review-prisma`. Claims in the final
+  document: `claim-evidence-integrity`. Device and laboratory quality systems:
+  `regulatory-quality-systems`.
 
-1. Provenance is explicit: source files, APIs, ids, versions, dates, or citations.
-2. The method matches the data-generating process and the intended claim.
-3. Assumptions and failure modes are listed plainly.
-4. Validation is tied to an actual benchmark, holdout, sensitivity check, audit trail, or source record.
-5. The output can be rerun, reviewed, or traced by another person.
-6. Anything requiring external credentials, proprietary data, wet-lab execution, or live services is marked unverified unless actually checked.
+## Guides in this skill
 
-## Response Shape
-
-Return:
-
-- Recommended route.
-- Minimal next action.
-- Verification checklist.
-- Risks or blockers.
-- Exact artifact to produce next, if any.
+| Guide | Covers |
+| --- | --- |
+| `references/clinical-decision-support.md` | Safety boundary, data gate, GRADE profiles, cohort tables, model and biomarker evaluation, survival plans, decision logic, privacy, reporting guidelines, governance |
+| `references/treatment-plans.md` | Transcribing verified clinician decisions, source ledger, goals and checkpoints, shared decisions, reconciliation handoffs, release gates |
+| `references/clinical-reports.md` | Case, diagnostic, trial and safety report scaffolds, source-fact manifests, de-identification, consistency checks, review routing |
