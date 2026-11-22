@@ -3,11 +3,15 @@ name: molecular-dynamics
 description: Plan and review molecular dynamics simulations and trajectory analysis with OpenMM, GROMACS, AmberTools, MDAnalysis, MDTraj, and reproducibility checks. Use when users ask about MD setup, force fields, equilibration, production runs, trajectories, RMSD/RMSF, or binding/stability dynamics.
 user-invocable: true
 license: Apache-2.0
+metadata:
+  version: "1.1.0"
+  origin: native
+  upstream: "none (native rewrite, no upstream text copied)"
 ---
 
 # Molecular Dynamics
 
-Source adaptation: BioRouter-original synthesis inspired by Scientific Agent Skills molecular-dynamics patterns, rewritten under Apache-2.0.
+Source adaptation: Biorouter-original synthesis inspired by Scientific Agent Skills molecular-dynamics patterns, rewritten under Apache-2.0.
 
 ## When to Use
 

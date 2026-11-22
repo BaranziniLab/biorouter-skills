@@ -3,13 +3,17 @@ name: playground
 description: Creates interactive HTML playgrounds — self-contained single-file explorers that let users configure something visually through controls, see a live preview, and copy out a prompt. Use when the user asks to make a playground, explorer, or interactive tool for a topic.
 license: Apache-2.0
 user-invocable: true
+metadata:
+  version: "1.1.0"
+  origin: adapted
+  upstream: "anthropics/claude-plugins-official/plugins/playground@de573bd84695c6657b28f05ffe32c37bb54d1f55"
 ---
 
-<!-- Adapted for BioRouter from anthropics/claude-plugins-official/plugins/playground (Apache License 2.0). -->
+<!-- Adapted for Biorouter from anthropics/claude-plugins-official/plugins/playground (Apache License 2.0). -->
 
 # Playground Builder
 
-A playground is a self-contained HTML file with interactive controls on one side, a live preview on the other, and a prompt output at the bottom with a copy button. The user adjusts controls, explores visually, then copies the generated prompt back into BioRouter.
+A playground is a self-contained HTML file with interactive controls on one side, a live preview on the other, and a prompt output at the bottom with a copy button. The user adjusts controls, explores visually, then copies the generated prompt back into Biorouter.
 
 Use this when the user asks for an interactive playground, explorer, or visual tool for a topic — especially when the input space is large, visual, or structural and hard to express as plain text.
 

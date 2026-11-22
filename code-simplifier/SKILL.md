@@ -3,9 +3,13 @@ name: code-simplifier
 description: Simplify and refine recently-modified code for clarity, consistency, and maintainability while preserving exact functionality. Use after writing or editing code, or when asked to clean up / simplify a change.
 license: Apache-2.0
 user-invocable: true
+metadata:
+  version: "1.1.0"
+  origin: adapted
+  upstream: "anthropics/claude-plugins-official/plugins/code-simplifier@de573bd84695c6657b28f05ffe32c37bb54d1f55"
 ---
 
-<!-- Adapted for BioRouter from anthropics/claude-plugins-official/plugins/code-simplifier (Apache License 2.0). -->
+<!-- Adapted for Biorouter from anthropics/claude-plugins-official/plugins/code-simplifier (Apache License 2.0). -->
 
 # Code simplifier
 

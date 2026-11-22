@@ -3,9 +3,13 @@ name: hookify
 description: Turn project guardrails into real, enforced Biorouter hooks — rules that warn on or block unwanted behavior (destructive shell commands, debug prints, edits to sensitive files, finishing without passing tests). Use when the user wants to add a guardrail, prevent a behavior, "stop doing X", or gate an action the agent must clear before proceeding.
 license: Apache-2.0
 user-invocable: true
+metadata:
+  version: "1.1.0"
+  origin: adapted
+  upstream: "anthropics/claude-plugins-official/plugins/hookify@de573bd84695c6657b28f05ffe32c37bb54d1f55"
 ---
 
-<!-- Adapted for BioRouter from anthropics/claude-plugins-official/plugins/hookify (Apache License 2.0). -->
+<!-- Adapted for Biorouter from anthropics/claude-plugins-official/plugins/hookify (Apache License 2.0). -->
 
 # Hookify (enforced guardrails)
 

@@ -3,11 +3,15 @@ name: arbor-optimization
 description: Run evaluator-driven hypothesis trees for improving research artifacts, prompts, analyses, and designs. Use when a task needs branch-and-prune exploration, rubric scoring, iterative refinement, or explicit comparison of competing scientific/workflow alternatives.
 user-invocable: true
 license: Apache-2.0
+metadata:
+  version: "1.1.0"
+  origin: native
+  upstream: "none (native rewrite, no upstream text copied)"
 ---
 
 # Arbor Optimization
 
-Source adaptation: BioRouter-original synthesis inspired by Scientific Agent Skills tree-optimization patterns, rewritten under Apache-2.0. This is a native BioRouter iterative-improvement workflow.
+Source adaptation: Biorouter-original synthesis inspired by Scientific Agent Skills tree-optimization patterns, rewritten under Apache-2.0. This is a native Biorouter iterative-improvement workflow.
 
 ## When to Use
 
@@ -32,7 +36,7 @@ Before branching, define:
 5. Refine the strongest branch once, incorporating the best elements from competitors.
 6. Produce a final recommendation with the rejected alternatives preserved in a compact comparison.
 
-## BioRouter Routes
+## Biorouter Routes
 
 - Use `empirical-benchmark-harness` when the branch can be tested against known-answer empirical cases.
 - Use `replication-package-audit` when the winning branch creates a runnable analysis.

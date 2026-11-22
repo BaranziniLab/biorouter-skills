@@ -3,11 +3,15 @@ name: hugging-science-resource-discovery
 description: Find and evaluate Hugging Face scientific models, datasets, Spaces, and papers with license, provenance, benchmark, and fit checks. Use when users ask for scientific ML resources, model cards, datasets, embeddings, checkpoints, or reproducible AI assets from Hugging Face.
 user-invocable: true
 license: Apache-2.0
+metadata:
+  version: "1.1.0"
+  origin: native
+  upstream: "none (native rewrite, no upstream text copied)"
 ---
 
 # Hugging Science Resource Discovery
 
-Source adaptation: BioRouter-original synthesis inspired by Scientific Agent Skills Hugging Face discovery patterns, rewritten under Apache-2.0.
+Source adaptation: Biorouter-original synthesis inspired by Scientific Agent Skills Hugging Face discovery patterns, rewritten under Apache-2.0.
 
 ## When to Use
 
@@ -35,7 +39,7 @@ For each candidate resource, capture:
 - Last update date and maintainer signals.
 - Known risks: restricted use, missing license, weak benchmarks, leakage, or unsafe clinical claims.
 
-## BioRouter Routes
+## Biorouter Routes
 
 - Use `scientific-machine-learning` for training/evaluation plans.
 - Use `drug-discovery-benchmarks`, `materials-informatics`, `geospatial-science`, or `biomedical-imaging-pathology` for domain-specific evaluation.

@@ -3,11 +3,15 @@ name: bids-neuroimaging
 description: Plan and audit BIDS neuroimaging datasets, derivatives, validation, metadata, and reproducible preprocessing. Use when users mention BIDS, fMRI, MRI, EEG/MEG/iEEG, DICOM conversion, dataset_description.json, participants.tsv, or neuroimaging derivatives.
 user-invocable: true
 license: Apache-2.0
+metadata:
+  version: "1.1.0"
+  origin: native
+  upstream: "none (native rewrite, no upstream text copied)"
 ---
 
 # BIDS Neuroimaging
 
-Source adaptation: BioRouter-original synthesis inspired by Scientific Agent Skills BIDS/neuroimaging patterns, rewritten under Apache-2.0.
+Source adaptation: Biorouter-original synthesis inspired by Scientific Agent Skills BIDS/neuroimaging patterns, rewritten under Apache-2.0.
 
 ## When to Use
 
