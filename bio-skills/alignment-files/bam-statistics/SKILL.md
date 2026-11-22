@@ -1,10 +1,13 @@
 ---
 name: bam-statistics
 description: Generate alignment statistics using samtools flagstat, stats, depth, coverage, and mosdepth. Use when assessing alignment quality, calculating coverage, or generating QC reports.
-license: Apache-2.0
+license: Apache-2.0 AND MIT
 tool_type: cli
 primary_tool: samtools
 user-invocable: false
+metadata:
+  version: "1.1.0"
+  upstream: "GPTomics/bioSkills@d91ed3d"
 ---
 
 ## Version Compatibility
@@ -20,7 +23,7 @@ package and adapt the example to match the actual API rather than retrying.
 
 # BAM Statistics
 
-**"Get alignment statistics and coverage from my BAM file"** → Generate read counts, mapping rates, per-chromosome statistics, depth profiles, and coverage summaries.
+**"Get alignment statistics and coverage from my BAM file"** -> Generate read counts, mapping rates, per-chromosome statistics, depth profiles, and coverage summaries.
 - CLI: `samtools flagstat`, `samtools stats`, `samtools depth`, `samtools coverage` (samtools)
 - Python: `pysam.AlignmentFile` with `pileup()` and `get_index_statistics()` (pysam)
 
@@ -68,19 +71,23 @@ samtools flagstat input.bam
 Output:
 ```
 10000000 + 0 in total (QC-passed reads + QC-failed reads)
+9950000 + 0 primary
 0 + 0 secondary
 50000 + 0 supplementary
 0 + 0 duplicates
+0 + 0 primary duplicates
 9800000 + 0 mapped (98.00% : N/A)
+9750000 + 0 primary mapped (97.99% : N/A)
 9950000 + 0 paired in sequencing
 4975000 + 0 read1
 4975000 + 0 read2
 9700000 + 0 properly paired (97.49% : N/A)
-9750000 + 0 with itself and mate mapped
-100000 + 0 singletons (1.01% : N/A)
-25000 + 0 with mate mapped to a different chr
+9720000 + 0 with itself and mate mapped
+30000 + 0 singletons (0.30% : N/A)
+15000 + 0 with mate mapped to a different chr
 10000 + 0 with mate mapped to a different chr (mapQ>=5)
 ```
+(samtools 1.13+ adds the `primary`, `primary duplicates`, and `primary mapped` lines shown above.)
 
 ### Multi-threaded
 ```bash
@@ -176,13 +183,13 @@ samtools depth -a input.bam > depth_with_zeros.txt
 
 ### Maximum Depth Cap (Critical Trap)
 ```bash
-# samtools <1.13: silently caps at 8000 -- pipelines pinned to old versions are silently wrong
-# samtools 1.13+: no cap by default
-# Always set explicitly to be portable:
-samtools depth -d 0 input.bam
+# samtools mpileup historically capped depth at 8000 per position -- the cap was in mpileup, not depth.
+# samtools depth -d/--max-depth is deprecated in 1.13+ (silently ignored).
+# For mpileup, raise the cap explicitly when working with deep targeted/amplicon data:
+samtools mpileup -d 1000000 -f ref.fa input.bam
 ```
 
-Pipelines that routinely break the 8000 cap: targeted oncology hotspots (5000-50000x), mitochondrial DNA (small genome, large read share), amplicon viral (ARTIC: 1000-100000x per amplicon), UMI-deduped capture (14000-17000x post-collapse), highly expressed transcripts (rRNA, mt-RNA).
+Pipelines that historically break the 8000 mpileup cap: targeted oncology hotspots (5000-50000x), mitochondrial DNA (small genome, large read share), amplicon viral (ARTIC: 1000-100000x per amplicon), UMI-deduped capture (14000-17000x post-collapse), highly expressed transcripts (rRNA, mt-RNA).
 
 ### Overlapping Pair Correction
 ```bash
@@ -190,7 +197,7 @@ Pipelines that routinely break the 8000 cap: targeted oncology hotspots (5000-50
 # Default samtools depth double-counts overlap; -s deducts:
 samtools depth -s input.bam
 ```
-Without `-s`, doubled support inflates somatic VAFs at sites covered by overlapping pairs (especially in fragmented samples: FFPE, cfDNA). `mosdepth` does not double-count overlap; `bcftools mpileup` corrects by default; `samtools mpileup` does not.
+Without `-s`, doubled support inflates somatic VAFs at sites covered by overlapping pairs (especially in fragmented samples: FFPE, cfDNA). `mosdepth` does not double-count overlap. `samtools mpileup` and `bcftools mpileup` both enable overlap detection by default; pass `-x` to disable (long form `--disable-overlap-removal` in samtools, `--ignore-overlaps` in bcftools).
 
 ### mosdepth (Modern Default)
 ```bash
@@ -199,7 +206,7 @@ mosdepth -t 4 --by exome.bed --thresholds 1,10,20,30,100 --no-per-base sample in
 mosdepth -t 4 --quantize 0:1:10:100: sample input.bam                                # CNV-style bands
 mosdepth -t 4 -f ref.fa sample input.cram                                            # CRAM with reference
 ```
-`mosdepth` filters dup/secondary/supp by default; configurable via `--flag`. Memory ~ 4 bytes x longest chrom (1 GB for human chr1, 12+ GB for axolotl). Does not honor base quality; use `samtools depth -q INT` if needed.
+`mosdepth` excludes unmapped, secondary, QC-fail, and duplicate reads by default (`--flag 1796`); supplementary reads are NOT excluded (use `--flag 3844` to drop them too). Configurable via `--flag`. Memory ~ 4 bytes x longest chrom (1 GB for human chr1, 12+ GB for axolotl). Does not honor base quality; use `samtools depth -q INT` if needed.
 
 ### Depth from BED Regions
 ```bash
@@ -382,8 +389,8 @@ A single "mapping rate > 95%" rule rejects valid ATAC, ChIP, RNA-seq, metagenomi
 | Mapping rate | >99% | >98% | >95% | >95% | >95% | >90% | >70% | >50% | >60% | >95% | 1-50% |
 | Duplicate rate | <5% | 5-15% | 20-50% | 20-50% | 50-90% pre-consensus | (skip) | (use UMI) | 10-30% | 5-30% | n/a | 20-60% |
 | Proper pair rate | >95% | >95% | >85% | >80% | >80% | >70% | n/a | >50% | >70% | n/a | >60% |
-| Mean MAPQ | bimodal at 0/60 | bimodal | bimodal | bimodal | bimodal | bimodal incl 255 (STAR) | 0/3/255 | 30-55 | 30-55 | 30-50 | 20-40 |
-| Mt fraction | 0.1-2% | 0.1-2% | <1% | <0.1% | <0.1% | varies | varies | **<10% target** | <2% | n/a | varies |
+| Mean MAPQ | bimodal at 0/60 | bimodal | bimodal | bimodal | bimodal | bimodal incl 255 (STAR) | 0/1/3/255 | 30-55 | 30-55 | 30-50 | 20-40 |
+| Mt fraction | 0.1-2% | 0.1-2% | <1% | <0.1% | <0.1% | varies | varies | **<10% (Omni-ATAC goal; original Buenrostro-2013 libraries were often majority-mito)** | <2% | n/a | varies |
 
 Mean MAPQ is misleading; the distribution is bimodal (0 and aligner-max). The fraction at MAPQ >= 30 is more informative:
 ```bash
@@ -409,7 +416,7 @@ A 99% flagstat mapping rate does NOT mean the data is usable. Common false-posit
 
 `samtools stats` reports the IS section only for FR-oriented properly paired reads. So:
 - Mate-pair libraries (RF orientation): IS section *empty* -- proper-pair flag not set for RF
-- ATAC-seq: bimodal/multimodal expected (nucleosome ladder ~50/~180/~340 bp). Unimodal suggests poor transposition.
+- ATAC-seq: bimodal/multimodal expected (nucleosome ladder ~50/~180/~370 bp). Unimodal suggests poor transposition.
 - RNA-seq: TLEN includes intron span -- mean meaningless
 - Bisulfite (PBAT): orientation reversed; samtools may not flag proper pair
 

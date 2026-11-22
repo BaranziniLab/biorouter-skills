@@ -1,10 +1,13 @@
 ---
 name: alignment-filtering
 description: Filter alignments by flags, mapping quality, and regions using samtools view and pysam. Use when extracting specific reads, removing low-quality alignments, or subsetting to target regions.
-license: Apache-2.0
+license: Apache-2.0 AND MIT
 tool_type: cli
 primary_tool: samtools
 user-invocable: false
+metadata:
+  version: "1.1.0"
+  upstream: "GPTomics/bioSkills@d91ed3d"
 ---
 
 ## Version Compatibility
@@ -20,7 +23,7 @@ package and adapt the example to match the actual API rather than retrying.
 
 # Alignment Filtering
 
-**"Filter my BAM file to keep only high-quality reads"** → Select reads by FLAG bits, mapping quality, and genomic regions using samtools view or pysam.
+**"Filter my BAM file to keep only high-quality reads"** -> Select reads by FLAG bits, mapping quality, and genomic regions using samtools view or pysam.
 - CLI: `samtools view` with `-F`/`-f`/`-q`/`-L` flags (samtools)
 - Python: `pysam.AlignmentFile` iteration with attribute filters (pysam)
 
@@ -125,13 +128,13 @@ MAPQ scales differ by aligner; the same `-q 30` filter does different things. Se
 | Aligner | "Drop ambiguous" | "High confidence" |
 |---------|------------------|-------------------|
 | BWA-MEM / BWA-MEM2 | `-q 1` | `-q 30` (or `-q 60` for unique only) |
-| Bowtie2 | `-q 1` | `-q 23` (~99% accurate per Heng Li) |
-| **STAR** | `-q 255` | `-q 255` (255 is the unique-mapped sentinel; -q 60 drops everything) |
+| Bowtie2 | `-q 1` | `-q 23` (Bowtie2 MAPQ maxes at 42 end-to-end; 23 is a community "uniquely mapped" convention derived from analysis of Bowtie2's MAPQ scoring, not stated in the official manual) |
+| **STAR** | `-q 255` | `-q 255` (STAR emits only MAPQ 0/1/3/255, 255 = unique; `-q 60` is therefore equivalent to `-q 255` -- there are no values between 3 and 255) |
 | HISAT2 | `-q 1` | `-q 60` |
 | minimap2 (DNA, long-read) | `-q 1` | `-q 60` |
 | pbmm2 (PacBio) | `-q 1` | `-q 60` |
 
-For Phred-scaled aligners (BWA, minimap2), MAPQ Q maps to ~10^(-Q/10) probability of wrong mapping. For STAR, the values 0/1/2/3/255 are sentinels, not probabilities.
+For Phred-scaled aligners (BWA, minimap2), MAPQ Q maps to ~10^(-Q/10) probability of wrong mapping. For STAR, the only emitted values are 0/1/3/255 (sentinels, not probabilities).
 
 ### Drop Ambiguous Across Aligners (Universal)
 ```bash
@@ -185,7 +188,7 @@ samtools view -F 3332 -q 30 -o filtered.bam input.bam
 | Long-read short-variant (clair3, DeepVariant ONT) | `-F 3328 -q 5` | Long-read MAPQ scale is lower |
 | Long-read SV (Sniffles, cuteSV) | `-F 1024` only | **Keep supplementary** -- SA tag is the SV signal |
 | Short-read SV (Manta, GRIDSS, Delly, SvABA) | `-F 1024` only | Same -- supplementary required |
-| ChIP-seq peak calling | `-F 1804 -q 30` | Drop dup + secondary + supp + unmapped + mate-unmapped + QC-fail |
+| ChIP-seq peak calling | `-F 1804 -q 30` | Drop dup + secondary + unmapped + mate-unmapped + QC-fail (supplementary reads are kept -- 1804 has no 2048 bit) |
 | ATAC-seq | `-F 1804 -q 30 -f 2` | Same plus proper pair |
 | RNA-seq quantification (STAR) | `-q 255` | Unique only (STAR sentinel) |
 | RNA-seq quantification (HISAT2) | `-F 256 -q 60` | Different aligner semantics |
@@ -214,7 +217,7 @@ samtools view -F 1804 -q 30 -o filtered.bam input.bam
 `samtools view -s SEED.FRAC` -- integer is the hash seed; fractional is the keep fraction. The hash is on QNAME, so:
 1. Mate consistency: read1 and read2 are kept or dropped together.
 2. Reproducibility: same seed + same fraction returns the same reads.
-3. **Sequential downsampling requires different seeds.** `-s 1.5` then `-s 1.25` keeps a nested 5/8 of the original (not 12.5%). Use different integer seeds for independent samples.
+3. **Sequential downsampling requires different seeds.** With the same seed the keep-sets are nested, so `-s 1.5` then `-s 1.25` keeps a nested 1/4 (25%) of the original, not 12.5%. Use different integer seeds for independent samples.
 
 ```bash
 # 10% with seed 42 (always the same reads; pair-consistent)
@@ -243,7 +246,7 @@ A subsampled BAM without an integer seed (`-s 0.1`) is non-reproducible -- produ
 
 ## Expression Filtering
 
-`samtools view -e EXPR` (or `--expr`, since samtools 1.16) supports arbitrary expression filtering on tags, FLAG, MAPQ, RNAME, CIGAR, etc. Powerful for filtering by `NM`, `AS`, `NH`, `cs`, etc. that the FLAG-based filters cannot reach:
+`samtools view -e EXPR` (or `--expr`, since samtools 1.12; the `sclen` helper used below and improved null-tag handling arrived in 1.16) supports arbitrary expression filtering on tags, FLAG, MAPQ, RNAME, CIGAR, etc. Powerful for filtering by `NM`, `AS`, `NH`, `cs`, etc. that the FLAG-based filters cannot reach:
 ```bash
 # Reads with >=2 mismatches (NM tag)
 samtools view -e '[NM] >= 2' in.bam
@@ -393,7 +396,7 @@ with pysam.AlignmentFile('input.bam', 'rb') as infile:
 |---------|-------|
 | Clean reads | `-F 3332 -q 30` (mapped, primary, no dups, high qual) |
 | Variant calling | `-f 2 -F 3328 -q 20` (proper pair, primary, no dups) |
-| Coverage analysis | `-F 1284 -q 1` (mapped, primary, no dups) |
+| Coverage analysis | `-F 1284 -q 1` (mapped, no secondary, no dups; supplementary retained) |
 | Count unique | `-F 2304` (primary only) |
 
 Flag breakdowns:

@@ -20,8 +20,8 @@ ArchR::installExtraPackages()
 # SnapATAC2 (Python)
 pip install snapatac2
 
-# Doublet detection
-pip install amulet-py
+# Doublet detection: AMULET is a GitHub release (jar + AMULET.sh; needs numpy/pandas/scipy/statsmodels + Java 8+)
+# from github.com/UcarLab/AMULET, or use the R amulet() implementation in the scDblFinder Bioconductor package
 ```
 
 ```r
@@ -139,6 +139,5 @@ Run two; intersection of flagged cells is high-confidence doublet set.
 - atac-seq/co-accessibility - Cicero / SCENIC+
 - single-cell/preprocessing - General sc patterns
 - single-cell/clustering - Cluster definition
-- single-cell/cell-annotation - Marker-based annotation
+- single-cell/cell-annotation - Automated reference-based label transfer
 - single-cell/multimodal-integration - Multiome integration
-- single-cell/scatac-analysis - Cross-reference single-cell ATAC-specific patterns

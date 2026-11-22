@@ -11,7 +11,7 @@ pip install pvactools mhcflurry vatools pandas numpy matplotlib seaborn
 
 mhcflurry-downloads fetch
 
-conda install -c bioconda vep arcashla optitype samtools
+conda install -c bioconda ensembl-vep arcas-hla optitype samtools
 ```
 
 **Required databases:**
@@ -74,12 +74,25 @@ Tell your AI agent what you want to do:
 | Epitope lengths | 8,9,10,11 | MHC-I peptide lengths |
 | VAF minimum | 0.1 | Variant allele frequency filter |
 | Expression minimum | 1 TPM | Gene expression filter |
-| DAI threshold | 500 | Differential agretopicity for specificity |
+| DAI threshold (WT/MT IC50 ratio) | >2 moderate, >10 strong | Agretopicity; >1 = MT binds better than WT |
 
 ## Tips
 
 - **Expression data improves ranking**: Include tumor RNA-seq TPM when available
 - **Use multiple algorithms**: MHCflurry + NetMHCpan gives more robust predictions
 - **Consider Class II**: CD4+ T cell help improves vaccine efficacy
-- **Clonal mutations first**: Prioritize high-VAF variants for broader tumor coverage
-- **Validate HLA typing**: Clinical-grade HLA typing is more reliable than computational
+- **Clonal mutations first**: Prioritize high-VAF variants for broader tumor coverage; clonal neoantigen burden (McGranahan 2016) predicts ICI response better than total
+- **Validate HLA typing**: Clinical-grade HLA typing is more reliable than computational; T1K (Song 2023 *Genome Res*) is the 2024-2026 all-rounder for class I + II + KIR from short read
+- **Check HLA-LOH**: LOHHLA (McGranahan 2017) or DASH (Pyke 2022); somatic loss of HLA abolishes neoantigen presentation in ~17% of pan-cancer (Montesion 2021; >30% HNSCC / NSCLC / cervical); flag and exclude lost-allele predictions
+- **Pair with TMB / MSI**: TMB-H pan-tumor (Vega 2021 panel-calibrated) and MSI-H / dMMR (KEYNOTE-016/164/158) are co-biomarkers; MSI-H supersedes TMB-H per Sha 2020
+
+## Related Skills
+
+- immunoinformatics/mhc-binding-prediction - MHCflurry parameters
+- immunoinformatics/mhc-class-ii-prediction - Class II (CD4) neoantigens for vaccine help
+- immunoinformatics/neoantigen-prediction - pVACtools details
+- immunoinformatics/immunogenicity-scoring - Ranking algorithms
+- clinical-databases/hla-typing - HLA typing + HLA-LOH detection
+- clinical-databases/tumor-mutational-burden - TMB-H ICI biomarker
+- clinical-databases/msi-detection - MSI-H / dMMR ICI biomarker
+- clinical-databases/somatic-signatures - Mutational mechanism context

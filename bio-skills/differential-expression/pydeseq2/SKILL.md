@@ -1,10 +1,13 @@
 ---
 name: differential-expression-pydeseq2
 description: Run DESeq2-style bulk RNA-seq differential expression in Python with PyDESeq2, including count matrix validation, design formula checks, size-factor estimation, dispersion fitting, Wald/LRT contrasts, shrinkage guidance, and exportable result tables. Use when the project is Python-first or needs DESeq2-compatible methods without switching to R.
+license: Apache-2.0 AND MIT
 tool_type: python
 primary_tool: pydeseq2
 user-invocable: false
-license: Apache-2.0
+metadata:
+  version: "1.1.0"
+  source: "Biorouter original"
 ---
 
 ## Version Compatibility

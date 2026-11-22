@@ -1,10 +1,13 @@
 ---
 name: machine-learning-causal-ml-dml
 description: Estimate causal effects with double machine learning, orthogonal scores, cross-fitting, CATE/meta-learners, and uplift-style models while guarding against leakage and prediction-only claims. Use when the user wants machine learning for treatment effects rather than ordinary prediction.
+license: Apache-2.0 AND MIT
 tool_type: python
 primary_tool: econml
 user-invocable: false
-license: Apache-2.0
+metadata:
+  version: "1.1.0"
+  source: "Biorouter original"
 ---
 
 # Causal ML and Double Machine Learning
@@ -39,4 +42,4 @@ Use this skill when ML models estimate treatment effects, heterogeneous effects,
 
 - `causal-identification-gates`
 - `clinical-biostatistics/effect-measures`
-- `machine-learning/model-explainability-shap`
+- `machine-learning/prediction-explanation`

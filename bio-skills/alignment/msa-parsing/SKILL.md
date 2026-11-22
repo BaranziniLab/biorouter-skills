@@ -1,10 +1,13 @@
 ---
 name: alignment-msa-parsing
 description: Parse and analyze multiple sequence alignments using Biopython. Extract sequences, identify conserved regions, analyze gaps, work with annotations, and manipulate alignment data for downstream analysis. Use when parsing or manipulating multiple sequence alignments.
-license: Apache-2.0
+license: Apache-2.0 AND MIT
 tool_type: python
 primary_tool: Bio.AlignIO
 user-invocable: false
+metadata:
+  version: "1.1.0"
+  upstream: "GPTomics/bioSkills@d91ed3d"
 ---
 
 ## Version Compatibility
@@ -217,7 +220,7 @@ Columns exhibiting **both** high gap fraction AND low conservation are the stron
 
 ## Consensus Sequence
 
-**"Get consensus sequence"** → Derive a single representative sequence from an MSA based on majority-rule voting at each column.
+**"Get consensus sequence"** -> Derive a single representative sequence from an MSA based on majority-rule voting at each column.
 
 **Goal:** Generate a consensus sequence from the alignment using a frequency threshold.
 
@@ -380,7 +383,7 @@ The thresholds reflect convention: 0.62 traces back to BLOSUM62 derivation; 0.80
 | EVcouplings | HHfilter clusters at id=0.80 | ~0.5-1x of `pb` |
 | HHsuite `hhmake` | inverse-purity count | Closer to `pb` |
 
-Always report which estimator was used. Threshold rules ("Neff/L > 0.5 for DCA") are calibrated against a specific estimator -- Hopf et al 2017 use HHfilter-80 cluster count; Marks et al 2011 use position-based weighting. AlphaFold2's MSA-depth gating uses unweighted cluster count at 62% identity.
+Always report which estimator was used. Threshold rules ("Neff/L > 0.5 for DCA") are calibrated against a specific estimator -- Hopf et al 2017 use HHfilter-80 cluster count; Marks et al 2011 use 70%-identity cluster reweighting. AlphaFold2's MSA-depth gating uses unweighted cluster count at 62% identity.
 
 ## Coevolution: Mutual Information with APC
 
@@ -449,6 +452,6 @@ For Pfam-scale streaming (multi-gigabyte Stockholm or A3M databases that exceed 
 - Marks DS et al. 2011. Protein 3D structure computed from evolutionary sequence variation. PLOS One 6:e28766.
 - Jumper J et al. 2021. Highly accurate protein structure prediction with AlphaFold. Nature 596:583-589.
 - Simmons MP, Ochoterena H. 2000. Gaps as characters in sequence-based phylogenetic analyses. Syst Biol 49:369-381.
-- Mueller K. 2006. Incorporating information from length-mutational events into phylogenetic analysis. Cladistics 22:368-381.
+- Mueller K. 2006. Incorporating information from length-mutational events into phylogenetic analysis. Mol Phylogenet Evol 38:667-676.
 - Dwivedi B, Gadagkar SR. 2009. Phylogenetic inference under varying proportions of indel-induced alignment gaps. BMC Evol Biol 9:211.
 - Velankar S et al. 2013. SIFTS: structure integration with function, taxonomy and sequences resource. NAR 41:D483-D489.

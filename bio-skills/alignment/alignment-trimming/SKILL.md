@@ -1,10 +1,13 @@
 ---
 name: alignment-trimming
 description: Trim multiple sequence alignments using ClipKIT, trimAl, BMGE, Divvier, or HMMcleaner with mode selection guidance per downstream goal. Use when removing unreliable columns or contaminating residues before phylogenetic inference, HMM building, or selection analysis.
-license: Apache-2.0
+license: Apache-2.0 AND MIT
 tool_type: mixed
 primary_tool: ClipKIT
 user-invocable: false
+metadata:
+  version: "1.1.0"
+  upstream: "GPTomics/bioSkills@d91ed3d"
 ---
 
 ## Version Compatibility
@@ -19,11 +22,11 @@ If code throws ImportError, AttributeError, or TypeError, introspect the install
 
 # Alignment Trimming
 
-**"Remove unreliable columns from this MSA"** → Filter or split columns based on gap fraction, conservation, entropy, or per-residue quality.
+**"Remove unreliable columns from this MSA"** -> Filter or split columns based on gap fraction, conservation, entropy, or per-residue quality.
 - CLI: `clipkit`, `trimal`, `BMGE`, `Divvier`, `HMMcleaner`
 - Python: post-process via Bio.AlignIO with custom column masks
 
-**"Make this alignment publication-grade for phylogenetics"** → Apply ClipKIT's `kpic-smart-gap` mode, or trimAl `-automated1`, then verify via tree-stability comparison before vs after trimming.
+**"Make this alignment publication-grade for phylogenetics"** -> Apply ClipKIT's `kpic-smart-gap` mode, or trimAl `-automated1`, then verify via tree-stability comparison before vs after trimming.
 
 Tool choice and aggressiveness matter more than trimming vs not-trimming. Pick a mode by dataset character (table below), and always run a sensitivity check by building trees on trimmed and untrimmed alignments.
 
@@ -37,7 +40,7 @@ Tool choice and aggressiveness matter more than trimming vs not-trimming. Pick a
 | Concatenated supermatrix with very long alignments (>10 kb) | Trimming reduces phylogenetic noise | `kpic-smart-gap` or BMGE `-h 0.5` |
 | Single short genes (<200 bp aligned) | Trimming amplifies stochastic error | Skip column trimming; use sequence-level outlier filtering |
 
-**The 20%/40% rule.** Tan et al 2015 (Syst Biol) and Steenwyk et al 2020 (PLOS Bio) appear to disagree but their conclusions are reconciled by trimming aggressiveness: light trimming (<20% of columns removed) has minimal impact on tree accuracy regardless of method; heavy trimming (>40%) removes phylogenetic signal alongside noise and degrades tree accuracy on most empirical datasets. Steenwyk's ClipKIT `kpic-smart-gap` improves trees because it stays in the light-trim regime; the older Gblocks defaults fail because they over-trim. **Operational rule:** if your trimmer removes >40% of columns, the mode is too aggressive for the dataset; switch to a less aggressive mode or skip trimming.
+**The 20%/40% rule.** Tan et al 2015 (Syst Biol) and Steenwyk et al 2020 (PLOS Bio) appear to disagree but their conclusions are reconciled by trimming aggressiveness: light trimming (<20% of columns removed) has minimal impact on tree accuracy regardless of method; heavy trimming (>40%) removes phylogenetic signal alongside noise and degrades tree accuracy on most empirical datasets. Steenwyk's ClipKIT `kpic-smart-gap` improves trees because it stays in the light-trim regime; the older Gblocks defaults fail because they over-trim. **Operational rule:** if the trimmer removes >40% of columns, the mode is too aggressive for the dataset; switch to a less aggressive mode or skip trimming.
 
 Always run a sensitivity analysis: build the tree on trimmed AND untrimmed alignments. If topology and support are stable across trimming choices, the conclusion is robust; if unstable, report this and pick the result better supported by independent evidence (gene-tree concordance, biological priors).
 
@@ -164,7 +167,7 @@ Maintenance note: Divvier's last release was 2019 (`simonwhelan/Divvier`); the t
 
 ## HMMcleaner: Per-Residue Cleaning
 
-Run HMMcleaner before column trimming when cross-contamination or annotation errors are suspected; it masks suspect residues with `X` rather than removing columns. Apply only to alignments with >= 15 sequences (false-positive rate climbs to ~10% at 10 sequences).
+Run HMMcleaner before column trimming when cross-contamination or annotation errors are suspected; it masks suspect residues with `X` rather than removing columns. Apply only to alignments with >= 15 sequences (below that the per-residue pHMM has too little signal and over-flags divergent residues).
 
 ```bash
 HmmCleaner.pl input.fasta
@@ -173,7 +176,7 @@ HmmCleaner.pl input.fasta --no-large-remove
 
 Output is `input_hmm.fasta` with low-confidence residues masked. Used in OrthoMaM and Compositional Heterogeneity-aware phylogenomic pipelines where cross-contamination from sequencing or annotation errors is suspected.
 
-**Sample-size sensitivity:** HMMcleaner builds a per-residue HMM from the OTHER sequences at each position, so on small alignments (<15 sequences) the HMM has insufficient signal and over-flags real divergent residues as contamination. Di Franco et al 2019 supplementary results show false-positive rate climbs to ~10% at 10 sequences and stabilises below 2% at >50 sequences. OrthoMaM v11 and PhyloHerb pipelines apply HMMcleaner only to alignments with >= 15 sequences. For smaller alignments, manual inspection or BLAST-based contamination screening is more reliable.
+**Sample-size sensitivity:** HMMcleaner builds a per-residue HMM from the OTHER sequences at each position, so on small alignments (<15 sequences) the HMM has insufficient signal and over-flags real divergent residues as contamination. Di Franco et al 2019 show two related effects: pHMMs built from few sequences carry less signal, lowering HMMcleaner sensitivity, and its false positives are driven mainly by evolutionary divergence -- specificity falls with gap frequency, evolutionary rate, and the fraction of ambiguously-aligned regions rather than by a fixed sequence count (global specificity ~94% at default settings). OrthoMaM v11 and PhyloHerb pipelines apply HMMcleaner only to alignments with >= 15 sequences. For smaller alignments, manual inspection or BLAST-based contamination screening is more reliable.
 
 ## Gblocks: The Legacy Default
 
@@ -239,7 +242,7 @@ t_coffee -other_pg seq_reformat -in aligned.fasta -struc_in tcs_scores.ascii \
     -struc_in_f number_aln -action +keep '[5-9]' -output fasta_aln > aligned_tcs5.fasta
 ```
 
-Threshold guidance: TCS >= 5 retains columns confidently aligned by the majority of library methods; TCS >= 7 is conservative and used by Chang et al 2014 for HoT-validated benchmarks. TCS-from-mcoffee gives substantially better column-confidence ranking than TCS-from-default-tcoffee because the library is more diverse. For PAML branch-site test, Fletcher & Yang 2010 found TCS-5 masking eliminates false positives nearly completely on simulated data.
+Threshold guidance: TCS >= 5 retains columns confidently aligned by the majority of library methods; TCS >= 7 is a stricter operational convention on the seq_reformat 0-9 display scale. Chang et al 2014 do not prescribe an integer 5/7 cutoff -- on BAliBASE 3 and PREFAB 4 structural benchmarks they keep residues scoring above ~0.6 on the native 0-1 scale and drop columns scoring below 2, with TCS outperforming GUIDANCE and HoT. TCS-from-mcoffee gives substantially better column-confidence ranking than TCS-from-default-tcoffee because the library is more diverse. For the PAML branch-site test, Fletcher & Yang 2010 showed alignment errors inflate false positives dramatically (up to ~0.99 with ClustalW, ~0.13 even with codon-aware PRANK) and that removing gappy columns did not reduce them; confidence-based column masking (TCS, GUIDANCE2) is a common mitigation but was not evaluated in that study, since TCS postdates it (Chang et al 2014).
 
 ## MACSE Frameshift Markers Need Post-Processing
 

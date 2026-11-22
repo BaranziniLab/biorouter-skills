@@ -9,8 +9,8 @@ Visualize splicing events as sashimi-style plots showing per-sample read coverag
 pip install pandas
 conda install -c bioconda ggsashimi rmats2sashimiplot pygenometracks
 
-# R for leafviz
-BiocManager::install('leafcutter')
+# R for leafviz (leafcutter is on GitHub, not Bioconductor)
+# devtools::install_github('davidaknowles/leafcutter/leafcutter')
 
 # MAJIQ-VOILA bundled with MAJIQ V3 (majiq.biociphers.org)
 
@@ -67,5 +67,5 @@ Tell your AI agent what you want to do:
 
 - differential-splicing - Identify events to plot
 - splicing-quantification - Context for PSI values
-- data-visualization/genome-browser-tracks - Multi-track figure design
-- data-visualization/ggplot2-fundamentals - ggsashimi customization
+- data-visualization/genome-tracks - Multi-track figure design
+- ggplot-visualization (core skill) - ggsashimi customization

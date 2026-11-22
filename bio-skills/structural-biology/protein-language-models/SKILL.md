@@ -1,10 +1,13 @@
 ---
 name: structural-biology-protein-language-models
 description: Use protein language models such as ESM-style embeddings for sequence representation, variant effect scoring, remote homology, structure-aware annotation, and downstream ML features. Use when a protein sequence task benefits from learned embeddings rather than only alignment or motif rules.
+license: Apache-2.0 AND MIT
 tool_type: python
 primary_tool: esm
 user-invocable: false
-license: Apache-2.0
+metadata:
+  version: "1.1.0"
+  source: "Biorouter original"
 ---
 
 # Protein Language Models

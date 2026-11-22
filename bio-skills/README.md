@@ -1,6 +1,6 @@
 # BioSkills — Bioinformatics Skill Bundle
 
-A comprehensive collection of bioinformatics skills for BioRouter, integrated from [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT-origin upstream) and distributed in this repository under Apache-2.0 with provenance preserved. Covers sequence I/O, alignment, variant calling, single-cell, ATAC/ChIP-seq, proteomics, metabolomics, machine learning, workflow management, and 50+ more categories.
+A comprehensive collection of bioinformatics skills for Biorouter, integrated from [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT upstream, archived) and maintained here, with provenance preserved. Covers sequence I/O, alignment, variant calling, single-cell, ATAC/ChIP-seq, proteomics, metabolomics, machine learning, workflow management, and 50+ more categories (570 components in 63 bundles).
 
 ## Install
 
@@ -8,15 +8,15 @@ A comprehensive collection of bioinformatics skills for BioRouter, integrated fr
 # Clone the biorouter-skills repo
 git clone https://github.com/BaranziniLab/biorouter-skills ~/.config/biorouter/skills-src
 
-# Symlink the bio-skills bundle into your BioRouter skills directory
+# Symlink the bio-skills bundle into your Biorouter skills directory
 ln -s ~/.config/biorouter/skills-src/bio-skills ~/.config/biorouter/skills/bio-skills
 ```
 
-Skills load automatically when BioRouter sees a relevant file or task (e.g., a `.vcf`, a `Seurat` import, a `pip install scanpy` request). The `user-invocable: false` frontmatter marks them as context-triggered, not slash commands.
+Skills load automatically when Biorouter sees a relevant file or task (e.g., a `.vcf`, a `Seurat` import, a `pip install scanpy` request). The `user-invocable: false` frontmatter marks them as context-triggered, not slash commands.
 
 ## Prefer `uv` over `pip`
 
-Many bioSkills examples install packages with `pip install ...`. BioRouter's house style prefers [`uv`](https://github.com/astral-sh/uv) — it's roughly 10-100× faster and produces reproducible installs.
+Many bioSkills examples install packages with `pip install ...`. Biorouter's house style prefers [`uv`](https://github.com/astral-sh/uv) — it's roughly 10-100× faster and produces reproducible installs.
 
 | Original | Preferred |
 |---|---|
@@ -49,20 +49,26 @@ Each `SKILL.md` carries YAML frontmatter:
 ---
 name: <kebab-case-name>
 description: <one-line "Use when ..." trigger>
-license: Apache-2.0
+license: Apache-2.0 AND MIT
 tool_type: <python | r | cli | mixed>
 primary_tool: <main package or CLI tool>
 user-invocable: false
+metadata:
+  version: "1.1.0"
+  upstream: "GPTomics/bioSkills@d91ed3d"
 ---
 ```
 
-## Attribution & License
+## Attribution and license
 
-Upstream content authored by the GPTomics community originated under MIT. The BioRouter-distributed bundle is licensed under Apache-2.0 and keeps upstream provenance in the top-level attribution table. See [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) for contributing guidelines and full upstream attribution.
+The bundles are adapted from [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT, Copyright (c) 2026 GPTomics), which was archived on 2026-08-15. Version 1.1.0 is a single final resync to its last commit, `d91ed3d`; from here on the lab maintains the bundles itself and does not expect further upstream changes. Components taken from other permissive projects (K-Dense, jsperger, Posit, Aperivue, OpenAI, marimo) are recorded in the catalog row of the bundle that holds them.
 
-The BioRouter integration changes are:
-1. Stripped the `bio-` prefix from the `name:` field so directory name matches skill name (matches the `superpowers/` bundle convention).
-2. Added `user-invocable: false` and the uv tip banner described above.
-3. Added `license: Apache-2.0` frontmatter for registry and installer visibility.
+Every bundle carries a `LICENSE-UPSTREAM` file with the licence text and copyright notice of each upstream it redistributes, and that file travels inside the zip. The bundle as a whole is shown as `Apache-2.0 AND MIT`, and every `SKILL.md` says the same in its `license` line.
 
-All skill content, examples, and command sequences are preserved as authored.
+The Biorouter changes to upstream text are:
+1. Removed the `bio-` prefix from the `name:` field (names of components that existed in 1.0.0 are unchanged, even where upstream later renamed them).
+2. Added `license`, `user-invocable: false` and a `metadata` map (`version`, `upstream`) to the frontmatter, and the uv tip banner described above.
+3. Spelled the product name "Biorouter", and pointed cross-references at components that still exist.
+4. Removed or merged components that duplicated another (recorded as `removed` or `superseded_by` in the catalog row), and added the Biorouter originals and third-party components listed in each bundle's README.
+
+All other skill content, examples and command sequences are preserved as authored.

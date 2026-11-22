@@ -1,10 +1,13 @@
 ---
 name: splicing-quantification
 description: Quantifies alternative splicing as PSI (percent spliced in) from RNA-seq using rMATS-turbo (BAM-based event), SUPPA2 (TPM-based event), MAJIQ V3 (LSV-based Bayesian), leafcutter (annotation-free intron clusters), VAST-TOOLS (cross-species with microexon support), Shiba (junction-imbalance-corrected, 2025 SOTA at low coverage), or IRFinder-S (intron retention coverage-aware). Distinguishes the five canonical event classes (SE, A5SS, A3SS, MXE, RI), special classes (microexons, exitrons, AFE/ALE), intron retention subtypes (canonical RI vs detained introns), and applies effective-length normalization. Use when measuring splice-site usage or isoform inclusion ratios from short-read RNA-seq.
-license: Apache-2.0
+license: Apache-2.0 AND MIT
 tool_type: mixed
 primary_tool: rMATS-turbo
 user-invocable: false
+metadata:
+  version: "1.1.0"
+  upstream: "GPTomics/bioSkills@d91ed3d"
 ---
 
 ## Version Compatibility
@@ -68,7 +71,7 @@ Tool-agnostic taxonomy reference: Wang 2008 *Nature*; Vaquero-Garcia 2016 *eLife
 | IRFinder-S | Intron retention specifically | FASTQ | Coverage + junction integration; CNN-based artifact filtering | IR-only; not for cassette events |
 | S-IRFindeR | Replicate-stable IR ratio | BAM | Stable IR ratio metric | IR-only; less integrated than IRFinder-S |
 
-Methodology evolves; verify benchmarks (Olofsson 2023 *Brief Bioinform*; Kubota 2025 *NAR*; Tran 2025 *WIREs RNA*) and tool docs before committing. Default 2026 recommendation: run rMATS-turbo + leafcutter and reconcile; add MAJIQ V3 for complex events / heterogeneous cohorts; switch to Shiba for n=2 vs n=2.
+Methodology evolves; verify benchmarks (Olofsson 2023 *Biochem Biophys Res Commun*; Kubota 2025 *NAR*; Tran 2025 *WIREs RNA*) and tool docs before committing. Default 2026 recommendation: run rMATS-turbo + leafcutter and reconcile; add MAJIQ V3 for complex events / heterogeneous cohorts; switch to Shiba for n=2 vs n=2.
 
 ## PSI Definition and Effective Length Normalization
 
@@ -148,9 +151,10 @@ reliable = se_jc[(min_inc + min_skip) >= 20]
 **Approach:** Generate IOE event definitions from GTF, then aggregate TPMs of transcripts including/excluding each event.
 
 ```bash
-suppa.py generateEvents -i annotation.gtf -o events -f ioe -e SE SS MX RI AF AL
+suppa.py generateEvents -i annotation.gtf -o events -f ioe -e SE SS MX RI FL
 
-for ev in SE A5 A3 MX RI; do
+# -e takes {SE,SS,MX,RI,FL}; SS emits A5+A3 files, FL emits AF+AL files
+for ev in SE A5 A3 MX RI AF AL; do
     suppa.py psiPerEvent -i events_${ev}_strict.ioe -e transcript_tpm.tsv -o psi_${ev}
 done
 ```
@@ -169,7 +173,7 @@ majiq psi build_output/sample1.majiq build_output/sample2.majiq -j 4 -o psi_outp
 voila view -p 5000 -j 8 build_output/splicegraph.zarr psi_output/condition_psi.psi.voila -o voila_output
 ```
 
-MAJIQ V3 (Slaff et al *bioRxiv* 2024; public release 2025) replaced V2's SQLite splicegraph (`splicegraph.sql`) with **Zarr storage** (`splicegraph.zarr`); the `.sql` is deprecated. V3 is ~3.2x faster than V2 via xarray/zarr/Dask parallelization. LSV output includes posterior mean PSI plus the full posterior distribution; this enables threshold-based testing (e.g. P(|ΔPSI| > 0.2)) rather than frequentist p-values.
+MAJIQ V3 (Aicher, Slaff, Jewell, Barash *bioRxiv* 2024; public release 2025) replaced V2's SQLite splicegraph (`splicegraph.sql`) with **Zarr storage** (`splicegraph.zarr`); the `.sql` is deprecated. V3 is substantially faster than V2 via a rewritten xarray/zarr implementation with parallelized coverage calculations. LSV output includes posterior mean PSI plus the full posterior distribution; this enables threshold-based testing (e.g. P(|ΔPSI| > 0.2)) rather than frequentist p-values.
 
 ## leafcutter Junction Quantification
 
@@ -255,7 +259,7 @@ Three biologically distinct states all called "IR" by generic tools:
 2. **Detained intron (DI)** (Boutz 2015 *Genes Dev*): nuclear-localized, mature transcripts retaining a specific intron; a regulated reservoir released into translation upon signaling.
 3. **Co-transcriptional unspliced**: nascent pre-mRNA captured before splicing complete; not a regulated state.
 
-**Library prep determines which state(s) you see:**
+**Library prep determines which state(s) are visible:**
 - Poly(A) selection: enriches (1), depletes (2)/(3)
 - rRNA depletion (cytoplasmic): captures (1)
 - rRNA depletion (whole cell or nuclear): captures all three
@@ -263,7 +267,7 @@ Three biologically distinct states all called "IR" by generic tools:
 **To distinguish DI from canonical RI:** subcellular fractionation (nuclear vs cytoplasmic RNA-seq), or NMD inhibitor (cycloheximide, NMDi-14) treatment — canonical RI mRNA increases under NMD inhibition; DI does not.
 
 ```bash
-IRFinder -m FullAuto -r REF/ -d ir_output sample.fastq.gz
+IRFinder FastQ -r REF/ -d ir_output sample.fastq
 ```
 
 IRFinder-S (Lorenzi 2021 *Genome Biol*) uses CNN-based filtering of true IR vs noise; current SOTA for IR analysis. iREAD and S-IRFindeR (Broseus & Ritchie 2020 *bioRxiv*) are alternatives.
@@ -288,8 +292,8 @@ For brain / neural tissue or autism-spectrum studies, **microexon analysis must 
 | Junction reads per replicate | >=10-20 (per-replicate minimum) | Empirical PSI variance becomes <0.05 above this; below, PSI becomes a coin flip |
 | PSI dynamic range | mean PSI 0.05-0.95 | Outside is near-constitutive; rMATS, SUPPA2 default filters drop these |
 | Missing values | <50% of samples | Higher missingness indicates low expression — re-test with subset |
-| Read length | >=75nt PE preferred; >=100nt for microexons | 50nt SE biases toward shorter exons (Wang 2008 *Nature*) |
-| Library | rRNA depletion for IR analysis; poly(A) acceptable for cassette | Sims 2014 *Genome Res*; poly(A) loses pre-mRNA |
+| Read length | >=75nt PE preferred; >=100nt for microexons | Shorter single-end reads bias junction detection toward shorter exons (convention) |
+| Library | rRNA depletion for IR analysis; poly(A) acceptable for cassette | poly(A) selection loses pre-mRNA/intronic signal (convention) |
 | STAR 2-pass | Cohort-style preferred over per-sample basic | Veeneman 2016 *Bioinformatics*: >=94% novel junction recovery |
 | MAJIQ minreads / minpos | --minreads 10 --minpos 3 | Default; lower for low-coverage |
 | leafcutter -m | 50 reads per cluster | Higher for rare events; lower for sQTL discovery |
@@ -319,7 +323,7 @@ For brain / neural tissue or autism-spectrum studies, **microexon analysis must 
 | `error: GTF gene_id parsing` (rMATS) | rMATS expects GENCODE-style gene_id; some Ensembl GTFs use different attribute order | `gffread input.gff3 -T -o standardized.gtf` |
 | `KeyError: 'IJC_SAMPLE_1'` (rMATS parsing) | Output column missing; sometimes occurs when --statoff combined with novel events on older versions | Update rMATS-turbo to >=4.3.x; re-run |
 | `MAJIQ: too few reads at junction` | Default `--minreads 10 --minpos 3` filters out the locus | Lower thresholds for low-coverage data; document filtering |
-| `leafcutter: dispersion estimation failed` | Cluster has all-zero counts in one group | Pre-filter clusters with `--min-samps-feature-prop 3` |
+| `leafcutter: dispersion estimation failed` | Cluster has all-zero counts in one group | Pre-filter with leafcutter_ds.R `--min_samples_per_group 3 --min_samples_per_intron 5` |
 | `SUPPA2: empirical p computed on N=4 nulls` | Insufficient replicates for empirical mode | Switch `--method classical` (Wilcoxon) for very low replicate count |
 | `regtools: invalid CIGAR` | Non-BAM-spec read in input | Filter with `samtools view -h -F 0x100 -F 0x800` (drop secondary/supplementary) |
 | `STAR: too many SJs` (in pass 2) | Cohort SJ.out.tab too large | Filter to junctions seen in >=3 samples or with >=3 unique reads before merging |
@@ -364,13 +368,13 @@ PSI ranges 0 to 1: 1 = always included, 0 = always skipped, 0.5 = balanced. Sign
 - Li et al 2018 *Nat Genet* - leafcutter
 - Tapial et al 2017 *Genome Res* - VAST-TOOLS / VastDB
 - Wang et al 2024 *Nat Protoc* - rMATS-turbo
-- Slaff et al 2024 *bioRxiv* - MAJIQ V3
+- Aicher, Slaff, Jewell, Barash 2024 *bioRxiv* - MAJIQ V3
 - Kubota et al 2025 *NAR* - Shiba
 - Lorenzi et al 2021 *Genome Biol* - IRFinder-S
 - Boutz et al 2015 *Genes Dev* - detained introns
 - Irimia et al 2014 *Cell* - SRRM4 microexons
 - Darman et al 2015 *Cell Rep* - SF3B1 cryptic 3'ss
-- Olofsson et al 2023 *Brief Bioinform* - benchmark
+- Olofsson et al 2023 *Biochem Biophys Res Commun* 653:31-37 - benchmark
 - Tran et al 2025 *WIREs RNA* - methodology review
 - Brown et al 2022 *Nature* - UNC13A cryptic exon (TDP-43)
 - Klim et al 2019 *Nat Neurosci* - STMN2 cryptic splicing

@@ -1,10 +1,13 @@
 ---
 name: single-cell-splicing
 description: Analyzes alternative splicing at single-cell resolution. The first decision is library chemistry — 10X 3' is fundamentally limited (RT primes from poly-A, R2 falls in 3' UTR, <0.1 junction read per cell per AS event). Plate-based full-length methods (Smart-seq3, FLASH-seq, VASA-seq, STORM-seq) and single-cell long-read (MAS-Iso-seq, scISOr-Seq2) are the chemistries that give per-cell isoform structure. Tools include MARVEL (R, Smart-seq integrated), BRIE2 (Bayesian PSI with regulatory features and ELBO_gain test), scQuint (junction-cluster, plate-based; not for 10X), SpliZ (annotation-free Z-score), Psix (graph-smoothness regulated AS), and Sierra (alternative polyadenylation, often confused with AS). Use when analyzing isoform usage in scRNA-seq, identifying cell-type-specific splicing, or determining whether scRNA-seq chemistry supports splicing analysis at all.
-license: Apache-2.0
+license: Apache-2.0 AND MIT
 tool_type: python
 primary_tool: MARVEL
 user-invocable: false
+metadata:
+  version: "1.1.0"
+  upstream: "GPTomics/bioSkills@d91ed3d"
 ---
 
 ## Version Compatibility
@@ -35,7 +38,7 @@ Three compounding mechanisms make 10X Chromium 3' (v3.1, GEM-X, v4) hostile to s
 
 **The 5' kit (10X 5' GEX) does not solve this** — it shifts capture from 3' UTR to 5' UTR / TSS-proximal regions. Marginal improvement; not a transcriptome-wide solution. Note that V(D)J recovery requires the **10X Chromium Single Cell Immune Profiling kit** (with TCR/BCR-specific enrichment), not 5' GEX alone — postdocs designing immune-repertoire experiments must use the dedicated V(D)J kit.
 
-## Decision: Does Your Chemistry Support Splicing Analysis?
+## Decision: Does the Chemistry Support Splicing Analysis?
 
 | Chemistry | Splicing analysis viable? | Best alternative if no |
 |-----------|----------------------------|--------------------------|
@@ -186,12 +189,10 @@ BRIE2 (Huang & Sanguinetti 2021 *Genome Biol*) uses a sequence-derived feature p
 **Approach:** Compute per-gene splicing Z-score across cells; test for cell-state association via permutation.
 
 ```bash
-spliz \
-    --bams sample1.bam sample2.bam \
-    --metadata cell_metadata.tsv \
-    --gtf annotation.gtf \
-    --output spliz_output/ \
-    --threads 8
+# SpliZ is a Nextflow pipeline (not a standalone CLI). Configure inputs in a .config
+# file (dataname, input_file, libraryType, grouping_level_1/2) - either SICILIAN
+# output (SICILIAN=true) or BAMs via a samplesheet CSV + metadata + GTF (SICILIAN=false).
+nextflow run salzmanlab/spliz -r main -latest -c spliz.config
 ```
 
 SpliZ (Olivieri 2022 *Nat Methods*) is robust to dropout because it pools junction information across the gene; particularly useful for discovering splicing diversity in heterogeneous tumor samples.
@@ -215,7 +216,7 @@ psix_obj.run_psix()
 regulated = psix_obj.psix_results.query('psix_score > 1.5 and pvalue < 0.05')
 ```
 
-Psix (Buen Abad Najar 2022 *Cell Syst*) is the principled alternative to imputing PSI: do not impute (it obliterates heterogeneity); test for graph smoothness instead.
+Psix (Buen Abad Najar 2022 *Genome Res* 32:1385) is the principled alternative to imputing PSI: do not impute (it obliterates heterogeneity); test for graph smoothness instead.
 
 ## Sierra for APA (Not Splicing)
 
@@ -239,10 +240,24 @@ counts <- CountPeaks(
     whitelist.file = 'barcodes.tsv'
 )
 
-apa_results <- DUTest(counts, group1 = ctrl_cells, group2 = trt_cells)
+# CountPeaks returns a peak x cell matrix; annotate it and build a peak Seurat
+# object before differential-usage testing.
+peak.annotations <- AnnotatePeaksFromGTF(
+    peak.sites.file = 'peaks.txt',
+    gtf.file = 'annotation.gtf',
+    output.file = 'peak_annotations.txt'
+)
+
+peaks.seurat <- NewPeakSeurat(
+    peak.data = counts,
+    annot.info = peak.annotations,
+    cell.idents = cell_identities
+)
+
+apa_results <- DUTest(peaks.seurat, population.1 = ctrl_cells, population.2 = trt_cells)
 ```
 
-If you only have 10X 3' data, this is often what you actually want. Distinct UTRs change miRNA targeting, RBP binding, and stability — biologically meaningful but not splicing.
+If only 10X 3' data is available, this is often what is actually wanted. Distinct UTRs change miRNA targeting, RBP binding, and stability — biologically meaningful but not splicing.
 
 ## Pseudobulk for Statistical Power
 
@@ -269,9 +284,9 @@ Use pseudobulk for differential splicing **between** well-defined cell types; us
 In 2024-2026, full-length single-cell long-read sequencing has become practical and is the recommended chemistry for splicing-focused single-cell experiments:
 
 - **MAS-Iso-seq / PacBio Kinnex**: concatenated full-length cDNA arrays, ~16x throughput vs plain Iso-Seq, compatible with 10X 5' libraries (Al'Khafaji 2024 *Nat Biotech*)
-- **scISOr-Seq2**: hybrid 10X + PacBio for cell typing + isoform structure (Joglekar 2024 *Nat Neurosci* mouse cortex atlas)
+- **scISOr-Seq2**: hybrid 10X + PacBio for cell typing + isoform structure (Joglekar et al 2024 *Nat Neurosci* 27:1051-1063, single-cell long-read brain isoform mapping)
 - **ONT direct cDNA + 10X**: lower cost, similar information content
-- **FLAMES**: barcode demultiplexing + isoform quantification + SNV calling for ONT scRNA (Tian 2021 *Nat Methods*)
+- **FLAMES**: barcode demultiplexing + isoform quantification + SNV calling for ONT scRNA (Tian 2021 *Genome Biol* 22:310)
 
 For splicing-specific full-length single-cell analysis, see `long-read-splicing` skill.
 
@@ -285,7 +300,7 @@ For splicing-specific full-length single-cell analysis, see `long-read-splicing`
 
 **Symptom:** "no `coord.intron` column found" errors; or empty PSI tables despite junction reads being present.
 
-**Fix:** Verify wide-matrix structure; ensure SJ.out.tabs are merged on the `chr:start:end` key with cells as columns. Use `data.table::dcast` for the long→wide reshape.
+**Fix:** Verify wide-matrix structure; ensure SJ.out.tabs are merged on the `chr:start:end` key with cells as columns. Use `data.table::dcast` for the long->wide reshape.
 
 ### BRIE2: TensorFlow Memory
 
@@ -354,18 +369,18 @@ For splicing-specific full-length single-cell analysis, see `long-read-splicing`
 
 **Beta-binomial vs binomial models:** with sparse counts, binomial PSI is overdispersed. Beta-binomial models (BRIE2; leafcutter2 as Dirichlet-multinomial cluster-level) handle this. For very sparse droplet data, even beta-binomial fits poorly per cell — collapse to pseudobulk.
 
-**Imputation pitfalls:** naive imputation (MAGIC, scImpute, ALRA) of expression matrices is **not** appropriate for PSI: imputing missing junction counts averages over neighboring cells and obliterates the very heterogeneity you want to study. Psix's approach — testing smoothness of observed PSI on the kNN graph — is the principled alternative.
+**Imputation pitfalls:** naive imputation (MAGIC, scImpute, ALRA) of expression matrices is **not** appropriate for PSI: imputing missing junction counts averages over neighboring cells and obliterates the very heterogeneity under study. Psix's approach — testing smoothness of observed PSI on the kNN graph — is the principled alternative.
 
 ## Cell-Type-Specific Splicing Biology
 
 | System | Event | Regulator |
 |--------|-------|-----------|
-| Neural microexons | 3-27 nt exons enriched in brain | SRRM4 (nSR100); SRRM3 in retina (Irimia 2014 *Cell*) |
-| Neural differentiation | PTBP1 → PTBP2 switch | miR-124 represses PTBP1; derepresses neural exons (Boutz 2007 *Genes Dev*) |
-| T-cell activation | CD45 RA → RO | hnRNP-L, ESRP-mediated |
+| Neural microexons | 3-27 nt exons enriched in brain | SRRM4/nSR100 (Irimia 2014 *Cell*); SRRM3 in retina/photoreceptors (Ciampi 2022 *PNAS*) |
+| Neural differentiation | PTBP1 -> PTBP2 switch | miR-124 represses PTBP1; derepresses neural exons (Boutz 2007 *Genes Dev*) |
+| T-cell activation | CD45 RA -> RO | hnRNP-L, ESRP-mediated |
 | Erythropoiesis | EPB41 exon 16 | Splicing factor switching during maturation |
-| Cardiac development | TTN N2BA → N2B | MBNL1/CELF1 antagonism |
-| EMT | FGFR2 IIIb → IIIc, ENAH exon 11a | ESRP1/2 loss in mesenchymal state (Warzecha 2009 *Mol Cell*) |
+| Cardiac development | TTN N2BA -> N2B | MBNL1/CELF1 antagonism |
+| EMT | FGFR2 IIIb -> IIIc, ENAH exon 11a | ESRP1/2 loss in mesenchymal state (Warzecha 2009 *Mol Cell*) |
 | Activated T cell | CD45 isoform shift | Multiple SR/hnRNP regulators |
 
 ## Quality Thresholds
@@ -395,7 +410,7 @@ For splicing-specific full-length single-cell analysis, see `long-read-splicing`
 ## Common Pitfalls
 
 - **Treating 10X 3' splicing analysis as legitimate** — the chemistry doesn't support it. Use Sierra for APA or upgrade to MAS-Iso-seq.
-- **Imputing PSI matrices** — destroys the heterogeneity you want to detect. Use Psix or BRIE2 instead.
+- **Imputing PSI matrices** — destroys the heterogeneity to be detected. Use Psix or BRIE2 instead.
 - **Per-cell PSI on droplet data** — typically too sparse for stable estimates. Use pseudobulk first, then drill down to per-cell.
 - **Confusing APA with splicing** — Sierra results look like AS but are 3' UTR isoforms. Different machinery, different biology.
 - **snRNA-seq IR signal misinterpreted as splicing dysregulation** — nuclear RNA is enriched for incompletely spliced transcripts; baseline IR is high.
@@ -415,10 +430,10 @@ For splicing-specific full-length single-cell analysis, see `long-read-splicing`
 ## References
 
 - Huang & Sanguinetti 2021 *Genome Biol* - BRIE2
-- Wen et al 2023 *NAR Genomics Bioinform* - MARVEL
+- Wen et al 2023 *Nucleic Acids Research* 51:e29 - MARVEL
 - Benegas, Fischer & Song 2022 *eLife* - scQuint (annotation-free single-cell splicing analysis, validated on Smart-seq2)
 - Olivieri et al 2022 *Nat Methods* - SpliZ
-- Buen Abad Najar et al 2022 *Cell Syst* - Psix
+- Buen Abad Najar et al 2022 *Genome Research* 32:1385 - Psix
 - Patrick et al 2020 *Genome Biol* - Sierra
 - Song et al 2017 *Mol Cell* - splicing modality classification
 - Picelli et al 2014 *Nat Protoc* - Smart-seq2
@@ -426,10 +441,11 @@ For splicing-specific full-length single-cell analysis, see `long-read-splicing`
 - Hagemann-Jensen et al 2022 *Nat Biotech* - Smart-seq3xpress
 - Hahaut et al 2022 *Nat Biotech* - FLASH-seq
 - Salmen et al 2022 *Nat Biotech* - VASA-seq
-- Johnson et al 2023 *Nat Commun* - STORM-seq
+- Johnson et al 2022 *bioRxiv* 10.1101/2022.03.14.484332 - STORM-seq (preprint)
 - Al'Khafaji et al 2024 *Nat Biotech* - MAS-Iso-seq / Kinnex
-- Tian et al 2021 *Nat Methods* - FLAMES
-- Joglekar et al 2024 *Nat Neurosci* - scISOr-Seq2 mouse cortex atlas
+- Tian et al 2021 *Genome Biology* 22:310 - FLAMES
+- Joglekar et al 2024 *Nat Neurosci* 27:1051-1063 - scISOr-Seq2 single-cell brain isoform mapping
 - Irimia et al 2014 *Cell* - neural microexons / SRRM4
+- Ciampi et al 2022 *PNAS* 119:e2117090119 - SRRM3-dependent photoreceptor microexons
 - Boutz et al 2007 *Genes Dev* - PTBP1/PTBP2 neural switch
 - Tian & Manley 2017 *Nat Rev Mol Cell Biol* - alternative polyadenylation and 3' UTR isoforms

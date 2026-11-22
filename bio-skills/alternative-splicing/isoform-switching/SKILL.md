@@ -1,10 +1,13 @@
 ---
 name: isoform-switching
 description: Analyzes differential transcript usage (DTU) and isoform switches with functional consequence prediction (NMD via 50nt rule, ORF disruption, protein domain loss/gain, signal peptide changes, IDR alterations, coding-potential shifts). Tools include IsoformSwitchAnalyzeR v2 (auto-selects satuRn for >5 reps else DEXSeq), the manual DRIMSeq -> DEXSeq/satuRn -> stageR DTU pipeline, and fishpond/swish for inferential-uncertainty-aware DTE. Distinguishes DTU from DGE and DTE; integrates external annotators (CPC2, Pfam, SignalP, IUPred2A or DeepTMHMM). Use when investigating how splicing differences alter protein function or trigger NMD-mediated degradation.
-license: Apache-2.0
+license: Apache-2.0 AND MIT
 tool_type: r
 primary_tool: IsoformSwitchAnalyzeR
 user-invocable: false
+metadata:
+  version: "1.1.0"
+  upstream: "GPTomics/bioSkills@d91ed3d"
 ---
 
 ## Version Compatibility
@@ -22,17 +25,17 @@ package and adapt the example to match the actual API rather than retrying.
 
 Identify shifts in *which* transcript a gene predominantly uses between conditions, and predict functional consequences. Statistically distinct from DGE and DTE; biologically distinct because the same gene-level expression can hide a complete isoform switch with major protein-level consequences.
 
-## DGE vs DTE vs DTU: Which Question Are You Asking?
+## DGE vs DTE vs DTU: Which Question Is Being Asked?
 
 | Question | Statistic | Tool | Example claim |
 |----------|-----------|------|----------------|
 | **DGE** Does the gene total change? | Sum of transcript counts | DESeq2, edgeR, limma-voom | "Gene X is upregulated 2-fold" |
 | **DTE** Does this transcript change in absolute abundance? | Per-transcript count | swish (fishpond), DESeq2 on transcripts, sleuth | "Transcript X-201 is upregulated 2-fold" |
-| **DTU** Do proportions of transcripts within the gene shift? | Vector of per-transcript proportions | DRIMSeq, DEXSeq, satuRn (+ stageR) | "Gene X switches from isoform 201 (50% → 10%) to 202 (50% → 90%)" |
+| **DTU** Do proportions of transcripts within the gene shift? | Vector of per-transcript proportions | DRIMSeq, DEXSeq, satuRn (+ stageR) | "Gene X switches from isoform 201 (50% -> 10%) to 202 (50% -> 90%)" |
 
 DTU is statistically harder than DGE because:
 1. The null is **compositional** (proportions sum to 1; one transcript up means another down).
-2. **Multi-stage testing** is required: gene-level "any DTU" + transcript-level "which transcript" → stageR formalizes this.
+2. **Multi-stage testing** is required: gene-level "any DTU" + transcript-level "which transcript" -> stageR formalizes this.
 3. **Quantification uncertainty propagates** when transcripts are similar (Salmon EM ambiguity).
 
 DTU and event-level differential splicing answer related but distinct questions: rMATS' `IncLevelDifference` is essentially a 1-D projection of a DTU shift onto a single event coordinate. The pragmatic 2026 default: run both an event-level tool (rMATS or leafcutter) and a DTU pipeline; reconcile.
@@ -56,12 +59,12 @@ The IsoformSwitchAnalyzeR v2 default rule is: **satuRn if any condition has >5 r
 | Question | Recommended approach |
 |----------|----------------------|
 | Functional consequences of switches (domains, NMD, signal peptide) | IsoformSwitchAnalyzeR v2 with full external annotator pipeline |
-| Pure statistical DTU (gene-level + transcript-level OFDR) | DRIMSeq (filter) → DEXSeq → stageR; or → satuRn → stageR for n>5 |
-| DTU with proper quantification uncertainty | Salmon `--numGibbsSamples 20` → tximeta → swish for DTE; concurrent DTU |
+| Pure statistical DTU (gene-level + transcript-level OFDR) | DRIMSeq (filter) -> DEXSeq -> stageR; or -> satuRn -> stageR for n>5 |
+| DTU with proper quantification uncertainty | Salmon `--numGibbsSamples 20` -> tximeta -> swish for DTE; concurrent DTU |
 | Single-cell DTU | satuRn (DEXSeq doesn't scale to scRNA-seq) |
 | Long-read DTU (PacBio Iso-Seq, ONT) | IsoformSwitchAnalyzeR v2 long-read input mode (no Salmon EM uncertainty) |
 | Time-course DTU | DEXSeq with time as factor + interaction; or limma::lmFit on logit-prop matrix |
-| Cancer / disease — switch hits → mechanism | Standard pipeline + cross-reference with eCLIP, ClinVar, COSMIC |
+| Cancer / disease — switch hits -> mechanism | Standard pipeline + cross-reference with eCLIP, ClinVar, COSMIC |
 | Therapeutic ASO target identification | Standard pipeline + sashimi visualization + SpliceAI design |
 
 ## IsoformSwitchAnalyzeR v2 Workflow
@@ -174,7 +177,7 @@ The external tools must be run *outside* R; IsoformSwitchAnalyzeR provides FASTA
 
 A transcript is predicted NMD-sensitive if its premature termination codon (PTC) lies **>50-55 nt upstream of the last exon-exon junction** (Maquat 2004 *Nat Rev Mol Cell Biol*; Lykke-Andersen & Jensen 2015 *Nat Rev Mol Cell Biol*).
 
-**Mechanism:** Spliceosome deposits the Exon Junction Complex (EJC) ~20-24 nt upstream of every exon-exon junction. During the pioneer round of translation, ribosome reading through removes EJCs upstream of the stop codon. If a stop codon precedes the last EJC by >50 nt, the EJC remains, recruits UPF1 → SMG1 phosphorylation → SMG6/SMG7 → mRNA decay.
+**Mechanism:** Spliceosome deposits the Exon Junction Complex (EJC) ~20-24 nt upstream of every exon-exon junction. During the pioneer round of translation, ribosome reading through removes EJCs upstream of the stop codon. If a stop codon precedes the last EJC by >50 nt, the EJC remains, recruits UPF1 -> SMG1 phosphorylation -> SMG6/SMG7 -> mRNA decay.
 
 **Caveats and exceptions:**
 - **Last-exon PTCs escape NMD** — can be dominant-negative or gain-of-function (e.g. MYH7 truncating variants).
@@ -191,14 +194,14 @@ A large class of conserved alternative splicing events is **deliberately PTC-int
 
 - **All major SR proteins** (SRSF1-12) autoregulate via poison exons (Lareau 2007 *Nature*; Ni 2007 *Genes Dev*)
 - **All major hnRNPs** likewise
-- **~70% of ribosomal protein genes** use AS-NMD (Mauger 2016 *Neuron*; Pirnie 2017 *RNA*)
-- **SCN1A** poison exon → Stoke STK-001 ASO in Phase 1/2 for Dravet syndrome (Han 2020 *Sci Transl Med*)
+- **Ribosomal protein genes** use AS-NMD autoregulation (e.g. rpL3, rpL12; Cuccurese 2005 *NAR*)
+- **SCN1A** poison exon -> Stoke STK-001 ASO in Phase 1/2 for Dravet syndrome (Han 2020 *Sci Transl Med*)
 
 **Functional implication:** an *increase* in PSI of a poison exon *decreases* functional protein. Sign-of-effect in DTU output is opposite from intuition for these genes. Always check whether the alternative form is PTC-bearing before interpreting direction.
 
 **Disease examples:**
-- TDP-43 cryptic exons (UNC13A, STMN2) introduce PTCs → NMD on disease-relevant transcript (Brown 2022 *Nature*)
-- Last-exon variants in MYH7, CARDIA: escape NMD → dominant-negative protein
+- TDP-43 cryptic exons (UNC13A, STMN2) introduce PTCs -> NMD on disease-relevant transcript (Brown 2022 *Nature*)
+- Last-exon truncating variants in TTN (and MYH7): escape NMD -> stable poison/dominant-negative protein
 
 ## Manual DTU Pipeline (DRIMSeq + DEXSeq + stageR)
 
@@ -259,7 +262,7 @@ results <- getAdjustedPValues(stageRObj, order = FALSE, onlySignificantGenes = F
 **stageR semantics:**
 - **Stage 1 (screening)**: gene-level p-value (`perGeneQValue` from DEXSeq, or DRIMSeq's gene-level p) is filtered at the desired Overall FDR.
 - **Stage 2 (confirmation)**: only within significant genes, individual transcripts are tested at a within-gene FWER computed to maintain global OFDR.
-- **Net effect**: gene-level FDR is properly controlled, AND you know which transcript drove the call.
+- **Net effect**: gene-level FDR is properly controlled, AND the transcript that drove the call is known.
 - Without stageR: naive transcript-level BH overcounts because the gene-level multiple-testing burden is ignored.
 
 ## fishpond/swish for Inferential-Uncertainty-Aware Testing
@@ -401,14 +404,14 @@ extractSplicingSummary(aSwitchList, asFractionTotal = FALSE)
 
 ## Common Pitfalls
 
-- **Skipping stageR** → inflated transcript-level FDR; gene-level multiple-testing burden ignored.
-- **Forgetting NMD direction** → sign-of-effect on protein opposite to sign-of-effect on transcript when alternative form is a PTC-bearer. Always check.
-- **Treating short-read-derived isoform calls as ground truth** → Salmon EM is uncertain; use Gibbs samples + swish if quantification uncertainty matters.
-- **Comparing across annotations** → GENCODE basic vs comprehensive, RefSeq, Ensembl all have different transcript catalogs; switches "appear" or "disappear" with annotation choice. Document version.
-- **Not running long-read where possible** → Iso-Seq / ONT removes ambiguity for genes with many similar isoforms (TTN, MAPT, NEFM, DSCAM).
-- **Choosing satuRn or DEXSeq blindly at the n=5 boundary** → IsoformSwitchAnalyzeR v2 auto-selects based on >5 vs <=5; results may differ. Document choice.
-- **Reporting a "switch" without a sashimi plot** → reviewers will demand it; do it upfront.
-- **Forgetting stageR also corrects gene-level p when starting from DRIMSeq** → DRIMSeq's `gene_p` should be passed as `pScreen`, not raw transcript p-values.
+- **Skipping stageR** -> inflated transcript-level FDR; gene-level multiple-testing burden ignored.
+- **Forgetting NMD direction** -> sign-of-effect on protein opposite to sign-of-effect on transcript when alternative form is a PTC-bearer. Always check.
+- **Treating short-read-derived isoform calls as ground truth** -> Salmon EM is uncertain; use Gibbs samples + swish if quantification uncertainty matters.
+- **Comparing across annotations** -> GENCODE basic vs comprehensive, RefSeq, Ensembl all have different transcript catalogs; switches "appear" or "disappear" with annotation choice. Document version.
+- **Not running long-read where possible** -> Iso-Seq / ONT removes ambiguity for genes with many similar isoforms (TTN, MAPT, NEFM, DSCAM).
+- **Choosing satuRn or DEXSeq blindly at the n=5 boundary** -> IsoformSwitchAnalyzeR v2 auto-selects based on >5 vs <=5; results may differ. Document choice.
+- **Reporting a "switch" without a sashimi plot** -> reviewers will demand it; do it upfront.
+- **Forgetting stageR also corrects gene-level p when starting from DRIMSeq** -> DRIMSeq's `gene_p` should be passed as `pScreen`, not raw transcript p-values.
 
 ## Related Skills
 
@@ -423,8 +426,8 @@ extractSplicingSummary(aSwitchList, asFractionTotal = FALSE)
 
 ## References
 
-- Vitting-Seerup 2025 *bioRxiv* - IsoformSwitchAnalyzeR v2
-- Vitting-Seerup & Sandelin 2017 *Bioinformatics* - IsoformSwitchAnalyzeR original
+- Han et al 2025 *bioRxiv* 10.64898/2025.12.08.693027 - IsoformSwitchAnalyzeR v2
+- Vitting-Seerup & Sandelin 2019 *Bioinformatics* 35:4469-4471 - IsoformSwitchAnalyzeR original
 - Anders et al 2012 *Genome Res* - DEXSeq
 - Nowicka & Robinson 2016 *F1000Research* - DRIMSeq
 - Gilis et al 2022 *F1000Research* - satuRn
@@ -435,6 +438,7 @@ extractSplicingSummary(aSwitchList, asFractionTotal = FALSE)
 - Lykke-Andersen & Jensen 2015 *Nat Rev Mol Cell Biol* - NMD update
 - Lindeboom et al 2016 *Nat Genet* - NMD escape rates from RNA-seq
 - Lareau et al 2007 *Nature* - SR protein AS-NMD autoregulation
-- Mauger et al 2016 *Neuron* - ribosomal protein AS-NMD
+- Ni et al 2007 *Genes Dev* - ultraconserved-element AS-NMD in splicing regulators
+- Cuccurese et al 2005 *NAR* 33:5965-5977 - ribosomal protein AS-NMD autoregulation
 - Brown et al 2022 *Nature* - UNC13A cryptic exon (TDP-43)
 - Han et al 2020 *Sci Transl Med* - SCN1A poison exon ASO

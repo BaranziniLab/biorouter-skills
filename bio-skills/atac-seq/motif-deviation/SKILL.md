@@ -1,11 +1,16 @@
 ---
 name: atac-seq-motif-deviation
 description: Analyze TF motif accessibility variability across samples or single cells using chromVAR. Use when identifying TF motifs whose accessibility correlates with conditions, computing per-sample motif z-scores after matched background correction, comparing to ArchR / Signac equivalents, or distinguishing motif-accessibility signal from per-site footprinting.
-license: Apache-2.0
+license: Apache-2.0 AND MIT
 tool_type: r
 primary_tool: chromVAR
 user-invocable: false
+metadata:
+  version: "1.1.0"
+  upstream: "GPTomics/bioSkills@d91ed3d"
 ---
+> **Tip — prefer `uv` over `pip`.** Where this skill shows `pip install <pkg>`, you can run `uv pip install <pkg>` (in an existing venv) or `uv add <pkg>` (in a uv-managed project) for faster, reproducible installs. Create venvs with `uv venv .venv` and activate with `source .venv/bin/activate`. Falls back to plain `pip` if `uv` is not available.
+
 
 ## Version Compatibility
 
@@ -42,7 +47,6 @@ Z-scores are signed: positive = motif more accessible in this sample than popula
 | chromVAR | Peak count matrix + motif annotations | Matched GC + accessibility (50 peaks per match by default) | Per-sample motif z-score | Bulk + single-cell (sparse-aware); cross-sample variability | < 1500 reads/sample (bulk) or < 500 cells/cluster (sc); too few peaks (< 5000) |
 | Signac::RunChromVAR | Seurat single-cell ATAC object | Same as chromVAR (delegated) | Motif assay in Seurat object | Standard single-cell workflows in Seurat ecosystem | Same as chromVAR; needs Seurat object setup |
 | ArchR::addDeviationsMatrix | ArrowFile + tile/peak matrix | ArchR's getBgdPeaks (matched on GC + log accessibility) | Per-cell deviation matrix in ArchR project | ArchR ecosystem; faster on large scATAC | ArchR-specific format; not portable to chromVAR objects |
-| chromVAR (multinomial) | Peak counts + motif annotations | Same | Same z-scores via different model | When read-depth is highly variable across samples | Original poisson-based variant; multinomial in newer versions |
 | Signac::FindMarkers (with motifs as features) | Motif accessibility matrix from RunChromVAR | Per-cell-cluster | Differential motifs per cluster | Cluster-level differential | Differential test must be on z-scores; raw counts will mislead |
 | TF activity inference (DecoupleR / SCENIC+) | Gene expression + motif activity | Multi-modal | TF activity score | Multi-omics integration | Requires paired RNA-seq; chromVAR alone is insufficient |
 
@@ -78,7 +82,7 @@ chromVAR is fundamentally a *summary statistic* over many motif sites. Footprint
 
 **Trigger:** Calling `getBackgroundPeaks()` with non-default `niterations` or `bias`.
 
-**Mechanism:** Default 50 iterations × 10 bgd peaks per peak generates 500 background sets. Reducing `niterations` increases noise; increasing slows linearly without much accuracy gain.
+**Mechanism:** Default `niterations=50` yields 50 matched background peaks per foreground peak. Reducing `niterations` increases noise; increasing slows linearly without much accuracy gain.
 
 **Symptom:** Custom backgrounds inflate variability when niterations < 30.
 
@@ -136,6 +140,10 @@ chromVAR is fundamentally a *summary statistic* over many motif sites. Footprint
 
 ## chromVAR Workflow (Bulk)
 
+**Goal:** Compute per-sample TF-motif accessibility z-scores corrected for GC bias and total signal.
+
+**Approach:** Build a SummarizedExperiment from peak counts, add GC bias, filter sparse samples and peaks, match JASPAR motifs to peaks, sample matched background peaks, then compute deviations and per-motif variability.
+
 ```r
 library(chromVAR); library(motifmatchr); library(BSgenome.Hsapiens.UCSC.hg38)
 library(JASPAR2024); library(TFBSTools); library(SummarizedExperiment)
@@ -145,9 +153,9 @@ counts <- as.matrix(read.delim('peak_counts.tsv', row.names=1))    # rows = peak
 se <- SummarizedExperiment(assays=list(counts=counts), rowRanges=peaks)
 se <- addGCBias(se, genome=BSgenome.Hsapiens.UCSC.hg38)
 
-# Filter: depth >= 1500 reads/sample, FRiP >= 0.15, peak in >= 10% samples with >= 10 reads
+# Filter: depth >= 1500 reads/sample, FRiP >= 0.15; drop peaks with < 10 total fragments
 se <- filterSamples(se, min_depth=1500, min_in_peaks=0.15, shiny=FALSE)
-se <- filterPeaks(se, non_overlapping=TRUE, min_count=10, n_samples_frac=0.1)
+se <- filterPeaks(se, non_overlapping=TRUE, min_fragments_per_peak=10)
 
 # Motifs: JASPAR vertebrate CORE (default for human/mouse)
 # JASPAR2024 + TFBSTools incompatibility (TFBSTools issue #39): getMatrixSet does not dispatch on the
@@ -164,11 +172,15 @@ bg <- getBackgroundPeaks(object=se, niterations=50)
 
 # Compute deviations
 dev <- computeDeviations(object=se, annotations=motif_ix, background_peaks=bg)
-zscores <- deviations(dev)              # motif x sample matrix of z-scores
+zscores <- deviationScores(dev)         # motif x sample matrix of z-scores (deviations() returns raw bias-corrected deviations)
 variability <- computeVariability(dev) # per-motif variability ranking
 ```
 
 ## Differential Motif Activity (limma on z-scores)
+
+**Goal:** Identify TF motifs whose chromVAR z-scores differ significantly between conditions.
+
+**Approach:** Build a contrast design matrix, fit limma's linear model on the motif-x-sample z-score matrix with empirical Bayes moderation, and pull motifs at adjusted p < 0.05.
 
 ```r
 library(limma)
@@ -181,6 +193,10 @@ diff_motifs <- topTable(fit, coef=2, number=Inf, p.value=0.05)   # adj.P.Val col
 Use `adj.P.Val` (limma's BH FDR), not `FDR` (which limma does not return). `logFC` is the difference in z-scores between groups; magnitudes 0.5-2 typical.
 
 ## chromVAR for Single-Cell ATAC (Signac)
+
+**Goal:** Compute per-cell TF-motif z-scores in a Seurat scATAC workflow and call cluster-marker motifs.
+
+**Approach:** Open the JASPAR2024 SQLite handle, attach motifs to the Seurat object via AddMotifs, run RunChromVAR to build the chromvar assay, then call FindAllMarkers with mean.fxn=rowMeans for z-score-appropriate differential.
 
 ```r
 library(Signac); library(Seurat); library(JASPAR2024); library(TFBSTools)
@@ -197,13 +213,20 @@ seurat_obj <- RunChromVAR(seurat_obj,
                           new.assay.name='chromvar')
 DefaultAssay(seurat_obj) <- 'chromvar'
 
-# Per-cluster differential motifs
+# Per-cluster differential motifs.
+# `mean.fxn` is the standard FindAllMarkers/FindMarkers control for the per-feature summary.
+# `fc.name` controls the output column name and is accepted by Seurat 4.x/5.x; if it errors,
+# fall back to renaming the output column post-hoc.
 markers <- FindAllMarkers(seurat_obj, only.pos=TRUE, mean.fxn=rowMeans, fc.name='avg_diff')
 ```
 
-`mean.fxn=rowMeans` is required for z-score-style data; the default (`fc.name='avg_log2FC'`) makes no sense here.
+`mean.fxn=rowMeans` is required for z-score-style data; the default fold-change function (designed for log-counts) makes no sense on chromVAR z-scores.
 
 ## chromVAR for Single-Cell ATAC (ArchR)
+
+**Goal:** Compute per-cell TF-motif deviations and per-cluster marker motifs within the ArchR ecosystem.
+
+**Approach:** Build the reproducible peakset, attach motif annotations from CIS-BP, sample matched background peaks, run addDeviationsMatrix to score motif z-scores, and call getMarkerFeatures on the MotifMatrix per cluster.
 
 ```r
 library(ArchR)
@@ -246,11 +269,11 @@ Variability is the across-sample variance of z-scores; it ranks motifs without r
 
 **Trigger:** Tuning chromVAR's `getBackgroundPeaks` parameters; benchmarking against published results.
 
-**Mechanism:** chromVAR matches each foreground peak to background peaks by GC content + total accessibility, in 25 GC bins x 25 accessibility bins (default). For each foreground peak, the algorithm samples k_iterations (default 50) replacement peaks from the matching bin. Variance across these matched samples becomes the null reference.
+**Mechanism:** chromVAR matches each foreground peak to background peaks by GC content + total accessibility, using a bin size `bs` (default 50). For each foreground peak, the algorithm samples `niterations` (default 50) replacement peaks from the matching bins. Variance across these matched samples becomes the null reference.
 
 **Threshold tuning:**
-- **bins=25** (default): each bin is ~4% GC range; works for >= 5,000 peaks. For very small peaksets (< 2,000), drop to `bins=10` (~10% GC range) to avoid empty bins.
-- **niterations=50** (default): with 25 x 25 = 625 bins, each background sample uses ~50 peaks per match. Reducing below 30 inflates noise; increasing above 100 yields diminishing returns.
+- **bs=50** (default): the GC/accessibility bin granularity; works for typical peaksets. For very small peaksets (< 2,000 peaks), lower `bs` to avoid empty bins.
+- **niterations=50** (default): 50 matched background peaks per foreground peak. Reducing below 30 inflates noise; increasing above 100 yields diminishing returns.
 
 For non-canonical genomes (mouse mm10 with different GC distribution), consider rebuilding bins manually with `quantile()` to ensure equal-sized bins.
 
@@ -260,7 +283,7 @@ For non-canonical genomes (mouse mm10 with different GC distribution), consider 
 |------|---------|----------|------------|
 | chromVAR | Matched-background z-score per motif | Standard sc workflow; integrated in Signac/ArchR | Linear; no sequence context beyond motif PWM |
 | scBasset (Yuan & Kelley 2022) | Sequence CNN with per-cell projection | Higher cluster-discrimination accuracy than chromVAR; predicts cell states from sequence | Newer; ecosystem smaller; needs >= 100 cells per cluster for stable projection |
-| EnFormer-derived TF activity | Long-context Transformer | Cross-cell-type TF activity prediction; distal regulation | Pre-trained models cell-type-specific |
+| Enformer-derived TF activity | Long-context Transformer | Cross-cell-type TF activity prediction; distal regulation | Pre-trained models cell-type-specific |
 | DecoupleR ULM/MLM (Badia-i-Mompel 2022) | Multi-method consensus TF activity scoring | Multi-omics integration; aggregation across motif databases | Requires careful cell-x-motif input matrix |
 
 For high-stakes per-cell TF activity, run chromVAR + scBasset and report the intersection. See atac-seq/deep-learning-atac for scBasset details.
@@ -268,7 +291,7 @@ For high-stakes per-cell TF activity, run chromVAR + scBasset and report the int
 ## DecoupleR Multi-Method TF Activity
 
 ```python
-import decoupler as dc
+import decoupler as dc   # 1.x API shown (pip install 'decoupler<2'); decoupler 2.x renamed these to dc.mt.ulm / dc.mt.mlm / dc.mt.consensus
 # adata: AnnData with motif_x_cell deviation matrix as input
 acts_ulm = dc.run_ulm(mat=adata.obsm['chromvar'], net=collectri_net,
                       source='source', target='target')
@@ -300,8 +323,9 @@ DecoupleR aggregates multiple TF-activity inference methods (ULM, MLM, viper, GS
 - Aibar S et al 2017 Nat Methods 14:1083 (SCENIC; downstream TF target inference)
 - Bravo Gonzalez-Blas C et al 2023 Nat Methods 20:1355 (SCENIC+)
 - Castro-Mondragon JA et al 2022 NAR 50:D165 (JASPAR 2022)
+- Rauluseviciute I et al 2024 NAR 52:D174 (JASPAR 2024)
 - Weirauch MT et al 2014 Cell 158:1431 (CIS-BP)
-- Vorontsov IE et al 2024 NAR 52:D116 (HOCOMOCO v12)
+- Vorontsov IE et al 2024 NAR 52:D154 (HOCOMOCO v12)
 
 ## Related Skills
 
@@ -309,7 +333,7 @@ DecoupleR aggregates multiple TF-activity inference methods (ULM, MLM, viper, GS
 - atac-seq/differential-accessibility - Peak-level DA (alternative approach)
 - atac-seq/single-cell-atac - sc workflow integration with Signac/ArchR
 - atac-seq/co-accessibility - Cis-regulatory connections
-- atac-seq/deep-learning-atac - scBasset / EnFormer alternative
+- atac-seq/deep-learning-atac - scBasset / Enformer alternative
 - gene-regulatory-networks/scenic-regulons - Downstream TF -> target inference
 - chip-seq/motif-analysis - Alternative motif-enrichment approaches
 - single-cell/clustering - Inputs for per-cluster motif activity

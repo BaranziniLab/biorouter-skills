@@ -1,10 +1,13 @@
 ---
 name: alignment-io
 description: Read, write, and convert multiple sequence alignment files using Biopython Bio.AlignIO. Supports Clustal, PHYLIP, Stockholm, FASTA, Nexus, and other alignment formats for phylogenetics and conservation analysis. Use when reading, writing, or converting alignment file formats.
-license: Apache-2.0
+license: Apache-2.0 AND MIT
 tool_type: python
 primary_tool: Bio.AlignIO
 user-invocable: false
+metadata:
+  version: "1.1.0"
+  upstream: "GPTomics/bioSkills@d91ed3d"
 ---
 
 ## Version Compatibility
@@ -65,7 +68,7 @@ Recommend `Bio.Align` (modern API) over `Bio.AlignIO` (legacy) for new code; it 
 
 ## Reading Alignments
 
-**"Read an alignment file"** → Parse an alignment file into an alignment object with sequences and metadata accessible.
+**"Read an alignment file"** -> Parse an alignment file into an alignment object with sequences and metadata accessible.
 
 **Goal:** Load alignment data from files in various formats (Clustal, PHYLIP, Stockholm, FASTA).
 
@@ -118,7 +121,7 @@ with open('output.aln', 'w') as handle:
 
 ## Format Conversion
 
-**"Convert alignment format"** → Transform an alignment file from one format to another (e.g., Clustal to PHYLIP).
+**"Convert alignment format"** -> Transform an alignment file from one format to another (e.g., Clustal to PHYLIP).
 
 **Goal:** Convert alignment files between formats for compatibility with different analysis tools.
 
