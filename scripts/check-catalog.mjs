@@ -175,6 +175,20 @@ export function checkRowFolder(root, row, catalog) {
       if (entry.status === 'active' && !JOB_PATTERN.test(entry.job ?? '')) f('components', `job-${folder}`, `component ${folder} has no valid job`);
     }
     for (const s of skillFilesIn(root, row.path)) skillFiles.push(s);
+    // Optional package record (plan 1.6; the install probe of 2026-11-22 showed
+    // the installed id, path and files are the same with and without it). When
+    // present it must agree with the row.
+    const pkgPath = path.join(abs, 'biorouter-package.json');
+    if (fs.existsSync(pkgPath)) {
+      let pkg = null;
+      try {
+        pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+      } catch {
+        f('package', 'package-json', 'biorouter-package.json is not valid JSON');
+      }
+      if (pkg && (pkg.id !== row.id || pkg.version !== row.version || pkg.displayName !== row.display_name))
+        f('package', 'package-json', `biorouter-package.json says ${JSON.stringify({ id: pkg.id, displayName: pkg.displayName, version: pkg.version })}; the row says ${JSON.stringify({ id: row.id, displayName: row.display_name, version: row.version })}`);
+    }
   }
   for (const s of skillFiles) {
     const fm = s.frontmatter ?? {};

@@ -167,3 +167,10 @@ test('jobs.json must carry the same screen settings as the rules library', async
   const drift = runCheck({ root: fx.root, catalog: fx.catalog, builtins: BUILTINS, jobs: { ...jobs, similarity_threshold: 0.4 } });
   assert.deepEqual(rules(drift), ['jobs:rules-drift']);
 });
+
+test("a bundle's optional biorouter-package.json must agree with its row", () => {
+  const good = run(({ write }) => write('bio-skills/gamma/biorouter-package.json', JSON.stringify({ id: 'gamma', displayName: 'Gamma', version: '1.0.0' })));
+  assert.deepEqual(rules(good), []);
+  const bad = run(({ write }) => write('bio-skills/gamma/biorouter-package.json', JSON.stringify({ id: 'gamma', displayName: 'Gamma', version: '0.9.0' })));
+  assert.deepEqual(rules(bad), ['package:package-json:gamma']);
+});

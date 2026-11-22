@@ -9,8 +9,8 @@
 // can be checked afterwards) and archive/<id>-<old version>.zip (the published
 // archive before it is replaced, which is also the rollback copy).
 // --biorouter runs the install test in a throwaway BIOROUTER_PATH_ROOT: the
-// new archive installed fresh, then over the previous archive, must land under
-// the same id both times. Without it the install test is skipped and the run
+// new archive installed fresh, then over the previous archive (with --force),
+// must land under the same id both times. Without it the install test is skipped and the run
 // says so.
 //
 // Every step runs gh against BaranziniLab/biorouter-skills. A release that
@@ -83,8 +83,8 @@ function installTest(zip, previous, id) {
     say(`skip  install test for ${id} (no --biorouter)`);
     return true;
   }
-  const run = (root, file) =>
-    execFileSync(opts.biorouter, ['skill', 'install', file], {
+  const run = (root, file, force = false) =>
+    execFileSync(opts.biorouter, ['skill', 'install', ...(force ? ['--force'] : []), file], {
       encoding: 'utf8',
       env: { ...process.env, BIOROUTER_PATH_ROOT: root, BIOROUTER_DISABLE_KEYRING: 'true' },
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -96,8 +96,9 @@ function installTest(zip, previous, id) {
   if (!opts.execute) return true;
   const a = run(fresh, zip);
   if (previous) run(over, previous);
-  const b = run(over, zip);
-  const named = (out) => out.includes(id);
+  const b = run(over, zip, Boolean(previous));
+  // The installer prints "path: <root>/config/skills/<id>" for what it installed.
+  const named = (out) => new RegExp(`path: .*[\\\\/]skills[\\\\/]${id}\\s*$`, 'm').test(out);
   if (!named(a) || !named(b)) {
     say(`FAIL  install of ${id} did not report the id both times\n--- fresh\n${a}\n--- over\n${b}`);
     return false;
