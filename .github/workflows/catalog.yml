@@ -31,7 +31,7 @@ jobs:
       - name: Merged and retired folders hold their stubs
         run: node scripts/write-stubs.mjs --check
       - name: Tests of the checks
-        run: node --test scripts/
+        run: node --test scripts/*.test.mjs
 
   releases:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
