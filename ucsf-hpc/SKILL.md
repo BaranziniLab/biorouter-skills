@@ -80,6 +80,8 @@ ssh -o BatchMode=yes ucsf-bastion "ssh-keyscan chpc-ucsf-login-vm1 2>/dev/null" 
 ssh -o BatchMode=yes ucsf-bastion "ssh-keyscan chpc-ucsf-login-vm1.corehpc.ucsf.edu 2>/dev/null" >> ~/.ssh/known_hosts
 ```
 
+`ssh-keyscan` trusts whatever key the host presents. Before appending, show the person the fingerprint (`ssh-keygen -lf <(ssh -o BatchMode=yes ucsf-bastion "ssh-keyscan chpc-ucsf-login-vm1 2>/dev/null")`) and have them confirm it against the cluster's documentation or administrators.
+
 ---
 
 ## 2. Avoiding Repeated Duo Pushes (ControlMaster)
