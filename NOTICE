@@ -24,5 +24,23 @@ hookify includes material from anthropics/claude-plugins-official (plugins/hooki
 
 frontend-design includes material from anthropics/claude-plugins-official (plugins/frontend-design, commit 104d39be10b7b1380b2ae23a387a11a297b599c3), licensed under Apache-2.0. Changes: The plugin's commands and subagents folded into one SKILL.md; shell routed through the Developer extension.
 
-alignment, alignment-files, alternative-splicing, atac-seq, causal-genomics, chemoinformatics, chip-seq, clinical-biostatistics, clinical-databases, clip-seq, comparative-genomics, copy-number, crispr-screens, data-visualization, database-access, differential-expression, ecological-genomics, epidemiological-genomics, epitranscriptomics, experimental-design, expression-matrix, flow-cytometry, gene-regulatory-networks, genome-annotation, genome-assembly, genome-engineering, genome-intervals, hi-c-analysis, imaging-mass-cytometry, immunoinformatics, liquid-biopsy, long-read-sequencing, machine-learning, metabolomics, metagenomics, methylation-analysis, microbiome, multi-omics-integration, pathway-analysis, phasing-imputation, phylogenetics, population-genetics, primer-design, proteomics, read-alignment, read-qc, reporting, restriction-analysis, ribo-seq, rna-quantification, rna-structure, sequence-io, sequence-manipulation, single-cell, small-rna-seq, spatial-transcriptomics, structural-biology, systems-biology, tcr-bcr-analysis, temporal-genomics, variant-calling, workflow-management, workflows include material from GPTomics/bioSkills (63 folders, one per skill named here, commit a32f29bce2bcb9bd880300cc324fb404b6e346c2),
-Copyright (c) 2026 GPTomics, licensed under MIT. Changes: Dropped the bio- name prefix, set user-invocable: false, added a one-line uv tip to skills that ship pip install commands.
+alignment, alignment-files, alternative-splicing, atac-seq, causal-genomics, chemoinformatics, chip-seq, clinical-biostatistics, clinical-databases, clip-seq, comparative-genomics, copy-number, crispr-screens, data-visualization, database-access, differential-expression, ecological-genomics, epidemiological-genomics, epitranscriptomics, experimental-design, expression-matrix, flow-cytometry, gene-regulatory-networks, genome-annotation, genome-assembly, genome-engineering, genome-intervals, hi-c-analysis, imaging-mass-cytometry, immunoinformatics, liquid-biopsy, long-read-sequencing, machine-learning, metabolomics, metagenomics, methylation-analysis, microbiome, multi-omics-integration, pathway-analysis, phasing-imputation, phylogenetics, population-genetics, primer-design, proteomics, read-alignment, read-qc, reporting, restriction-analysis, ribo-seq, rna-quantification, rna-structure, sequence-io, sequence-manipulation, single-cell, small-rna-seq, spatial-transcriptomics, structural-biology, systems-biology, tcr-bcr-analysis, temporal-genomics, variant-calling, workflow-management, workflows include material from GPTomics/bioSkills (63 folders, one per skill named here, commit d91ed3d563019e649dc854c56ccd62551359488a),
+Copyright (c) 2026 GPTomics, licensed under MIT.
+
+clinical-biostatistics, clinical-biostatistics, clinical-biostatistics include material from Aperivue/medsci-skills (skills/analyze-stats, skills/calc-sample-size, skills/make-figures, commit 7e9d133dd0216c29b0e030729e3719c3db5e0973),
+Copyright (c) 2026 Aperivue (https://aperivue.com), licensed under MIT.
+
+database-access includes material from K-Dense-AI/scientific-agent-skills (skills/ontology-term-resolution, commit ec59a29a03d5c40f73ab40878df04860bc00e876),
+Copyright (c) 2025 K-Dense Inc., licensed under MIT.
+
+reporting includes material from posit-dev/skills (quarto/quarto-authoring, commit 951959403f4ecc9d0274adf35538fc67153b6f31),
+Copyright (c) 2025 Posit PBC, licensed under MIT.
+
+reporting includes material from openai/skills (skills/.curated/jupyter-notebook, commit 49f948faa9258a0c61caceaf225e179651397431),
+none stated in the upstream LICENSE.txt (Apache License 2.0 text only), licensed under Apache-2.0.
+
+reporting, reporting include material from marimo-team/skills (skills/marimo-notebook, skills/jupyter-to-marimo, commit d5783f16066d6b05576e8a8637466c11f2433734),
+none stated in the upstream LICENSE (Apache License 2.0 text only), licensed under Apache-2.0.
+
+workflow-management includes material from jsperger/llm-r-skills (skills/targets-pipelines, commit 7a10126fafd6d19b340da2661c7559b120264ffb),
+Copyright (c) 2026 John Sperger, licensed under MIT.

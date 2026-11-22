@@ -7,7 +7,7 @@ Skills are instruction bundles that Biorouter loads on demand to shape how the m
 This repository is curated by the [Baranzini Lab](https://baranzinilab.ucsf.edu/) at UCSF. Each top-level folder is one skill or a bundle of skills, `bio-skills/<id>/` holds the biomedical bundles, and [`catalog.json`](catalog.json) records every item, active or not.
 
 <!-- catalog:begin counts -->
-47 core skills, 7 developer skills and 63 biomedical bundles (466 skills) are active; 12 older skills have moved or retired.
+47 core skills, 7 developer skills and 63 biomedical bundles (570 skills) are active; 12 older skills have moved or retired.
 <!-- catalog:end counts -->
 
 ---
@@ -101,69 +101,69 @@ Several of these are adapted from [Anthropic's official Claude Code plugins](htt
 <!-- catalog:begin biomedical -->
 | Bundle | Version | Skills | What it covers |
 |---|---|---|---|
-| [`alignment`](bio-skills/alignment) | 1.0.0 | 7 | Multiple sequence alignment and pairwise alignment. |
-| [`alignment-files`](bio-skills/alignment-files) | 1.0.0 | 10 | SAM/BAM/CRAM manipulation, sorting, indexing, dedup, and stats. |
-| [`alternative-splicing`](bio-skills/alternative-splicing) | 1.0.0 | 9 | RNA isoform and splice-junction analysis from short- and long-read data. |
-| [`atac-seq`](bio-skills/atac-seq) | 1.0.0 | 12 | Chromatin accessibility, peak calling, footprinting, and deep-learning ATAC. |
-| [`causal-genomics`](bio-skills/causal-genomics) | 1.0.0 | 11 | Mendelian randomization, colocalization, fine-mapping, and TWAS. |
-| [`chemoinformatics`](bio-skills/chemoinformatics) | 1.0.0 | 9 | Molecular structure handling, descriptors, and drug-discovery utilities. |
-| [`chip-seq`](bio-skills/chip-seq) | 1.0.0 | 7 | Transcription-factor and histone-mark peak calling and differential binding. |
-| [`clinical-biostatistics`](bio-skills/clinical-biostatistics) | 1.0.0 | 6 | Survival, mixed models, and clinical-trial statistical analysis. |
-| [`clinical-databases`](bio-skills/clinical-databases) | 1.0.0 | 10 | ClinVar, OMIM, COSMIC, gnomAD, and phenotype DB queries. |
-| [`clip-seq`](bio-skills/clip-seq) | 1.0.0 | 5 | Protein-RNA interaction mapping from iCLIP/eCLIP/PAR-CLIP data. |
-| [`comparative-genomics`](bio-skills/comparative-genomics) | 1.0.0 | 5 | Cross-species synteny, orthology, and selection scans. |
-| [`copy-number`](bio-skills/copy-number) | 1.0.0 | 4 | CNV detection, visualization, and segmentation. |
-| [`crispr-screens`](bio-skills/crispr-screens) | 1.0.0 | 8 | Pooled screen counting, MAGeCK analysis, and hit prioritization. |
-| [`data-visualization`](bio-skills/data-visualization) | 1.0.0 | 13 | Publication-quality plots: heatmaps, volcano, Manhattan, dimplots. |
-| [`database-access`](bio-skills/database-access) | 1.0.0 | 12 | NCBI, UniProt, Ensembl, and biological database APIs. |
-| [`differential-expression`](bio-skills/differential-expression) | 1.0.0 | 7 | RNA-seq DE testing with DESeq2, edgeR, and limma-voom. |
-| [`ecological-genomics`](bio-skills/ecological-genomics) | 1.0.0 | 6 | Environmental DNA, ecological population genomics, and biodiversity. |
-| [`epidemiological-genomics`](bio-skills/epidemiological-genomics) | 1.0.0 | 5 | Pathogen typing, outbreak phylogeography, and surveillance. |
-| [`epitranscriptomics`](bio-skills/epitranscriptomics) | 1.0.0 | 5 | m6A and other RNA modification detection from sequencing. |
-| [`experimental-design`](bio-skills/experimental-design) | 1.0.0 | 4 | Power analysis and sample-size calculation for omics studies. |
-| [`expression-matrix`](bio-skills/expression-matrix) | 1.0.0 | 5 | Count normalization, gene ID mapping, and matrix QC. |
-| [`flow-cytometry`](bio-skills/flow-cytometry) | 1.0.0 | 8 | FCS parsing, gating, and high-dimensional cytometry analysis. |
-| [`gene-regulatory-networks`](bio-skills/gene-regulatory-networks) | 1.0.0 | 5 | TF-target network inference from expression and chromatin data. |
-| [`genome-annotation`](bio-skills/genome-annotation) | 1.0.0 | 6 | Gene prediction, repeat masking, and functional annotation. |
-| [`genome-assembly`](bio-skills/genome-assembly) | 1.0.0 | 8 | De novo assembly, polishing, and assembly QC. |
-| [`genome-engineering`](bio-skills/genome-engineering) | 1.0.0 | 5 | CRISPR guide design, off-target prediction, and editing analysis. |
-| [`genome-intervals`](bio-skills/genome-intervals) | 1.0.0 | 7 | BED/GTF arithmetic, overlap, and feature manipulation. |
-| [`hi-c-analysis`](bio-skills/hi-c-analysis) | 1.0.0 | 8 | 3D chromatin contacts, TAD calling, and loop detection. |
-| [`imaging-mass-cytometry`](bio-skills/imaging-mass-cytometry) | 1.0.0 | 6 | Single-cell spatial proteomics from IMC and MIBI data. |
-| [`immunoinformatics`](bio-skills/immunoinformatics) | 1.0.0 | 5 | MHC binding, neoantigen prediction, and HLA typing. |
-| [`liquid-biopsy`](bio-skills/liquid-biopsy) | 1.0.0 | 6 | Cell-free DNA fragmentomics, tumor fraction, and methylation cfDNA. |
-| [`long-read-sequencing`](bio-skills/long-read-sequencing) | 1.0.0 | 8 | ONT and PacBio basecalling, alignment, and structural-variant workflows. |
-| [`machine-learning`](bio-skills/machine-learning) | 1.0.0 | 8 | Biomarker discovery, model training, and cross-validation pipelines. |
-| [`metabolomics`](bio-skills/metabolomics) | 1.0.0 | 8 | Mass-spec metabolite identification, alignment, and quantification. |
-| [`metagenomics`](bio-skills/metagenomics) | 1.0.0 | 7 | Shotgun microbial profiling, assembly, and binning. |
-| [`methylation-analysis`](bio-skills/methylation-analysis) | 1.0.0 | 5 | Bisulfite alignment and differential methylation testing. |
-| [`microbiome`](bio-skills/microbiome) | 1.0.0 | 6 | 16S rRNA amplicon and microbiota community profiling. |
-| [`multi-omics-integration`](bio-skills/multi-omics-integration) | 1.0.0 | 4 | Cross-modality fusion: MOFA, DIABLO, WNN, totalVI. |
-| [`pathway-analysis`](bio-skills/pathway-analysis) | 1.0.0 | 6 | GO, KEGG, Reactome, and GSEA enrichment testing. |
-| [`phasing-imputation`](bio-skills/phasing-imputation) | 1.0.0 | 4 | Haplotype phasing and genotype imputation with SHAPEIT and Beagle. |
-| [`phylogenetics`](bio-skills/phylogenetics) | 1.0.0 | 8 | Tree construction with IQ-TREE, RAxML, BEAST, and ancestral state. |
-| [`population-genetics`](bio-skills/population-genetics) | 1.0.0 | 6 | GWAS, population structure, LD, and selection scans. |
-| [`primer-design`](bio-skills/primer-design) | 1.0.0 | 3 | PCR and qPCR primer generation with Primer3 and primerBLAST. |
-| [`proteomics`](bio-skills/proteomics) | 1.0.0 | 9 | Mass-spec quantification and protein abundance pipelines. |
-| [`read-alignment`](bio-skills/read-alignment) | 1.0.0 | 4 | Short-read mapping with BWA-MEM2, Bowtie2, STAR, HISAT2. |
-| [`read-qc`](bio-skills/read-qc) | 1.0.0 | 7 | FastQC, fastp, trimming, and contamination screening. |
-| [`reporting`](bio-skills/reporting) | 1.0.0 | 5 | Reproducible HTML, Quarto, and R Markdown reports. |
-| [`restriction-analysis`](bio-skills/restriction-analysis) | 1.0.0 | 4 | Restriction-enzyme mapping and digestion prediction. |
-| [`ribo-seq`](bio-skills/ribo-seq) | 1.0.0 | 5 | Ribosome profiling and translation-efficiency analysis. |
-| [`rna-quantification`](bio-skills/rna-quantification) | 1.0.0 | 4 | Gene and transcript abundance with Salmon, kallisto, RSEM. |
-| [`rna-structure`](bio-skills/rna-structure) | 1.0.0 | 3 | Secondary-structure prediction with RNAfold, IPknot. |
-| [`sequence-io`](bio-skills/sequence-io) | 1.0.0 | 9 | FASTA/FASTQ parsing, conversion, and indexing. |
-| [`sequence-manipulation`](bio-skills/sequence-manipulation) | 1.0.0 | 7 | Transcription, translation, ORF finding, and motif search. |
-| [`single-cell`](bio-skills/single-cell) | 1.0.0 | 14 | scRNA-seq clustering, annotation, trajectory, and integration. |
-| [`small-rna-seq`](bio-skills/small-rna-seq) | 1.0.0 | 5 | miRNA, piRNA, and small-RNA quantification. |
-| [`spatial-transcriptomics`](bio-skills/spatial-transcriptomics) | 1.0.0 | 11 | Visium, Slide-seq, and high-resolution tissue expression. |
-| [`structural-biology`](bio-skills/structural-biology) | 1.0.0 | 8 | PDB parsing, AlphaFold, ESMFold, and structure analysis. |
-| [`systems-biology`](bio-skills/systems-biology) | 1.0.0 | 5 | Metabolic flux balance, kinetic modelling, network analysis. |
-| [`tcr-bcr-analysis`](bio-skills/tcr-bcr-analysis) | 1.0.0 | 5 | Immune-receptor repertoire profiling and clonal-family analysis. |
-| [`temporal-genomics`](bio-skills/temporal-genomics) | 1.0.0 | 5 | Time-series and circadian expression analysis. |
-| [`variant-calling`](bio-skills/variant-calling) | 1.0.0 | 13 | SNPs, indels, SVs with GATK, DeepVariant, Manta, Delly. |
-| [`workflow-management`](bio-skills/workflow-management) | 1.0.0 | 5 | Snakemake, Nextflow, CWL, WDL pipeline scaffolding. |
-| [`workflows`](bio-skills/workflows) | 1.0.0 | 41 | Ready-to-run analysis pipelines combining multiple skills. |
+| [`alignment`](bio-skills/alignment) | 1.1.0 | 7 | Multiple sequence alignment and pairwise alignment. |
+| [`alignment-files`](bio-skills/alignment-files) | 1.1.0 | 10 | SAM/BAM/CRAM manipulation, sorting, indexing, dedup, and stats. |
+| [`alternative-splicing`](bio-skills/alternative-splicing) | 1.1.0 | 9 | RNA isoform and splice-junction analysis from short- and long-read data. |
+| [`atac-seq`](bio-skills/atac-seq) | 1.1.0 | 12 | Chromatin accessibility, peak calling, footprinting, and deep-learning ATAC. |
+| [`causal-genomics`](bio-skills/causal-genomics) | 1.1.0 | 11 | Mendelian randomization, colocalization, fine-mapping, and TWAS. |
+| [`chemoinformatics`](bio-skills/chemoinformatics) | 1.1.0 | 20 | Molecular structure handling, descriptors, and drug-discovery utilities. |
+| [`chip-seq`](bio-skills/chip-seq) | 1.1.0 | 12 | Transcription-factor and histone-mark peak calling and differential binding. |
+| [`clinical-biostatistics`](bio-skills/clinical-biostatistics) | 1.1.0 | 15 | Survival, mixed models, and clinical-trial statistical analysis. |
+| [`clinical-databases`](bio-skills/clinical-databases) | 1.1.0 | 12 | ClinVar, OMIM, COSMIC, gnomAD, and phenotype DB queries. |
+| [`clip-seq`](bio-skills/clip-seq) | 1.1.0 | 12 | Protein-RNA interaction mapping from iCLIP/eCLIP/PAR-CLIP data. |
+| [`comparative-genomics`](bio-skills/comparative-genomics) | 1.1.0 | 13 | Cross-species synteny, orthology, and selection scans. |
+| [`copy-number`](bio-skills/copy-number) | 1.1.0 | 11 | CNV detection, visualization, and segmentation. |
+| [`crispr-screens`](bio-skills/crispr-screens) | 1.1.0 | 15 | Pooled screen counting, MAGeCK analysis, and hit prioritization. |
+| [`data-visualization`](bio-skills/data-visualization) | 1.1.0 | 18 | Publication-quality plots: heatmaps, volcano, Manhattan, dimplots. |
+| [`database-access`](bio-skills/database-access) | 1.1.0 | 17 | NCBI, UniProt, Ensembl, and biological database APIs. |
+| [`differential-expression`](bio-skills/differential-expression) | 1.1.0 | 7 | RNA-seq DE testing with DESeq2, edgeR, and limma-voom. |
+| [`ecological-genomics`](bio-skills/ecological-genomics) | 1.1.0 | 6 | Environmental DNA, ecological population genomics, and biodiversity. |
+| [`epidemiological-genomics`](bio-skills/epidemiological-genomics) | 1.1.0 | 5 | Pathogen typing, outbreak phylogeography, and surveillance. |
+| [`epitranscriptomics`](bio-skills/epitranscriptomics) | 1.1.0 | 5 | m6A and other RNA modification detection from sequencing. |
+| [`experimental-design`](bio-skills/experimental-design) | 1.1.0 | 5 | Power analysis and sample-size calculation for omics studies. |
+| [`expression-matrix`](bio-skills/expression-matrix) | 1.1.0 | 5 | Count normalization, gene ID mapping, and matrix QC. |
+| [`flow-cytometry`](bio-skills/flow-cytometry) | 1.1.0 | 8 | FCS parsing, gating, and high-dimensional cytometry analysis. |
+| [`gene-regulatory-networks`](bio-skills/gene-regulatory-networks) | 1.1.0 | 6 | TF-target network inference from expression and chromatin data. |
+| [`genome-annotation`](bio-skills/genome-annotation) | 1.1.0 | 7 | Gene prediction, repeat masking, and functional annotation. |
+| [`genome-assembly`](bio-skills/genome-assembly) | 1.1.0 | 9 | De novo assembly, polishing, and assembly QC. |
+| [`genome-engineering`](bio-skills/genome-engineering) | 1.1.0 | 5 | CRISPR guide design, off-target prediction, and editing analysis. |
+| [`genome-intervals`](bio-skills/genome-intervals) | 1.1.0 | 8 | BED/GTF arithmetic, overlap, and feature manipulation. |
+| [`hi-c-analysis`](bio-skills/hi-c-analysis) | 1.1.0 | 9 | 3D chromatin contacts, TAD calling, and loop detection. |
+| [`imaging-mass-cytometry`](bio-skills/imaging-mass-cytometry) | 1.1.0 | 7 | Single-cell spatial proteomics from IMC and MIBI data. |
+| [`immunoinformatics`](bio-skills/immunoinformatics) | 1.1.0 | 6 | MHC binding, neoantigen prediction, and HLA typing. |
+| [`liquid-biopsy`](bio-skills/liquid-biopsy) | 1.1.0 | 7 | Cell-free DNA fragmentomics, tumor fraction, and methylation cfDNA. |
+| [`long-read-sequencing`](bio-skills/long-read-sequencing) | 1.1.0 | 9 | ONT and PacBio basecalling, alignment, and structural-variant workflows. |
+| [`machine-learning`](bio-skills/machine-learning) | 1.1.0 | 7 | Biomarker discovery, model training, and cross-validation pipelines. |
+| [`metabolomics`](bio-skills/metabolomics) | 1.1.0 | 9 | Mass-spec metabolite identification, alignment, and quantification. |
+| [`metagenomics`](bio-skills/metagenomics) | 1.1.0 | 8 | Shotgun microbial profiling, assembly, and binning. |
+| [`methylation-analysis`](bio-skills/methylation-analysis) | 1.1.0 | 10 | Bisulfite alignment and differential methylation testing. |
+| [`microbiome`](bio-skills/microbiome) | 1.1.0 | 6 | 16S rRNA amplicon and microbiota community profiling. |
+| [`multi-omics-integration`](bio-skills/multi-omics-integration) | 1.1.0 | 5 | Cross-modality fusion: MOFA, DIABLO, WNN, totalVI. |
+| [`pathway-analysis`](bio-skills/pathway-analysis) | 1.1.0 | 6 | GO, KEGG, Reactome, and GSEA enrichment testing. |
+| [`phasing-imputation`](bio-skills/phasing-imputation) | 1.1.0 | 4 | Haplotype phasing and genotype imputation with SHAPEIT and Beagle. |
+| [`phylogenetics`](bio-skills/phylogenetics) | 1.1.0 | 8 | Tree construction with IQ-TREE, RAxML, BEAST, and ancestral state. |
+| [`population-genetics`](bio-skills/population-genetics) | 1.1.0 | 7 | GWAS, population structure, LD, and selection scans. |
+| [`primer-design`](bio-skills/primer-design) | 1.1.0 | 4 | PCR and qPCR primer generation with Primer3 and primerBLAST. |
+| [`proteomics`](bio-skills/proteomics) | 1.1.0 | 9 | Mass-spec quantification and protein abundance pipelines. |
+| [`read-alignment`](bio-skills/read-alignment) | 1.1.0 | 4 | Short-read mapping with BWA-MEM2, Bowtie2, STAR, HISAT2. |
+| [`read-qc`](bio-skills/read-qc) | 1.1.0 | 7 | FastQC, fastp, trimming, and contamination screening. |
+| [`reporting`](bio-skills/reporting) | 1.1.0 | 10 | Reproducible HTML, Quarto, and R Markdown reports. |
+| [`restriction-analysis`](bio-skills/restriction-analysis) | 1.1.0 | 5 | Restriction-enzyme mapping and digestion prediction. |
+| [`ribo-seq`](bio-skills/ribo-seq) | 1.1.0 | 6 | Ribosome profiling and translation-efficiency analysis. |
+| [`rna-quantification`](bio-skills/rna-quantification) | 1.1.0 | 4 | Gene and transcript abundance with Salmon, kallisto, RSEM. |
+| [`rna-structure`](bio-skills/rna-structure) | 1.1.0 | 4 | Secondary-structure prediction with RNAfold, IPknot. |
+| [`sequence-io`](bio-skills/sequence-io) | 1.1.0 | 9 | FASTA/FASTQ parsing, conversion, and indexing. |
+| [`sequence-manipulation`](bio-skills/sequence-manipulation) | 1.1.0 | 7 | Transcription, translation, ORF finding, and motif search. |
+| [`single-cell`](bio-skills/single-cell) | 1.1.0 | 15 | scRNA-seq clustering, annotation, trajectory, and integration. |
+| [`small-rna-seq`](bio-skills/small-rna-seq) | 1.1.0 | 6 | miRNA, piRNA, and small-RNA quantification. |
+| [`spatial-transcriptomics`](bio-skills/spatial-transcriptomics) | 1.1.0 | 12 | Visium, Slide-seq, and high-resolution tissue expression. |
+| [`structural-biology`](bio-skills/structural-biology) | 1.1.0 | 11 | PDB parsing, AlphaFold, ESMFold, and structure analysis. |
+| [`systems-biology`](bio-skills/systems-biology) | 1.1.0 | 7 | Metabolic flux balance, kinetic modelling, network analysis. |
+| [`tcr-bcr-analysis`](bio-skills/tcr-bcr-analysis) | 1.1.0 | 6 | Immune-receptor repertoire profiling and clonal-family analysis. |
+| [`temporal-genomics`](bio-skills/temporal-genomics) | 1.1.0 | 6 | Time-series and circadian expression analysis. |
+| [`variant-calling`](bio-skills/variant-calling) | 1.1.0 | 13 | SNPs, indels, SVs with GATK, DeepVariant, Manta, Delly. |
+| [`workflow-management`](bio-skills/workflow-management) | 1.1.0 | 6 | Snakemake, Nextflow, CWL, WDL pipeline scaffolding. |
+| [`workflows`](bio-skills/workflows) | 1.1.0 | 41 | Ready-to-run analysis pipelines combining multiple skills. |
 <!-- catalog:end biomedical -->
 
 ---
@@ -269,7 +269,11 @@ Licence per skill, as the catalog records. Material written here is Apache-2.0; 
 | `superpowers` | [obra/superpowers](https://github.com/obra/superpowers) (MIT) | Apache-2.0 | Folded 13 of the 15 skills in; dropped the using-superpowers dispatcher and its SessionStart hook; optional Stop-hook recipes added. |
 | `code-review`, `code-simplifier`, `commit-commands`, `code-modernization`, `playground`, `frontend-design` | [anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official) (Apache-2.0) | Apache-2.0 | The plugin's commands and subagents folded into one SKILL.md; shell routed through the Developer extension. |
 | `hookify` | [anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official) (Apache-2.0) | Apache-2.0 | Rewritten to write enforced Biorouter hooks in <project>/.biorouter/hooks.yaml. |
-| 63 bundles: `alignment`, `alignment-files`, `alternative-splicing`, `atac-seq`, `causal-genomics`, `chemoinformatics`, `chip-seq`, `clinical-biostatistics`, `clinical-databases`, `clip-seq`, `comparative-genomics`, `copy-number`, `crispr-screens`, `data-visualization`, `database-access`, `differential-expression`, `ecological-genomics`, `epidemiological-genomics`, `epitranscriptomics`, `experimental-design`, `expression-matrix`, `flow-cytometry`, `gene-regulatory-networks`, `genome-annotation`, `genome-assembly`, `genome-engineering`, `genome-intervals`, `hi-c-analysis`, `imaging-mass-cytometry`, `immunoinformatics`, `liquid-biopsy`, `long-read-sequencing`, `machine-learning`, `metabolomics`, `metagenomics`, `methylation-analysis`, `microbiome`, `multi-omics-integration`, `pathway-analysis`, `phasing-imputation`, `phylogenetics`, `population-genetics`, `primer-design`, `proteomics`, `read-alignment`, `read-qc`, `reporting`, `restriction-analysis`, `ribo-seq`, `rna-quantification`, `rna-structure`, `sequence-io`, `sequence-manipulation`, `single-cell`, `small-rna-seq`, `spatial-transcriptomics`, `structural-biology`, `systems-biology`, `tcr-bcr-analysis`, `temporal-genomics`, `variant-calling`, `workflow-management`, `workflows` | [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT) | Apache-2.0 | Dropped the bio- name prefix, set user-invocable: false, added a one-line uv tip to skills that ship pip install commands. |
+| 59 bundles: `alignment`, `alignment-files`, `alternative-splicing`, `atac-seq`, `causal-genomics`, `chemoinformatics`, `chip-seq`, `clinical-databases`, `clip-seq`, `comparative-genomics`, `copy-number`, `crispr-screens`, `data-visualization`, `differential-expression`, `ecological-genomics`, `epidemiological-genomics`, `epitranscriptomics`, `experimental-design`, `expression-matrix`, `flow-cytometry`, `gene-regulatory-networks`, `genome-annotation`, `genome-assembly`, `genome-engineering`, `genome-intervals`, `hi-c-analysis`, `imaging-mass-cytometry`, `immunoinformatics`, `liquid-biopsy`, `long-read-sequencing`, `machine-learning`, `metabolomics`, `metagenomics`, `methylation-analysis`, `microbiome`, `multi-omics-integration`, `pathway-analysis`, `phasing-imputation`, `phylogenetics`, `population-genetics`, `primer-design`, `proteomics`, `read-alignment`, `read-qc`, `restriction-analysis`, `ribo-seq`, `rna-quantification`, `rna-structure`, `sequence-io`, `sequence-manipulation`, `single-cell`, `small-rna-seq`, `spatial-transcriptomics`, `structural-biology`, `systems-biology`, `tcr-bcr-analysis`, `temporal-genomics`, `variant-calling`, `workflows` | [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT) | Apache-2.0 AND MIT | — |
+| `clinical-biostatistics` | [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT), [Aperivue/medsci-skills](https://github.com/Aperivue/medsci-skills) (MIT) | Apache-2.0 AND MIT | — |
+| `database-access` | [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT), [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (MIT) | Apache-2.0 AND MIT | — |
+| `reporting` | [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT), [posit-dev/skills](https://github.com/posit-dev/skills) (MIT), [openai/skills](https://github.com/openai/skills) (Apache-2.0), [marimo-team/skills](https://github.com/marimo-team/skills) (Apache-2.0) | Apache-2.0 AND MIT | — |
+| `workflow-management` | [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT), [jsperger/llm-r-skills](https://github.com/jsperger/llm-r-skills) (MIT) | Apache-2.0 AND MIT | — |
 <!-- catalog:end sources -->
 
 Maintained by the [Baranzini Lab](https://baranzinilab.ucsf.edu/) at UCSF.
