@@ -1,3 +1,5 @@
+<!-- Adapted for Biorouter from K-Dense-AI/scientific-agent-skills skills/scientific-slides (MIT, commit ec59a29; see ../../LICENSE-UPSTREAM). Unchanged except this note. Paths written as `skills/scientific-slides/scripts/` mean `$SKILL_DIR/scientific-slides/scripts/`; the AI image-generation scripts and the `research-lookup` skill it may name are not part of Biorouter (build slides from real figures; search with LiteratureAgent or `scientific-research`). -->
+
 # Presentation Development Workflow
 
 The six stages from planning through final preparation, with the checks that belong at

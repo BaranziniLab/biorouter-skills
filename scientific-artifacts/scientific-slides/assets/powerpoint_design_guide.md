@@ -1,3 +1,5 @@
+<!-- Adapted for Biorouter from K-Dense-AI/scientific-agent-skills skills/scientific-slides (MIT, commit ec59a29; see ../../LICENSE-UPSTREAM). `scripts/pdf_to_images.py` is not included (it needs PyMuPDF, AGPL-3.0): render pages with `pdftoppm` or LibreOffice. Paths written as `skills/scientific-slides/scripts/` mean `$SKILL_DIR/scientific-slides/scripts/`. -->
+
 # PowerPoint Design Guide for Scientific Presentations
 
 ## Overview

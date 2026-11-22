@@ -1,3 +1,5 @@
+<!-- Adapted for Biorouter from K-Dense-AI/scientific-agent-skills skills/scientific-slides (MIT, commit ec59a29; see ../../LICENSE-UPSTREAM). `scripts/pdf_to_images.py` is not included, because it needs PyMuPDF (AGPL-3.0): render pages with `pdftoppm -png -r 110 deck.pdf page` (Poppler) or LibreOffice instead. Paths written as `skills/scientific-slides/scripts/` mean `$SKILL_DIR/scientific-slides/scripts/`. The `research-lookup` skill it names is not part of Biorouter; use LiteratureAgent or `scientific-research`. -->
+
 # Visual Review Workflow for Presentations
 
 ## Overview

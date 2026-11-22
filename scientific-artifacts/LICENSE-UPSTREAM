@@ -12,9 +12,9 @@ cathrynlavery/diagram-design
 Source: https://github.com/cathrynlavery/diagram-design (skills/diagram-design (SKILL.md, assets/, references/, scripts/) and THIRD_PARTY_LICENSES.md)
 Commit: d74d8c2d0c78a9e1efd43137f6a9a51182a8b5f0 (release line 2.6)
 Licence: MIT
-Changes: copied into diagram-design/ with SKILL.md renamed GUIDE.md, so it is read as part of this skill and not installed as a separate one.
+Changes: copied into diagram-design/ with SKILL.md renamed GUIDE.md (so it is read as part of this skill) and a Biorouter note at its top; the SAS and Stata icons, whose licences the upstream marks unverified, removed from references/primitive-icons.md and assets/icons.html.
 
-Bundled icons keep their own licences, listed in diagram-design/THIRD_PARTY_LICENSES.md: Tabler Icons (MIT), Simple Icons (CC0 1.0), log-z/logos (MIT). The Instrument Serif font (OFL-1.1) appears only in the upstream plugin logo, which is not included; no font file is bundled. Product names and logos remain trademarks of their owners.
+Bundled icons keep their own licences, listed in diagram-design/THIRD_PARTY_LICENSES.md: Tabler Icons (MIT), Devicon (MIT; the RStudio and SPSS icons), Simple Icons (CC0 1.0), log-z/logos (MIT). No font file is bundled. The Instrument Serif font (OFL-1.1) is used upstream only in the plugin logo, which is not included; the example pages in diagram-design/assets/ and scripts/export_svg.py reference web fonts that a browser loads from Google Fonts at render time (those fonts are not redistributed here). Product names and logos remain trademarks of their owners.
 
 MIT License
 
@@ -43,7 +43,7 @@ K-Dense-AI/scientific-agent-skills
 Source: https://github.com/K-Dense-AI/scientific-agent-skills (skills/pptx-posters; skills/scientific-slides (references, assets and three rendering and validation scripts); skills/markdown-mermaid-writing)
 Commit: ec59a29a03d5c40f73ab40878df04860bc00e876
 Licence: MIT (pptx-posters, scientific-slides)
-Changes: pptx-posters copied with SKILL.md renamed GUIDE.md; from scientific-slides, the SKILL.md and every image-generation path (generate_slide_image*.py, generate_schematic*.py, prompt_writing.md, script_reference.md, slide_capabilities.md) removed, the remaining references, assets and scripts kept; markdown-mermaid-writing copied into markdown-mermaid/ with SKILL.md renamed GUIDE.md.
+Changes: pptx-posters copied with SKILL.md renamed GUIDE.md and its citation section changed so the model never adds a citation on its own; from scientific-slides, the SKILL.md and every image-generation path (generate_slide_image*.py, generate_schematic*.py, prompt_writing.md, script_reference.md, slide_capabilities.md) removed, and pdf_to_images.py removed because it needs PyMuPDF (AGPL-3.0); the remaining references, assets and two scripts kept with Biorouter notes.
 
 MIT License
 

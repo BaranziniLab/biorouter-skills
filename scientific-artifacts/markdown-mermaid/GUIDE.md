@@ -1,3 +1,5 @@
+<!-- Adapted for Biorouter from K-Dense-AI/scientific-agent-skills skills/markdown-mermaid-writing/SKILL.md (Apache-2.0, commit ec59a29; see ../LICENSE-UPSTREAM). Renamed GUIDE.md so it is read as part of scientific-artifacts. In Biorouter, the K-Dense skills it names map as follows: `scientific-schematics` to `diagram-design/GUIDE.md` in this skill, `scientific-writing` to `scientific-manuscript-writing`, `literature-review` to `systematic-review-prisma`. Do not use AI image generation for figures; this skill bundles none. -->
+
 ---
 name: markdown-mermaid-writing
 description: Writes scientific Markdown documentation and Mermaid diagrams for workflows, relationships, timelines, and schemas. Provides syntax references, document templates, accessibility guidance, and version-aware rendering checks. Use when a user requests Markdown, Mermaid, or a text-based structural diagram; quantitative scientific figures require suitable plotting tools.
