@@ -1,55 +1,95 @@
 ---
 name: grant-funding-strategy
-description: Structure research grants, specific aims, significance/innovation/approach, reviewer-risk responses, milestones, and funder-fit checks. Use when users ask for grant planning, NIH-style aims, fellowship statements, or funding strategy.
+description: Plan, draft and review research grant proposals against the exact funding opportunity, for NIH, NSF, DOE, DARPA, ERC, Horizon Europe, Taiwan NSTC and foundations, covering specific aims, significance and innovation, approach, broader impacts, budgets and justifications, compliance matrices, resubmission introductions, and a six-reviewer mock panel before submission. Use when someone is writing, revising or critiquing a grant, aims page, project summary, or response to a previous review.
 user-invocable: true
-license: Apache-2.0
+license: Apache-2.0 AND MIT
+metadata:
+  version: "1.1.0"
+  origin: adapted
+  upstream: "K-Dense-AI/scientific-agent-skills@ec59a29a03d5c40f73ab40878df04860bc00e876 (skills/research-grants); claesbackman/AI-research-feedback@949d82792ea20c30806147539ed2c70a8898260a (Skills/review-grant)"
 ---
 
 # Grant and Funding Strategy
 
-Source adaptation: BioRouter-original synthesis inspired by remaining Scientific Agent Skills and Auto-Empirical Research Skills capability clusters, rewritten under Apache-2.0. This is not copied upstream text; it is a native BioRouter routing and verification checklist.
+Proposals fail most often on fit and compliance, not on science: the wrong mechanism, a missed
+page limit, aims that do not match the review criteria. This skill starts from the opportunity's
+own rules and keeps the investigator as the author. The two guides under `references/` are
+adapted from K-Dense Scientific Agent Skills and claesbackman/AI-research-feedback (MIT; see
+`LICENSE-UPSTREAM`).
 
-## When to Use
+## Start from the governing opportunity
 
-Use this skill when the user asks about grant planning, specific aims, fellowship statements, milestones, or funding strategy. Prefer the most specific BioRouter extension, BioSkill, or language style skill whenever a concrete platform, package, or file type appears.
+Before drafting anything, get the exact notice (NIH NOFO or parent announcement, NSF
+solicitation or the PAPPG, ERC work programme, foundation call) and its date. Extract into a
+compliance matrix:
 
-## Intake
+- eligibility, deadlines and submission system;
+- required sections, page and character limits, fonts and margins, file naming;
+- review criteria and their weights, and who reviews (study section, panel, programme officer);
+- budget caps, allowable costs, cost sharing, indirect rates;
+- required plans (data management and sharing, mentoring, resource sharing, human subjects,
+  vertebrate animals, safety) and letters.
 
-Before producing output, capture:
+Rules change between cycles; anything not checked against the current notice is marked
+unverified. The research-grants guide has agency overviews to start from, not to replace the
+notice (`references/research-grants/references/nih_guidelines.md`,
+`references/research-grants/references/nsf_guidelines.md`, and DOE, DARPA and NSTC files beside
+them).
 
-- Research or operational question.
-- Data, platform, package, or source material involved.
-- Unit of analysis, model system, cohort, sample, or artifact.
-- Desired deliverable: plan, code, review, table, figure, protocol, or narrative.
-- Constraints: credentials, privacy, licensing, compute budget, validation standard, or external service availability.
+## Build the argument
 
-## BioRouter Routes
+1. **One sentence of significance**: the gap, why it matters now, and what will be different if
+   the work succeeds.
+2. **Aims that test, not describe.** Each aim has a hypothesis or a clear deliverable, an
+   approach, an expected outcome and a fallback; aims are related but do not depend on each
+   other succeeding. The aims page is the most-read page; draft it first
+   (`references/research-grants/references/specific_aims_guide.md`,
+   `references/research-grants/assets/nih_specific_aims_template.md`).
+3. **Map every review criterion to a place in the text** where a reviewer finds the answer
+   (significance, investigators, innovation, approach, environment for NIH; intellectual merit
+   and broader impacts for NSF).
+4. **Preliminary data that de-risk the approach**, each figure tied to a claim in the aims.
+5. **Rigour and feasibility**: power or sample-size justification (`statistical-modeling-bayes`),
+   biological variables such as sex, authentication of key resources, timeline and milestones,
+   and potential problems with alternatives.
+6. **Budget follows the work**: personnel effort that matches the aims, justification in the
+   funder's format (`references/research-grants/assets/budget_justification_template.md`).
+7. **Resubmissions** answer every point of the summary statement in the introduction, with
+   changes marked in the text (`references/research-grants/references/proposal_types_and_resubmission.md`).
 
-Use these routes when applicable:
+## Review before submission
 
-- Platform/API work: call the relevant BRXT extension first and keep mutation/execution gated.
-- Biomedical or omics data: load the relevant `bio-skills` category.
-- Statistical/causal claims: load `causal-identification-gates`, `statistical-modeling-bayes`, or `econometrics-toolkit`.
-- Evidence/citations: load `citation-temporal-integrity` and `claim-evidence-integrity`.
-- Reproducibility: load `replication-package-audit` before treating the result as final.
+Run the six-reviewer mock panel in `references/review-grant-panel.md` on a complete draft:
+clarity and compliance, internal consistency, significance and innovation, methods and
+feasibility, budget and team, and a funder-specific overall reviewer. Each reviewer reads the
+proposal independently; the consolidated report ranks issues and gives a preliminary
+recommendation. In Biorouter, the reviewers run as subagents when the subagent tool is available
+(Completely Autonomous mode), and one after another otherwise.
 
-## Quality Gates
+Treat the panel as a rehearsal: it finds unclear writing, inconsistencies and missing pieces, but
+it does not know the field's politics or the study section's taste. The investigator's
+colleagues and the programme officer remain the real test.
 
-Do not present final claims until these are true:
+## Boundaries
 
-1. Provenance is explicit: source files, APIs, ids, versions, dates, or citations.
-2. The method matches the data-generating process and the intended claim.
-3. Assumptions and failure modes are listed plainly.
-4. Validation is tied to an actual benchmark, holdout, sensitivity check, audit trail, or source record.
-5. The output can be rerun, reviewed, or traced by another person.
-6. Anything requiring external credentials, proprietary data, wet-lab execution, or live services is marked unverified unless actually checked.
+- The investigator owns the ideas and the text; drafts are proposals for them to edit, and
+  institutional and funder rules on AI assistance must be followed (some funders prohibit
+  AI-generated content in applications or in peer review).
+- Never invent preliminary data, citations, letters of support or effort commitments.
+- Budgets need the institution's research office for rates and final figures.
 
-## Response Shape
+## In Biorouter
 
-Return:
+- Figures and diagrams for the proposal: `scientific-artifacts`; data figures:
+  `ggplot-visualization` or `python-visualization`.
+- Papers drafted from the same work: `scientific-manuscript-writing`; reference lists:
+  `citation-library-management`; claims against sources: `claim-evidence-integrity`.
+- Data management and sharing plans are a planned native skill; until it exists, follow the
+  funder's template and the institution's library guidance.
 
-- Recommended route.
-- Minimal next action.
-- Verification checklist.
-- Risks or blockers.
-- Exact artifact to produce next, if any.
+## Guides in this skill
+
+| Guide | Covers |
+| --- | --- |
+| `references/research-grants.md` | Opportunity-first workflow, agency overviews (NSF, NIH, DOE, DARPA, NSTC), core components, review criteria, writing principles, common mistakes, resubmissions |
+| `references/review-grant-panel.md` | The six-reviewer pre-submission panel: reviewer briefs, consolidation and report format |
