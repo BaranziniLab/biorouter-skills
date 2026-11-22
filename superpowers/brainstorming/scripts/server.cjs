@@ -109,7 +109,9 @@ const TELEMETRY_DISABLE_ENV_VARS = [
   'DISABLE_TELEMETRY',
   'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'
 ];
-const SUPERPOWERS_TELEMETRY_DISABLED = TELEMETRY_DISABLE_ENV_VARS.some(name => isTruthyEnv(process.env[name]));
+// Biorouter: the remote brand logo (a request to primeradiant.com carrying the version) is never
+// loaded. Upstream loads it unless one of TELEMETRY_DISABLE_ENV_VARS is set.
+const SUPERPOWERS_TELEMETRY_DISABLED = true || TELEMETRY_DISABLE_ENV_VARS.some(name => isTruthyEnv(process.env[name]));
 let ownerPid = process.env.BRAINSTORM_OWNER_PID ? Number(process.env.BRAINSTORM_OWNER_PID) : null;
 
 // Per-session secret key. The companion is reachable by any local browser tab

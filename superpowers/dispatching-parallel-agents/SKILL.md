@@ -171,3 +171,7 @@ After agents return:
 2. **Check for conflicts** - Did agents edit same code?
 3. **Run full suite** - Verify all fixes work together
 4. **Spot check** - Agents can make systematic errors
+
+## Biorouter note
+
+Use Biorouter's `subagent` tool for the dispatches; "general-purpose" means an ordinary subagent. If the tool is not offered in this chat, work through the problems one at a time instead.

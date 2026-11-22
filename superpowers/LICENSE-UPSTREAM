@@ -12,7 +12,7 @@ obra/superpowers
 Source: https://github.com/obra/superpowers (skills/: brainstorming, dispatching-parallel-agents, executing-plans, finishing-a-development-branch, receiving-code-review, requesting-code-review, subagent-driven-development, systematic-debugging, test-driven-development, using-git-worktrees, verification-before-completion, writing-plans, writing-skills)
 Commit: 22f0b463e7a5e579904dd6211a520321035526f7 (v7.0.2)
 Licence: MIT
-Changes: resynced from v5.1.0 (f2cbfbe) to v7.0.2; the using-superpowers and diagnosing-superpowers harness bootstraps, writing-skills' copy of Anthropic's best-practices page and its CLAUDE.md test transcripts, and systematic-debugging's test and creation-log files are not included; superpowers: prefixes removed from cross-references; Biorouter notes added to finishing-a-development-branch, verification-before-completion, requesting-code-review, writing-skills and the visual companion's launch steps; frontmatter gains licence, user-invocable and version metadata.
+Changes: resynced from v5.1.0 (f2cbfbe) to v7.0.2; the using-superpowers and diagnosing-superpowers harness bootstraps, writing-skills' copy of Anthropic's best-practices page and its CLAUDE.md test transcripts, and systematic-debugging's test and creation-log files are not included; superpowers: prefixes removed from cross-references and links to the excluded files replaced; the visual companion's remote brand logo (a request to primeradiant.com) disabled; render-graphs.js renamed render-graphs.mjs; Biorouter notes added to several components; frontmatter gains licence, user-invocable and version metadata.
 
 MIT License
 

@@ -17,7 +17,7 @@ metadata:
 
 **Writing skills IS Test-Driven Development applied to process documentation.**
 
-**Personal skills live in your runtime's skills directory** (`~/.config/biorouter/skills/` in Biorouter) — see [codex-tools.md](../using-superpowers/references/codex-tools.md) or [gemini-tools.md](../using-superpowers/references/gemini-tools.md) for the path on those runtimes. Codex, Copilot CLI, and Gemini CLI all also recognize `~/.agents/skills/` as a cross-runtime alias.
+**Personal skills live in your runtime's skills directory** (`~/.config/biorouter/skills/` in Biorouter, which also reads `~/.claude/skills/` and `~/.config/agents/skills/`; the built-in `develop-biorouter-skill` lists every location).
 
 You write test cases (pressure scenarios with subagents), watch them fail (baseline behavior), write the skill (documentation), watch tests pass (agents comply), and refactor (close loopholes).
 
@@ -25,7 +25,7 @@ You write test cases (pressure scenarios with subagents), watch them fail (basel
 
 **REQUIRED BACKGROUND:** You MUST understand test-driven-development before using this skill. That skill defines the fundamental RED-GREEN-REFACTOR cycle. This skill adapts TDD to documentation.
 
-**Official guidance:** For Anthropic's official skill authoring best practices, see references/anthropic-best-practices.md. This document provides additional patterns and guidelines that complement the TDD-focused approach in this skill.
+**Format guidance:** In Biorouter, the built-in `develop-biorouter-skill` holds the skill format and authoring practice (description writing, progressive disclosure, packaging). This document provides additional patterns that complement it with a TDD-focused approach.
 
 ## What is a Skill?
 

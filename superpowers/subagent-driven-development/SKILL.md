@@ -343,3 +343,7 @@ covers the whole-branch review, its single fix wave, and how you finish.
 | "Reviews slow the loop down" | The loop without reviews is just unverified churn. Reviews are the loop's brakes and steering. |
 | "Ledger bookkeeping is overhead" | The ledger is what survives compaction. Controllers without one have re-dispatched entire completed task sequences. |
 | "The implementer spawned its own reviewer — free extra assurance" | It's a duplicate seat reviewing the same diff; the task review is the gate. A worker-spawned reviewer is a defect to flag, not rigor. |
+
+## Biorouter note
+
+Dispatch each subagent with Biorouter's `subagent` tool when it is offered in the chat. A "general-purpose" subagent is an ordinary one, and a `model:` line in a prompt template means the subagent's model, when the tool lets you choose it; otherwise leave it out. The `scripts/` named here live in this skill's directory, which Biorouter lists when the skill loads; call them by that full path.

@@ -52,9 +52,8 @@ those, stop and ask.
 
 - You have a plan from writing-plans and your human partner
   chose inline execution at the handoff.
-- Your harness has no subagent tool (see the per-platform references in
-  `../using-superpowers/references/`). Never fabricate a dispatch; run
-  the plan here.
+- Your harness has no subagent tool (in Biorouter, the `subagent` tool is
+  offered only in some chats). Never fabricate a dispatch; run the plan here.
 - Tasks are mostly independent — the same precondition as
   subagent-driven-development.
 
@@ -327,3 +326,7 @@ Use finishing-a-development-branch.
 | "The reviewer said Minor, so it's Minor" | The label graded the spec's silence. Grade what the person gets. Re-grade, then gate. |
 | "The fix is obvious, no need for a failing test first" | The failing test is the only proof the finding was real and is now gone. Without it you have a diff and a hope. |
 | "I'll fix the minors too while I'm in there" | Every minor you fix is a test, a fix, and a suite run your partner did not ask for. Ledger them; your partner decides. |
+
+## Biorouter note
+
+The `scripts/task-start` and `scripts/task-done` helpers live in this skill's directory, which Biorouter lists when the skill loads; call them by that full path (or with `bash <path>` if they are not executable).
