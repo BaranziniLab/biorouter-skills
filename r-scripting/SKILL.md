@@ -1,6 +1,6 @@
 ---
 name: r-scripting
-description: R scripting conventions. Apply whenever writing, editing, or reviewing any R code.
+description: "R house style: = for assignment, the native pipe |>, no space before parentheses, minimal comments, and precedence over upstream R examples; routes package-building and performance work to their own skills. Apply whenever writing, editing or reviewing R code."
 license: Apache-2.0
 user-invocable: false
 metadata:

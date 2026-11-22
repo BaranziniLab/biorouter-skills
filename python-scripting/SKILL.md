@@ -1,6 +1,6 @@
 ---
 name: python-scripting
-description: Python scripting conventions. Apply whenever writing, editing, or reviewing any Python code.
+description: "Python house style: uv for environments and packages, a project-local .venv, minimal comments; routes packaging, testing, documentation, plotting and code-hardening work to their own skills. Apply whenever writing, editing or reviewing Python code."
 license: Apache-2.0
 user-invocable: false
 metadata:
