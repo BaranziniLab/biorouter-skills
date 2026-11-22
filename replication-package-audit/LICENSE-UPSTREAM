@@ -1,0 +1,120 @@
+Third-party material in this skill
+==================================
+
+This skill includes material adapted from the projects listed below. Each is used
+under its own licence, reproduced in full under its entry. Biorouter's own text and
+changes are licensed under Apache-2.0 (the LICENSE file of
+BaranziniLab/biorouter-skills). The skill's `license` line is the SPDX expression of
+everything in this folder.
+
+------------------------------------------------------------------------------
+Aperivue/medsci-skills
+Source: https://github.com/Aperivue/medsci-skills (skills/check-reporting: SKILL.md, scripts/check_checklist_exists.py, check_checklist_version.py, check_framework_naming.py, check_prisma_figure.py, prisma_cascade_check.py, references/report_templates.md, critical_item_floor.md, step4c_registration_timing.md, step4d_prisma_figure_audit.md, genai_image_study_object_decision_aid.md, and eight files of references/checklists/)
+Commit: 7e9d133dd0216c29b0e030729e3719c3db5e0973
+Licence: MIT
+Changes: SKILL.md became references/check-reporting.md with the reference-file list cut to the eight bundled checklists; checklists moved to checklists/ and the guard script pointed there; references to other medsci-skills commands replaced with Biorouter skills; files renamed.
+
+The eight files under checklists/ are Aperivue's checklist files for guidelines whose own
+licence was verified as open. Item text in them reproduces the published guideline:
+- STROBE 2007: von Elm E et al. PLoS Med 2007;4(10):e296. CC BY 4.0.
+- STARD 2015: Bossuyt PM et al. BMJ 2015;351:h5527. CC BY 4.0.
+- TRIPOD+AI 2024: Collins GS et al. BMJ 2024;385:e078378. CC BY 4.0.
+- PRISMA 2020 and PRISMA 2020 for Abstracts: Page MJ et al. BMJ 2021;372:n71. CC BY 4.0.
+- CONSORT 2025: Hopewell S et al. BMJ 2025;389:e081123. CC BY 4.0.
+- SPIRIT 2025: Chan AW et al. BMJ 2025;389:e081477. CC BY 4.0.
+- ARRIVE 2.0: Percie du Sert N et al. PLoS Biol 2020;18(7):e3000410. CC0 1.0.
+CC BY 4.0: https://creativecommons.org/licenses/by/4.0/legalcode
+CC0 1.0: https://creativecommons.org/publicdomain/zero/1.0/legalcode
+Changes to the checklist files: references to other medsci-skills commands replaced with Biorouter
+skill names. Checklists Aperivue lists as non-commercial, closed or unresolved are not included.
+
+MIT License
+
+Copyright (c) 2026 Aperivue (https://aperivue.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+------------------------------------------------------------------------------
+uw-ssec/savvy
+Source: https://github.com/uw-ssec/savvy (plugins/ai-research-workflows/skills/ensuring-reproducibility/SKILL.md)
+Commit: e1084bba4ef18cfe9ce16a459e69df1ebe5018b0
+Licence: BSD-3-Clause
+Changes: became references/ensuring-reproducibility.md; the interaction-mode pointer removed, savvy cross-references replaced with Biorouter skills, the record location generalised; its rule that a record is not done until reproduced summarised in SKILL.md section 3.
+
+Neither the name of the copyright holder nor the names of its contributors are
+used to endorse or promote Biorouter or this skill.
+
+BSD 3-Clause License
+
+Copyright (c) 2026 University of Washington, eScience Institute, Scientific Software Engineering Center
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+------------------------------------------------------------------------------
+claesbackman/AI-research-feedback
+Source: https://github.com/claesbackman/AI-research-feedback (Skills/review-paper-code/SKILL.md)
+Commit: 949d82792ea20c30806147539ed2c70a8898260a
+Licence: MIT
+Changes: became references/review-paper-code.md; Claude Code's Agent tool and $ARGUMENTS replaced with Biorouter's subagent tool and the request.
+
+MIT License
+
+Copyright (c) 2026 claesbackman
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
