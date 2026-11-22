@@ -1,0 +1,52 @@
+Third-party notices for the Biorouter skill "econometrics-toolkit"
+============================================================
+
+SKILL.md is Biorouter-original text, Copyright 2026 Baranzini Lab, University of
+California, San Francisco, licensed under the Apache License, Version 2.0.
+
+The folders and guides under references/ are adapted from the upstream projects
+below. Each upstream SKILL.md became references/<name>.md: its frontmatter was
+replaced by an attribution note, its citation and related-skill sections were
+removed, and its relative paths were rewritten to start at the skill root. Other
+files were copied unchanged unless a line below says otherwise. Files listed as
+excluded were not copied.
+
+- references/statsmodels.md and references/statsmodels/
+  Source: https://github.com/K-Dense-AI/scientific-agent-skills/tree/ec59a29a03d5c40f73ab40878df04860bc00e876/skills/statsmodels
+  Licence: BSD-3-Clause
+  Copyright: Copyright (c) 2025 K-Dense Inc.
+
+Attribution requested by upstream authors:
+  Scientific Agent Skills: Kassis, T., Agarwal, V., He, Y., Patel, D., and Brueckner, A. M. (2026). Scientific Agent Skills: A Library of Procedural Knowledge for Research Agents. arXiv:2609.00065.
+
+------------------------------------------------------------
+BSD-3-Clause licence (applies to: statsmodels)
+------------------------------------------------------------
+
+Copyright (c) 2025 K-Dense Inc.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
