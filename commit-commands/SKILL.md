@@ -3,9 +3,13 @@ name: commit-commands
 description: Git commit workflows — create one focused commit; commit, push and open a PR; or clean up local branches whose remote is gone. Use when asked to commit, push and PR, or prune stale branches.
 license: Apache-2.0
 user-invocable: true
+metadata:
+  version: "1.1.0"
+  origin: adapted
+  upstream: "anthropics/claude-plugins-official/plugins/commit-commands@73c8cf3ea7e296057b467990f2f5d61b4c922260 (v1.0.1)"
 ---
 
-<!-- Adapted for BioRouter from anthropics/claude-plugins-official/plugins/commit-commands (Apache License 2.0). -->
+<!-- Adapted for Biorouter from anthropics/claude-plugins-official/plugins/commit-commands (Apache License 2.0). -->
 
 # Commit commands
 
@@ -68,6 +72,10 @@ git branch -v
 git worktree list
 ```
 
+Tell the person which branches and worktrees the loop below will remove before you run
+it: `git worktree remove --force` discards uncommitted changes in those worktrees, and
+`git branch -D` deletes unmerged commits on those branches.
+
 Then run:
 
 ```bash
@@ -86,3 +94,10 @@ done
 ```
 
 If no branch is marked `[gone]`, report that no cleanup was needed.
+
+## Related skills
+
+- `superpowers` → `finishing-a-development-branch` decides how a finished branch ends
+  (verify the tests, then merge locally, open a pull request, keep it or discard it).
+  When it chooses the pull request path, Workflow 2 here performs the git and `gh` steps.
+- `code-review` reviews the diff or the pull request before or after Workflow 2.

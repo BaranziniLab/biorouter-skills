@@ -1,11 +1,15 @@
 ---
 name: ralph
 description: Plan a feature end-to-end for the Ralph autonomous agent loop. Use when starting a new feature, writing requirements, drafting a PRD, or producing prd.json. Generates a markdown PRD from a feature description, then converts it to the prd.json format Ralph executes one story at a time.
-license: Apache-2.0
+license: Apache-2.0 AND MIT
 user-invocable: true
+metadata:
+  version: "1.1.0"
+  origin: adapted
+  upstream: "snarktank/ralph@6c53cb0b831ebe8739c6a003e22af14902d8b0b5"
 ---
 
-<!-- Adapted for BioRouter from snarktank/ralph (Ryan Carson, MIT), itself based on Geoffrey Huntley's Ralph pattern (https://ghuntley.com/ralph). -->
+<!-- Adapted for Biorouter from snarktank/ralph (Ryan Carson, MIT; licence text in LICENSE-UPSTREAM), itself based on Geoffrey Huntley's Ralph pattern (https://ghuntley.com/ralph). -->
 
 # RALPH
 
@@ -368,3 +372,16 @@ Once `prd.json` is in place, point Ralph at it with the prompt in [`agent-instru
 4. Marks `passes: true` and appends to `progress.txt`
 
 Ralph stops automatically when every story is `passes: true`.
+
+# Related skills
+
+- `superpowers` → `writing-plans` writes a step-by-step implementation plan for work a
+  person or agent carries out in one session; `executing-plans` and
+  `subagent-driven-development` carry such a plan out with review checkpoints. Use them
+  when the work is one feature in one sitting. Use Ralph when the work should run as
+  many unattended iterations, one story per fresh context, with `prd.json` as the only
+  memory between them.
+- `superpowers` → `brainstorming` turns a vague idea into a design. Run it before Phase 1
+  when the feature itself is still unclear.
+- `superpowers` → `verification-before-completion` and `test-driven-development` are the
+  habits each Ralph iteration should follow before it marks a story `passes: true`.

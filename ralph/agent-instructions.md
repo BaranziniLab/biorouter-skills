@@ -1,6 +1,6 @@
 # Ralph Agent Instructions
 
-Use this as the prompt when running BioRouter as an autonomous Ralph iteration agent.
+Use this as the prompt when running Biorouter as an autonomous Ralph iteration agent.
 The agent reads `prd.json`, implements the next incomplete story, and updates progress.
 
 ---
@@ -89,7 +89,7 @@ Before committing, check if any edited files have learnings worth preserving in 
 For any story with "Verify in browser" in its acceptance criteria:
 
 1. Start the development server if not already running
-2. Use BioRouter's computer controller to navigate to the relevant page
+2. Use Biorouter's computer controller to navigate to the relevant page
 3. Verify the UI changes work as expected
 4. Capture a screenshot if helpful for the progress log
 
