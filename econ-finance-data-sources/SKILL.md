@@ -1,52 +1,18 @@
 ---
 name: econ-finance-data-sources
-description: Route empirical econ/finance data-source work across WRDS, CRSP, Compustat, SEC/EDGAR, NBER, SSRN, OpenAlex, Unpaywall, and common public finance/econ datasets. Use when the blocker is finding, joining, licensing, or documenting source data.
-user-invocable: true
+description: "Moved: this skill is now part of Econometrics Toolkit (econometrics-toolkit). Use econometrics-toolkit instead."
 license: Apache-2.0
+user-invocable: true
+metadata:
+  version: "1.1.0"
+  status: "superseded_by:econometrics-toolkit"
 ---
 
-# Economics and Finance Data Sources
+# Economics and Finance Data Sources has moved
 
-Source adaptation: BioRouter-original synthesis inspired by Auto-Empirical Research Skills capability clusters, rewritten under Apache-2.0. This is native BioRouter guidance and does not copy upstream text.
+This skill is now part of **Econometrics Toolkit** (`econometrics-toolkit`).
 
-## When to Use
-
-Use this skill when the user asks about WRDS, CRSP, Compustat, SEC/EDGAR, NBER, SSRN, OpenAlex, public finance/econ data, or data-source provenance. If the task is biomedical, clinical, or omics-specific, combine this with the appropriate BioSkills category and extension instead of treating the methods in isolation.
-
-## Intake
-
-Collect:
-
-- Research question, estimand, and audience.
-- Dataset/source, file formats, licenses, access constraints, and identifiers.
-- Unit of analysis, time period, sample design, and outcome/treatment definitions.
-- Software stack and expected artifact: code, table, figure, memo, manuscript, appendix, or review response.
-- Whether the work is exploratory, confirmatory, replication, submission, or referee-response.
-
-## Method Gates
-
-Before writing conclusions:
-
-1. State the design and estimand before the model.
-2. Preserve provenance for every dataset, variable, citation, and transformation.
-3. Match inference to the sampling/assignment structure.
-4. Identify weights, clusters, panels, repeated measures, or dependence before estimating.
-5. Check robustness against the actual design threat, not decorative alternative models.
-6. Keep code/table/figure outputs reproducible from a clean entry point.
-
-## BioRouter Routing
-
-- Use `empirical-research-router` for full workflow staging.
-- Use `causal-identification-gates` before causal language.
-- Use `econometrics-toolkit`, `statistical-modeling-bayes`, or `financial-accounting-econometrics` for adjacent method detail.
-- Use `citation-temporal-integrity`, `claim-evidence-integrity`, and `replication-package-audit` for publication-facing outputs.
-
-## Output Pattern
-
-Return a compact plan with:
-
-- Primary route and why.
-- Required data/design evidence.
-- Minimal next command or artifact.
-- Failure modes.
-- Verification checklist before final claims.
+- Use the `econometrics-toolkit` skill for this work. If it is installed, load it now and follow it.
+- If `econometrics-toolkit` is not installed, tell the person how to add it: in Biorouter, open Skills, choose Browse, search for "Econometrics Toolkit" (a search for "econ-finance-data-sources" finds it too), and add it.
+- If an older copy of `econ-finance-data-sources` is still installed next to `econometrics-toolkit`, `econometrics-toolkit` is the current version of its content and wins.
+- This copy is only a pointer and can be removed.

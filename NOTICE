@@ -12,16 +12,13 @@ This file is generated from catalog.json by scripts/render-readme.mjs.
 Upstream material
 =================
 
-taste-skill includes material from Leonxlnx/taste-skill (skills/taste-skill/SKILL.md, commit 84ff339312d29955ce2040c02fd6e5bedb934608),
-Copyright (c) 2026 Leonxlnx, licensed under MIT. Changes: Wired to auto-trigger on frontend work; attribution header kept.
-
 ralph includes material from snarktank/ralph (skills, commit 6c53cb0b831ebe8739c6a003e22af14902d8b0b5),
 Copyright (c) 2026 snarktank, licensed under MIT. Changes: PRD and prd.json flow reworked around the Biorouter agent loop and /ralph.
 
 superpowers includes material from obra/superpowers (skills, commit f2cbfbefebbfef77321e4c9abc9e949826bea9d7),
 Copyright (c) 2025 Jesse Vincent, licensed under MIT. Changes: Folded 13 of the 15 skills in; dropped the using-superpowers dispatcher and its SessionStart hook; optional Stop-hook recipes added.
 
-code-review, code-simplifier, commit-commands, skill-creator, code-modernization, playground include material from anthropics/claude-plugins-official (6 folders, one per skill named here, commit de573bd84695c6657b28f05ffe32c37bb54d1f55), licensed under Apache-2.0. Changes: The plugin's commands and subagents folded into one SKILL.md; shell routed through the Developer extension.
+code-review, code-simplifier, commit-commands, code-modernization, playground include material from anthropics/claude-plugins-official (5 folders, one per skill named here, commit de573bd84695c6657b28f05ffe32c37bb54d1f55), licensed under Apache-2.0. Changes: The plugin's commands and subagents folded into one SKILL.md; shell routed through the Developer extension.
 
 hookify includes material from anthropics/claude-plugins-official (plugins/hookify, commit de573bd84695c6657b28f05ffe32c37bb54d1f55), licensed under Apache-2.0. Changes: Rewritten to write enforced Biorouter hooks in <project>/.biorouter/hooks.yaml.
 

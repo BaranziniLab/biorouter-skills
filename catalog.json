@@ -5,12 +5,6 @@
   "baseline_violations": [
     {
       "rule": "notice",
-      "subject": "notice:taste-skill",
-      "wp": "WP-02B",
-      "note": "taste-skill: has Leonxlnx/taste-skill (MIT) upstream text but no notice_file"
-    },
-    {
-      "rule": "notice",
       "subject": "notice:ralph",
       "wp": "WP-17",
       "note": "ralph: has snarktank/ralph (MIT) upstream text but no notice_file"
@@ -400,306 +394,154 @@
       "note": "workflows: has GPTomics/bioSkills (MIT) upstream text but no notice_file"
     },
     {
-      "rule": "D1",
-      "subject": "builtin:skill.authoring",
-      "wp": "WP-02B",
-      "note": "skill:skill-creator claims \"skill.authoring\", which Biorouter itself owns (built-in skill develop-biorouter-skill)",
-      "cross_kind": true
-    },
-    {
-      "rule": "D1",
-      "subject": "builtin:extension.authoring",
-      "wp": "WP-02B",
-      "note": "skill:develop-biorouter-extension claims \"extension.authoring\", which Biorouter itself owns (built-in skill develop-biorouter-extension)",
-      "cross_kind": true
-    },
-    {
-      "rule": "D1",
-      "subject": "job:reproducibility.replication-package-audit",
-      "wp": "WP-02B",
-      "note": "2 active items share the job \"reproducibility.replication-package-audit\": skill:replication-package-audit, skill:open-science-review. One of them merges into the other."
-    },
-    {
-      "rule": "D1",
-      "subject": "job:evidence.claim-and-citation-audit",
-      "wp": "WP-02B",
-      "note": "2 active items share the job \"evidence.claim-and-citation-audit\": skill:claim-evidence-integrity, skill:citation-temporal-integrity. One of them merges into the other."
-    },
-    {
-      "rule": "D1",
-      "subject": "job:documents.scientific-exhibits",
-      "wp": "WP-02B",
-      "note": "2 active items share the job \"documents.scientific-exhibits\": skill:scientific-artifacts, skill:scientific-visual-communication. One of them merges into the other."
-    },
-    {
-      "rule": "D1",
-      "subject": "job:econ.applied-econometrics",
-      "wp": "WP-02B",
-      "note": "4 active items share the job \"econ.applied-econometrics\": skill:econometrics-toolkit, skill:financial-accounting-econometrics, skill:stata-research-workbench, skill:econ-finance-data-sources. One of them merges into the other."
-    },
-    {
-      "rule": "D1",
-      "subject": "job:design.frontend",
-      "wp": "WP-02B",
-      "note": "2 active items share the job \"design.frontend\": skill:taste-skill, skill:frontend-design. One of them merges into the other."
-    },
-    {
-      "rule": "D1",
-      "subject": "job:bio.systems-biology",
-      "wp": "WP-02B",
-      "note": "2 active items share the job \"bio.systems-biology\": skill:metabolic-modeling-cobrapy, skill:systems-biology. One of them merges into the other."
-    },
-    {
-      "rule": "D1",
-      "subject": "job:bio.chemoinformatics",
-      "wp": "WP-02B",
-      "note": "2 active items share the job \"bio.chemoinformatics\": skill:drug-discovery-benchmarks, skill:chemoinformatics. One of them merges into the other."
-    },
-    {
-      "rule": "D2",
-      "subject": "name:developbiorouterextension",
-      "wp": "WP-02B",
-      "note": "the name \"developbiorouterextension\" is used by skill:develop-biorouter-extension (id \"develop-biorouter-extension\"), skill:develop-biorouter-extension (display name \"Develop Biorouter Extension\"), builtin-skill:develop-biorouter-extension (built-in skill \"develop-biorouter-extension\")"
-    },
-    {
-      "rule": "D3",
-      "subject": "pair:econometrics-toolkit|financial-accounting-econometrics",
-      "wp": "WP-02B",
-      "note": "skill:econometrics-toolkit and skill:financial-accounting-econometrics look alike (Jaccard 0.353 >= 0.115); merge them, or record a distinct_from boundary"
-    },
-    {
-      "rule": "D3",
-      "subject": "pair:metabolic-modeling-cobrapy|systems-biology",
-      "wp": "WP-02B",
-      "note": "skill:metabolic-modeling-cobrapy and skill:systems-biology look alike (Jaccard 0.200 >= 0.115); merge them, or record a distinct_from boundary"
-    },
-    {
-      "rule": "D3",
-      "subject": "pair:scientific-artifacts|scientific-visual-communication",
-      "wp": "WP-02B",
-      "note": "skill:scientific-artifacts and skill:scientific-visual-communication look alike (Jaccard 0.176 >= 0.115); merge them, or record a distinct_from boundary"
-    },
-    {
-      "rule": "D3",
-      "subject": "pair:citation-temporal-integrity|claim-evidence-integrity",
-      "wp": "WP-02B",
-      "note": "skill:claim-evidence-integrity and skill:citation-temporal-integrity look alike (Jaccard 0.154 >= 0.115); merge them, or record a distinct_from boundary"
-    },
-    {
-      "rule": "D3",
-      "subject": "pair:citation-library-management|citation-temporal-integrity",
-      "wp": "WP-02B",
-      "note": "skill:citation-temporal-integrity and skill:citation-library-management look alike (Jaccard 0.150 >= 0.115); merge them, or record a distinct_from boundary"
-    },
-    {
-      "rule": "D3",
-      "subject": "pair:replication-package-audit|stata-research-workbench",
-      "wp": "WP-02B",
-      "note": "skill:replication-package-audit and skill:stata-research-workbench look alike (Jaccard 0.143 >= 0.115); merge them, or record a distinct_from boundary"
-    },
-    {
-      "rule": "D3",
-      "subject": "pair:frontend-design|taste-skill",
-      "wp": "WP-02B",
-      "note": "skill:taste-skill and skill:frontend-design look alike (Jaccard 0.137 >= 0.115); merge them, or record a distinct_from boundary"
-    },
-    {
-      "rule": "D3",
-      "subject": "pair:chemoinformatics|drug-discovery-benchmarks",
-      "wp": "WP-02B",
-      "note": "skill:drug-discovery-benchmarks and skill:chemoinformatics look alike (Jaccard 0.115 >= 0.115); merge them, or record a distinct_from boundary"
-    },
-    {
       "rule": "D6",
       "subject": "shell:scientific-data-engineering",
       "wp": "WP-16a",
-      "note": "skill:scientific-data-engineering is a template shell: 30 of its 31 lines (97%) appear in 5 or more other skills"
+      "note": "skill:scientific-data-engineering is a template shell: 30 of its 31 lines (97%) appear in 5 or more other skills or in the baseline template"
     },
     {
       "rule": "D6",
       "subject": "shell:statistical-modeling-bayes",
       "wp": "WP-16a",
-      "note": "skill:statistical-modeling-bayes is a template shell: 30 of its 31 lines (97%) appear in 5 or more other skills"
+      "note": "skill:statistical-modeling-bayes is a template shell: 30 of its 31 lines (97%) appear in 5 or more other skills or in the baseline template"
     },
     {
       "rule": "D6",
       "subject": "shell:scientific-machine-learning",
       "wp": "WP-16a",
-      "note": "skill:scientific-machine-learning is a template shell: 30 of its 31 lines (97%) appear in 5 or more other skills"
+      "note": "skill:scientific-machine-learning is a template shell: 30 of its 31 lines (97%) appear in 5 or more other skills or in the baseline template"
     },
     {
       "rule": "D6",
       "subject": "shell:geospatial-science",
       "wp": "WP-16a",
-      "note": "skill:geospatial-science is a template shell: 30 of its 31 lines (97%) appear in 5 or more other skills"
+      "note": "skill:geospatial-science is a template shell: 30 of its 31 lines (97%) appear in 5 or more other skills or in the baseline template"
     },
     {
       "rule": "D6",
       "subject": "shell:neurophysiology-analysis",
       "wp": "WP-16a",
-      "note": "skill:neurophysiology-analysis is a template shell: 30 of its 31 lines (97%) appear in 5 or more other skills"
+      "note": "skill:neurophysiology-analysis is a template shell: 30 of its 31 lines (97%) appear in 5 or more other skills or in the baseline template"
     },
     {
       "rule": "D6",
       "subject": "shell:quantum-scientific-computing",
       "wp": "WP-16a",
-      "note": "skill:quantum-scientific-computing is a template shell: 30 of its 31 lines (97%) appear in 5 or more other skills"
+      "note": "skill:quantum-scientific-computing is a template shell: 30 of its 31 lines (97%) appear in 5 or more other skills or in the baseline template"
     },
     {
       "rule": "D6",
       "subject": "shell:materials-informatics",
       "wp": "WP-16a",
-      "note": "skill:materials-informatics is a template shell: 30 of its 31 lines (97%) appear in 5 or more other skills"
+      "note": "skill:materials-informatics is a template shell: 30 of its 31 lines (97%) appear in 5 or more other skills or in the baseline template"
     },
     {
       "rule": "D6",
       "subject": "shell:biomedical-imaging-pathology",
       "wp": "WP-16a",
-      "note": "skill:biomedical-imaging-pathology is a template shell: 30 of its 31 lines (97%) appear in 5 or more other skills"
+      "note": "skill:biomedical-imaging-pathology is a template shell: 30 of its 31 lines (97%) appear in 5 or more other skills or in the baseline template"
     },
     {
       "rule": "D6",
       "subject": "shell:citation-library-management",
       "wp": "WP-16b",
-      "note": "skill:citation-library-management is a template shell: 30 of its 31 lines (97%) appear in 5 or more other skills"
+      "note": "skill:citation-library-management is a template shell: 30 of its 31 lines (97%) appear in 5 or more other skills or in the baseline template"
     },
     {
       "rule": "D6",
       "subject": "shell:laboratory-automation-planning",
       "wp": "WP-16b",
-      "note": "skill:laboratory-automation-planning is a template shell: 30 of its 31 lines (97%) appear in 5 or more other skills"
+      "note": "skill:laboratory-automation-planning is a template shell: 30 of its 31 lines (97%) appear in 5 or more other skills or in the baseline template"
     },
     {
       "rule": "D6",
       "subject": "shell:econometrics-toolkit",
       "wp": "WP-16b",
-      "note": "skill:econometrics-toolkit is a template shell: 30 of its 31 lines (97%) appear in 5 or more other skills"
+      "note": "skill:econometrics-toolkit is a template shell: 30 of its 31 lines (97%) appear in 5 or more other skills or in the baseline template"
     },
     {
       "rule": "D6",
       "subject": "shell:systematic-review-prisma",
       "wp": "WP-16b",
-      "note": "skill:systematic-review-prisma is a template shell: 30 of its 31 lines (97%) appear in 5 or more other skills"
+      "note": "skill:systematic-review-prisma is a template shell: 30 of its 31 lines (97%) appear in 5 or more other skills or in the baseline template"
     },
     {
       "rule": "D6",
       "subject": "shell:simulation-optimization",
       "wp": "WP-16a",
-      "note": "skill:simulation-optimization is a template shell: 31 of its 32 lines (97%) appear in 5 or more other skills"
+      "note": "skill:simulation-optimization is a template shell: 31 of its 32 lines (97%) appear in 5 or more other skills or in the baseline template"
     },
     {
       "rule": "D6",
       "subject": "shell:physical-science-computing",
       "wp": "WP-16a",
-      "note": "skill:physical-science-computing is a template shell: 31 of its 32 lines (97%) appear in 5 or more other skills"
-    },
-    {
-      "rule": "D6",
-      "subject": "shell:metabolic-modeling-cobrapy",
-      "wp": "WP-02B",
-      "note": "skill:metabolic-modeling-cobrapy is a template shell: 31 of its 32 lines (97%) appear in 5 or more other skills"
-    },
-    {
-      "rule": "D6",
-      "subject": "shell:drug-discovery-benchmarks",
-      "wp": "WP-02B",
-      "note": "skill:drug-discovery-benchmarks is a template shell: 31 of its 32 lines (97%) appear in 5 or more other skills"
+      "note": "skill:physical-science-computing is a template shell: 31 of its 32 lines (97%) appear in 5 or more other skills or in the baseline template"
     },
     {
       "rule": "D6",
       "subject": "shell:clinical-decision-support-review",
       "wp": "WP-16b",
-      "note": "skill:clinical-decision-support-review is a template shell: 31 of its 32 lines (97%) appear in 5 or more other skills"
-    },
-    {
-      "rule": "D6",
-      "subject": "shell:scientific-visual-communication",
-      "wp": "WP-02B",
-      "note": "skill:scientific-visual-communication is a template shell: 31 of its 32 lines (97%) appear in 5 or more other skills"
+      "note": "skill:clinical-decision-support-review is a template shell: 31 of its 32 lines (97%) appear in 5 or more other skills or in the baseline template"
     },
     {
       "rule": "D6",
       "subject": "shell:grant-funding-strategy",
       "wp": "WP-16b",
-      "note": "skill:grant-funding-strategy is a template shell: 31 of its 32 lines (97%) appear in 5 or more other skills"
+      "note": "skill:grant-funding-strategy is a template shell: 31 of its 32 lines (97%) appear in 5 or more other skills or in the baseline template"
     },
     {
       "rule": "D6",
       "subject": "shell:regulatory-quality-systems",
       "wp": "WP-16b",
-      "note": "skill:regulatory-quality-systems is a template shell: 31 of its 32 lines (97%) appear in 5 or more other skills"
+      "note": "skill:regulatory-quality-systems is a template shell: 31 of its 32 lines (97%) appear in 5 or more other skills or in the baseline template"
     },
     {
       "rule": "D6",
       "subject": "shell:gpu-compute-optimization",
       "wp": "WP-16a",
-      "note": "skill:gpu-compute-optimization is a template shell: 31 of its 32 lines (97%) appear in 5 or more other skills"
+      "note": "skill:gpu-compute-optimization is a template shell: 31 of its 32 lines (97%) appear in 5 or more other skills or in the baseline template"
     },
     {
       "rule": "D6",
       "subject": "shell:research-evaluation-venues",
       "wp": "WP-16b",
-      "note": "skill:research-evaluation-venues is a template shell: 31 of its 32 lines (97%) appear in 5 or more other skills"
+      "note": "skill:research-evaluation-venues is a template shell: 31 of its 32 lines (97%) appear in 5 or more other skills or in the baseline template"
     },
     {
       "rule": "D6",
       "subject": "shell:qualitative-thematic-analysis",
       "wp": "WP-16b",
-      "note": "skill:qualitative-thematic-analysis is a template shell: 31 of its 32 lines (97%) appear in 5 or more other skills"
-    },
-    {
-      "rule": "D6",
-      "subject": "shell:financial-accounting-econometrics",
-      "wp": "WP-02B",
-      "note": "skill:financial-accounting-econometrics is a template shell: 31 of its 32 lines (97%) appear in 5 or more other skills"
-    },
-    {
-      "rule": "D6",
-      "subject": "shell:stata-research-workbench",
-      "wp": "WP-02B",
-      "note": "skill:stata-research-workbench is a template shell: 29 of its 30 lines (97%) appear in 5 or more other skills"
-    },
-    {
-      "rule": "D6",
-      "subject": "shell:survey-weights-complex-samples",
-      "wp": "WP-16b",
-      "note": "skill:survey-weights-complex-samples is a template shell: 29 of its 30 lines (97%) appear in 5 or more other skills"
-    },
-    {
-      "rule": "D6",
-      "subject": "shell:psychometrics-sem-measurement",
-      "wp": "WP-16b",
-      "note": "skill:psychometrics-sem-measurement is a template shell: 29 of its 30 lines (97%) appear in 5 or more other skills"
-    },
-    {
-      "rule": "D6",
-      "subject": "shell:social-science-text-as-data",
-      "wp": "WP-16b",
-      "note": "skill:social-science-text-as-data is a template shell: 29 of its 30 lines (97%) appear in 5 or more other skills"
-    },
-    {
-      "rule": "D6",
-      "subject": "shell:econ-finance-data-sources",
-      "wp": "WP-02B",
-      "note": "skill:econ-finance-data-sources is a template shell: 29 of its 30 lines (97%) appear in 5 or more other skills"
-    },
-    {
-      "rule": "D6",
-      "subject": "shell:empirical-paper-submission-rr",
-      "wp": "WP-16b",
-      "note": "skill:empirical-paper-submission-rr is a template shell: 29 of its 30 lines (97%) appear in 5 or more other skills"
-    },
-    {
-      "rule": "D6",
-      "subject": "shell:structural-economics-theory",
-      "wp": "WP-02B",
-      "note": "skill:structural-economics-theory is a template shell: 29 of its 30 lines (97%) appear in 5 or more other skills"
+      "note": "skill:qualitative-thematic-analysis is a template shell: 31 of its 32 lines (97%) appear in 5 or more other skills or in the baseline template"
     },
     {
       "rule": "D6",
       "subject": "shell:causal-heterogeneity-policy-learning",
       "wp": "WP-16a",
-      "note": "skill:causal-heterogeneity-policy-learning is a template shell: 29 of its 30 lines (97%) appear in 5 or more other skills"
+      "note": "skill:causal-heterogeneity-policy-learning is a template shell: 29 of its 30 lines (97%) appear in 5 or more other skills or in the baseline template"
+    },
+    {
+      "rule": "D6",
+      "subject": "shell:empirical-paper-submission-rr",
+      "wp": "WP-16b",
+      "note": "skill:empirical-paper-submission-rr is a template shell: 29 of its 30 lines (97%) appear in 5 or more other skills or in the baseline template"
+    },
+    {
+      "rule": "D6",
+      "subject": "shell:psychometrics-sem-measurement",
+      "wp": "WP-16b",
+      "note": "skill:psychometrics-sem-measurement is a template shell: 29 of its 30 lines (97%) appear in 5 or more other skills or in the baseline template"
+    },
+    {
+      "rule": "D6",
+      "subject": "shell:social-science-text-as-data",
+      "wp": "WP-16b",
+      "note": "skill:social-science-text-as-data is a template shell: 29 of its 30 lines (97%) appear in 5 or more other skills or in the baseline template"
+    },
+    {
+      "rule": "D6",
+      "subject": "shell:survey-weights-complex-samples",
+      "wp": "WP-16b",
+      "note": "skill:survey-weights-complex-samples is a template shell: 29 of its 30 lines (97%) appear in 5 or more other skills or in the baseline template"
     }
   ],
   "items": [
@@ -877,7 +719,9 @@
       "path": "replication-package-audit",
       "version": "1.0.0",
       "status": "active",
-      "aliases": [],
+      "aliases": [
+        "open-science-review"
+      ],
       "job": "reproducibility.replication-package-audit",
       "summary": "Checks research packages for clean-run reproducibility, relative paths, environment capture, seeds, logs, and table/figure mapping.",
       "keywords": [
@@ -931,7 +775,9 @@
       "path": "claim-evidence-integrity",
       "version": "1.0.0",
       "status": "active",
-      "aliases": [],
+      "aliases": [
+        "citation-temporal-integrity"
+      ],
       "job": "evidence.claim-and-citation-audit",
       "summary": "Verifies that manuscript claims, numbers, citations, figures, and tables are grounded in traceable evidence.",
       "keywords": [
@@ -983,8 +829,8 @@
       "kind": "skill",
       "category": "core",
       "path": "citation-temporal-integrity",
-      "version": "1.0.0",
-      "status": "active",
+      "version": "1.1.0",
+      "status": "superseded_by:claim-evidence-integrity",
       "aliases": [],
       "job": "evidence.claim-and-citation-audit",
       "summary": "Confirms citations are real, relevant, current enough for the claim, and temporally valid.",
@@ -1022,6 +868,11 @@
           "version": "1.0.0",
           "date": "2026-07-01",
           "note": "first BAAM release"
+        },
+        {
+          "version": "1.1.0",
+          "date": "2026-11-22",
+          "note": "redirect stub: now part of claim-evidence-integrity"
         }
       ]
     },
@@ -1083,7 +934,9 @@
       "path": "scientific-artifacts",
       "version": "1.0.0",
       "status": "active",
-      "aliases": [],
+      "aliases": [
+        "scientific-visual-communication"
+      ],
       "job": "documents.scientific-exhibits",
       "summary": "Plans and verifies DOCX/PDF/PPTX/XLSX/LaTeX/scientific figure artifacts with source-to-exhibit mapping.",
       "keywords": [
@@ -1130,8 +983,8 @@
       "kind": "skill",
       "category": "core",
       "path": "open-science-review",
-      "version": "1.0.0",
-      "status": "active",
+      "version": "1.1.0",
+      "status": "superseded_by:replication-package-audit",
       "aliases": [],
       "job": "reproducibility.replication-package-audit",
       "summary": "Reviews data/code availability, reporting checklists, protocols, ethics/privacy notes, and open-science readiness.",
@@ -1171,6 +1024,11 @@
           "version": "1.0.0",
           "date": "2026-07-01",
           "note": "first BAAM release"
+        },
+        {
+          "version": "1.1.0",
+          "date": "2026-11-22",
+          "note": "redirect stub: now part of replication-package-audit"
         }
       ]
     },
@@ -1673,7 +1531,13 @@
       "path": "econometrics-toolkit",
       "version": "1.0.0",
       "status": "active",
-      "aliases": [],
+      "aliases": [
+        "financial-accounting-econometrics",
+        "Financial and Accounting Econometrics",
+        "stata-research-workbench",
+        "econ-finance-data-sources",
+        "Economics and Finance Data Sources"
+      ],
       "job": "econ.applied-econometrics",
       "summary": "Plans applied econometrics in Python, R, or Stata: panel data, IV, DiD, RDD, clustering, and replication tables.",
       "keywords": [
@@ -1771,8 +1635,8 @@
       "kind": "skill",
       "category": "core",
       "path": "taste-skill",
-      "version": "1.0.0",
-      "status": "active",
+      "version": "1.1.0",
+      "status": "superseded_by:frontend-design",
       "aliases": [],
       "job": "design.frontend",
       "summary": "Anti-slop frontend design for landing pages, dashboards, lab tools, and paper companion sites. Reads the brief, picks a real design direction, and ships interfaces that don't look templated.",
@@ -1817,6 +1681,11 @@
           "version": "1.0.0",
           "date": "2026-06-10",
           "note": "first BAAM release"
+        },
+        {
+          "version": "1.1.0",
+          "date": "2026-11-22",
+          "note": "redirect stub: now part of frontend-design"
         }
       ]
     },
@@ -1922,8 +1791,8 @@
       "kind": "skill",
       "category": "core",
       "path": "metabolic-modeling-cobrapy",
-      "version": "1.0.0",
-      "status": "active",
+      "version": "1.1.0",
+      "status": "superseded_by:systems-biology",
       "aliases": [],
       "job": "bio.systems-biology",
       "summary": "Guides COBRApy/FBA metabolic modeling with GPR rules, media constraints, knockouts, objectives, and provenance.",
@@ -1961,6 +1830,11 @@
           "version": "1.0.0",
           "date": "2026-07-01",
           "note": "first BAAM release"
+        },
+        {
+          "version": "1.1.0",
+          "date": "2026-11-22",
+          "note": "redirect stub: now part of systems-biology"
         }
       ]
     },
@@ -1970,8 +1844,8 @@
       "kind": "skill",
       "category": "core",
       "path": "drug-discovery-benchmarks",
-      "version": "1.0.0",
-      "status": "active",
+      "version": "1.1.0",
+      "status": "superseded_by:chemoinformatics",
       "aliases": [],
       "job": "bio.chemoinformatics",
       "summary": "Plans ADMET, virtual-screening, molecular-property, scaffold-split, leakage, and assay-provenance benchmark checks.",
@@ -2009,6 +1883,11 @@
           "version": "1.0.0",
           "date": "2026-07-01",
           "note": "first BAAM release"
+        },
+        {
+          "version": "1.1.0",
+          "date": "2026-11-22",
+          "note": "redirect stub: now part of chemoinformatics"
         }
       ]
     },
@@ -2073,8 +1952,8 @@
       "kind": "skill",
       "category": "core",
       "path": "scientific-visual-communication",
-      "version": "1.0.0",
-      "status": "active",
+      "version": "1.1.0",
+      "status": "superseded_by:scientific-artifacts",
       "aliases": [],
       "job": "documents.scientific-exhibits",
       "summary": "Plans schematics, posters, slides, figure panels, infographics, visual abstracts, and source-to-visual traceability.",
@@ -2112,6 +1991,11 @@
           "version": "1.0.0",
           "date": "2026-07-01",
           "note": "first BAAM release"
+        },
+        {
+          "version": "1.1.0",
+          "date": "2026-11-22",
+          "note": "redirect stub: now part of scientific-artifacts"
         }
       ]
     },
@@ -2363,8 +2247,8 @@
       "kind": "skill",
       "category": "core",
       "path": "financial-accounting-econometrics",
-      "version": "1.0.0",
-      "status": "active",
+      "version": "1.1.0",
+      "status": "superseded_by:econometrics-toolkit",
       "aliases": [],
       "job": "econ.applied-econometrics",
       "summary": "Plans empirical finance/accounting workflows with event studies, abnormal returns, panel data, and table replication.",
@@ -2403,6 +2287,11 @@
           "version": "1.0.0",
           "date": "2026-07-01",
           "note": "first BAAM release"
+        },
+        {
+          "version": "1.1.0",
+          "date": "2026-11-22",
+          "note": "redirect stub: now part of econometrics-toolkit"
         }
       ]
     },
@@ -2412,8 +2301,8 @@
       "kind": "skill",
       "category": "core",
       "path": "stata-research-workbench",
-      "version": "1.0.0",
-      "status": "active",
+      "version": "1.1.0",
+      "status": "superseded_by:econometrics-toolkit",
       "aliases": [],
       "job": "econ.applied-econometrics",
       "summary": "Plans Stata .do/.dta research workflows: audits, logs, tables, graph export, replication, and R&R updates.",
@@ -2451,6 +2340,11 @@
           "version": "1.0.0",
           "date": "2026-07-01",
           "note": "first BAAM release"
+        },
+        {
+          "version": "1.1.0",
+          "date": "2026-11-22",
+          "note": "redirect stub: now part of econometrics-toolkit"
         }
       ]
     },
@@ -2603,8 +2497,8 @@
       "kind": "skill",
       "category": "core",
       "path": "econ-finance-data-sources",
-      "version": "1.0.0",
-      "status": "active",
+      "version": "1.1.0",
+      "status": "superseded_by:econometrics-toolkit",
       "aliases": [],
       "job": "econ.applied-econometrics",
       "summary": "Routes empirical econ/finance sources including WRDS, CRSP, Compustat, SEC/EDGAR, NBER, SSRN, and public datasets.",
@@ -2642,6 +2536,11 @@
           "version": "1.0.0",
           "date": "2026-07-01",
           "note": "first BAAM release"
+        },
+        {
+          "version": "1.1.0",
+          "date": "2026-11-22",
+          "note": "redirect stub: now part of econometrics-toolkit"
         }
       ]
     },
@@ -2699,8 +2598,8 @@
       "kind": "skill",
       "category": "core",
       "path": "structural-economics-theory",
-      "version": "1.0.0",
-      "status": "active",
+      "version": "1.1.0",
+      "status": "retired",
       "aliases": [],
       "job": "econ.structural-theory",
       "summary": "Routes game theory, equilibrium, DSGE/HANK, structural IO, calibration, simulation, and identification-proof workflows.",
@@ -2738,8 +2637,17 @@
           "version": "1.0.0",
           "date": "2026-07-01",
           "note": "first BAAM release"
+        },
+        {
+          "version": "1.1.0",
+          "date": "2026-11-22",
+          "note": "retirement stub"
         }
-      ]
+      ],
+      "retired": {
+        "reason": "it was an empty template, and no permissively licensed source with real content was found",
+        "use": "econometrics-toolkit"
+      }
     },
     {
       "id": "causal-heterogeneity-policy-learning",
@@ -3726,8 +3634,8 @@
       "kind": "skill",
       "category": "developer",
       "path": "skill-creator",
-      "version": "1.0.0",
-      "status": "active",
+      "version": "1.1.0",
+      "status": "superseded_by:builtin:develop-biorouter-skill",
       "aliases": [],
       "job": "skill.authoring",
       "summary": "The canonical guide to authoring Biorouter skills: frontmatter, progressive disclosure, packaging, and testing.",
@@ -3769,6 +3677,11 @@
           "version": "1.0.0",
           "date": "2026-06-10",
           "note": "first BAAM release"
+        },
+        {
+          "version": "1.1.0",
+          "date": "2026-11-22",
+          "note": "redirect stub: now part of the built-in develop-biorouter-skill skill"
         }
       ]
     },
@@ -3778,8 +3691,8 @@
       "kind": "skill",
       "category": "developer",
       "path": "develop-biorouter-extension",
-      "version": "1.0.0",
-      "status": "active",
+      "version": "1.1.0",
+      "status": "retired",
       "aliases": [],
       "job": "extension.authoring",
       "summary": "Step-by-step guide for building a .brxt extension: manifest, MCP server, packaging, validation, and bundled skills.",
@@ -3814,8 +3727,18 @@
           "version": "1.0.0",
           "date": "2026-06-15",
           "note": "first BAAM release"
+        },
+        {
+          "version": "1.1.0",
+          "date": "2026-11-22",
+          "note": "retirement stub"
         }
-      ]
+      ],
+      "retired": {
+        "reason": "Biorouter now ships a newer skill of the same name built in",
+        "use": "builtin:develop-biorouter-extension",
+        "guidance": "If Biorouter refuses to install this archive because the name is built in, nothing is wrong: the built-in skill is already there."
+      }
     },
     {
       "id": "hookify",
@@ -3984,7 +3907,10 @@
       "path": "frontend-design",
       "version": "1.0.0",
       "status": "active",
-      "aliases": [],
+      "aliases": [
+        "taste-skill",
+        "Taste (Frontend Design)"
+      ],
       "job": "design.frontend",
       "summary": "Anthropic's anti-slop frontend guidance for distinctive, production-grade UIs. Complements the Taste skill above.",
       "keywords": [
@@ -4605,7 +4531,9 @@
       "path": "bio-skills/chemoinformatics",
       "version": "1.0.0",
       "status": "active",
-      "aliases": [],
+      "aliases": [
+        "drug-discovery-benchmarks"
+      ],
       "job": "bio.chemoinformatics",
       "summary": "Molecular structure handling, descriptors, and drug-discovery utilities.",
       "keywords": [
@@ -9406,7 +9334,10 @@
       "path": "bio-skills/systems-biology",
       "version": "1.0.0",
       "status": "active",
-      "aliases": [],
+      "aliases": [
+        "metabolic-modeling-cobrapy",
+        "Metabolic Modeling with COBRApy"
+      ],
       "job": "bio.systems-biology",
       "summary": "Metabolic flux balance, kinetic modelling, network analysis.",
       "keywords": [

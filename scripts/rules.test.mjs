@@ -146,6 +146,8 @@ test('D6 fails a skill whose lines mostly appear in five or more others', () => 
   assert.equal(fails.length, 7);
   assert.ok(!fails.some((f) => f.subject === 'shell:rich'));
   assert.deepEqual(ruleD6(bodies.slice(0, 5)), [], 'with only four others a shared line does not count');
+  const frozen = new Set(shared);
+  assert.equal(ruleD6(bodies.slice(0, 2), { isTemplate: (l) => frozen.has(l) }).length, 2, 'a frozen template line still counts after its siblings are gone');
 });
 
 test('G1 passes an active owner, warns on a planned gap, fails an unplanned gap', () => {

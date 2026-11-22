@@ -373,8 +373,14 @@ export function shellLines(body) {
 /**
  * bodies: [{ ref, id, body }] for every active single skill. A skill fails when
  * more than half of its lines appear in five or more other skills.
+ *
+ * isTemplate(line), when given, also counts a line as shared. The check passes
+ * the template lines frozen from the baseline, because the frequency alone
+ * forgets a template once enough of the shells built from it become stubs: a
+ * shell must keep failing until it is rebuilt, not pass because its siblings
+ * were merged away.
  */
-export function ruleD6(bodies, { minOthers = 5, maxShare = 0.5 } = {}) {
+export function ruleD6(bodies, { minOthers = 5, maxShare = 0.5, isTemplate = () => false } = {}) {
   const lines = new Map(bodies.map((b) => [b.ref, shellLines(b.body)]));
   const freq = new Map();
   for (const ls of lines.values()) for (const l of new Set(ls)) freq.set(l, (freq.get(l) ?? 0) + 1);
@@ -385,11 +391,11 @@ export function ruleD6(bodies, { minOthers = 5, maxShare = 0.5 } = {}) {
       failures.push({ rule: 'D6', subject: `shell:${b.id}`, refs: [b.ref], share: 1, message: `${b.ref} has an empty body` });
       continue;
     }
-    const shared = ls.filter((l) => freq.get(l) >= minOthers + 1).length;
+    const shared = ls.filter((l) => freq.get(l) >= minOthers + 1 || isTemplate(l)).length;
     const share = shared / ls.length;
     if (share > maxShare) {
       failures.push({ rule: 'D6', subject: `shell:${b.id}`, refs: [b.ref], share,
-        message: `${b.ref} is a template shell: ${shared} of its ${ls.length} lines (${Math.round(share * 100)}%) appear in ${minOthers} or more other skills` });
+        message: `${b.ref} is a template shell: ${shared} of its ${ls.length} lines (${Math.round(share * 100)}%) appear in ${minOthers} or more other skills or in the baseline template` });
     }
   }
   return failures;

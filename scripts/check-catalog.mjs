@@ -10,6 +10,7 @@
 // Exit code 0 when nothing fails (warnings allowed), 1 when something fails.
 // No dependencies.
 
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -264,6 +265,14 @@ export function extensionItems(extCatalog) {
   return items;
 }
 
+/** The baseline's template lines (scripts/fixtures/template-lines.json), as a predicate for D6. */
+export function templatePredicate(root) {
+  const p = path.join(root, 'scripts/fixtures/template-lines.json');
+  if (!fs.existsSync(p)) return () => false;
+  const set = new Set(JSON.parse(fs.readFileSync(p, 'utf8')).lines);
+  return (line) => set.has(crypto.createHash('sha256').update(line).digest('hex').slice(0, 16));
+}
+
 export function runCheck({ root = REPO_ROOT, catalog, builtins, jobs = null, extensions = null } = {}) {
   const errors = [];
   const warnings = [];
@@ -309,7 +318,7 @@ export function runCheck({ root = REPO_ROOT, catalog, builtins, jobs = null, ext
   raw.push(...ruleD3(rowsOnly.filter((i) => i.kind !== 'bundled-skill'), { threshold, genericWords }));
   raw.push(...ruleD4(all, builtinNames));
   raw.push(...ruleD5(all, { threshold: componentThreshold, genericWords, builtins: builtinNames }));
-  raw.push(...ruleD6(bodies.filter((b) => seen.get(b.id)?.status === 'active')));
+  raw.push(...ruleD6(bodies.filter((b) => seen.get(b.id)?.status === 'active'), { isTemplate: templatePredicate(root) }));
   if (jobs) {
     const g = ruleG1(all, jobs.required ?? []);
     raw.push(...g.failures);
