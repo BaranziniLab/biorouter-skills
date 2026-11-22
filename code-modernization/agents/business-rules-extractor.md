@@ -1,4 +1,4 @@
-<!-- From anthropics/claude-plugins-official plugins/code-modernization/agents/business-rules-extractor.md (Apache-2.0, v1.1.0 at commit 73c8cf3, which includes d7d3279; see LICENSE-UPSTREAM). Changes: `${CLAUDE_PLUGIN_ROOT}` became `$SKILL_DIR` and slash commands became phase-file references. Read SKILL.md's 'Running this in Biorouter' section first: it says how Claude Code tools named here map to Biorouter. -->
+<!-- From anthropics/claude-plugins-official plugins/code-modernization/agents/business-rules-extractor.md (Apache-2.0, v1.1.0 at commit 73c8cf3, which includes d7d3279; see LICENSE-UPSTREAM). Changes: `${CLAUDE_PLUGIN_ROOT}` became `$SKILL_DIR`, `commands/` became `phases/`, and slash commands became phase-file references. Read SKILL.md's 'Running this in Biorouter' section first: it maps the Claude Code tools named here (AskUserQuestion, Workflow and its workflows/*.js scripts, the progress pane, .claude/settings.json) to Biorouter. -->
 
 ---
 name: business-rules-extractor
@@ -53,7 +53,7 @@ in a parameter list is a leak.
 
 ## Output format
 
-One "Rule Card" per rule (see the format in the phase `modernize-extract` (`phases/modernize-extract.md`)-rules`
+One "Rule Card" per rule (see the format in the phase `modernize-extract-rules` (`phases/modernize-extract-rules.md`)
 command). Group by category. Lead with a summary table.
 
 ## Untrusted content discipline

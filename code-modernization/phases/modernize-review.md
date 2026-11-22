@@ -1,4 +1,4 @@
-<!-- From anthropics/claude-plugins-official plugins/code-modernization/commands/modernize-review.md (Apache-2.0, v1.1.0 at commit 73c8cf3, which includes d7d3279; see LICENSE-UPSTREAM). Changes: `${CLAUDE_PLUGIN_ROOT}` became `$SKILL_DIR` and slash commands became phase-file references. Read SKILL.md's 'Running this in Biorouter' section first: it says how Claude Code tools named here map to Biorouter. -->
+<!-- From anthropics/claude-plugins-official plugins/code-modernization/commands/modernize-review.md (Apache-2.0, v1.1.0 at commit 73c8cf3, which includes d7d3279; see LICENSE-UPSTREAM). Changes: `${CLAUDE_PLUGIN_ROOT}` became `$SKILL_DIR`, `commands/` became `phases/`, and slash commands became phase-file references. Read SKILL.md's 'Running this in Biorouter' section first: it maps the Claude Code tools named here (AskUserQuestion, Workflow and its workflows/*.js scripts, the progress pane, .claude/settings.json) to Biorouter. -->
 
 ---
 description: Confirm or correct the business rules that need a person's judgement; the plan and the build read your answers
@@ -23,7 +23,7 @@ Use the AskUserQuestion tool, never chat text, up to four rules per call. One qu
 
 ## 3 — Record
 
-Merge the answers into `analysis/$system/RULE_REVIEWS.json`, the same file the live progress pane's review deck (`/modernize-review-pane`) writes:
+Merge the answers into `analysis/$system/RULE_REVIEWS.json`, the same file the live progress pane's review deck (the progress pane's review deck (not included in Biorouter; use phase `modernize-review`)) writes:
 
 ```json
 { "system": "<name>", "version": 1, "reviews": {

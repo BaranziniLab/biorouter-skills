@@ -1,4 +1,4 @@
-<!-- From anthropics/claude-plugins-official plugins/code-modernization/commands/modernize-extract-rules.md (Apache-2.0, v1.1.0 at commit 73c8cf3, which includes d7d3279; see LICENSE-UPSTREAM). Changes: `${CLAUDE_PLUGIN_ROOT}` became `$SKILL_DIR` and slash commands became phase-file references. Read SKILL.md's 'Running this in Biorouter' section first: it says how Claude Code tools named here map to Biorouter. -->
+<!-- From anthropics/claude-plugins-official plugins/code-modernization/commands/modernize-extract-rules.md (Apache-2.0, v1.1.0 at commit 73c8cf3, which includes d7d3279; see LICENSE-UPSTREAM). Changes: `${CLAUDE_PLUGIN_ROOT}` became `$SKILL_DIR`, `commands/` became `phases/`, and slash commands became phase-file references. Read SKILL.md's 'Running this in Biorouter' section first: it maps the Claude Code tools named here (AskUserQuestion, Workflow and its workflows/*.js scripts, the progress pane, .claude/settings.json) to Biorouter. -->
 
 ---
 description: Mine the business rules out of the code into testable Given/When/Then rule cards with file:line citations

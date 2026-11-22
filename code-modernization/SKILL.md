@@ -1,7 +1,7 @@
 ---
 name: code-modernization
 description: "Modernize legacy code with proof that behaviour is unchanged: preflight, assess, map, extract business rules into testable rule cards, have a person review the flagged rules, write the phased brief, transform module by module or uplift a version in place, harden security, and verify each module PROVEN, PARTLY PROVEN or NOT PROVEN with independent re-checks. Target versions are looked up, never remembered. Use for COBOL, legacy Java, .NET Framework, C++, monoliths, or any same-stack version move."
-license: Apache-2.0
+license: Apache-2.0 AND MIT
 user-invocable: true
 metadata:
   version: "1.1.0"
@@ -9,7 +9,7 @@ metadata:
   upstream: "anthropics/claude-plugins-official/plugins/code-modernization@73c8cf3ea7e296057b467990f2f5d61b4c922260 (plugin v1.1.0, includes d7d3279)"
 ---
 
-<!-- Adapted for Biorouter from anthropics/claude-plugins-official plugins/code-modernization, plugin version 1.1.0 (Apache-2.0; licence in LICENSE-UPSTREAM). The phase files, agent prompts, scripts and target-version reference are upstream's; this SKILL.md is the Biorouter entry point. The live progress pane, its hooks, the usage telemetry and the Claude Code workflow scripts are not included. -->
+<!-- Adapted for Biorouter from anthropics/claude-plugins-official plugins/code-modernization, plugin version 1.1.0 (Apache-2.0; licence in LICENSE-UPSTREAM). The phase files, agent prompts, scripts and target-version reference are upstream's; this SKILL.md is the Biorouter entry point. `assets/` keeps the offline report template, the topology viewer and the vendored Mermaid library (MIT). The live progress pane, its hooks and screenshots, the usage telemetry and the Claude Code workflow scripts are not included. -->
 
 # Code Modernization
 
@@ -55,7 +55,8 @@ The phase and agent files were written for Claude Code. Map what they name as fo
 - **`Workflow({...})` with a `workflows/*.js` script.** Those scripts are not shipped. Run the same fan-out with Biorouter's `subagent` tool: one subagent per shard or unit the phase describes (`scripts/make_shards.py` makes the shards), each given the matching prompt from `agents/`, then merge their outputs into the files the phase names. Without the subagent tool, run the shards one at a time. Respect the phase's limits (for example, ask before launching more than 12 shards).
 - **Subagents named in a phase** (`legacy-analyst`, `business-rules-extractor`, `architecture-critic`, `security-auditor`, `test-engineer`, `version-delta-analyst`, `uplift-migrator`, `scaffolder`): give the subagent the body of `agents/<name>.md` as its instructions.
 - **`Read`, `Write`, `Edit`, `Glob`, `Grep`, `Bash`.** The Developer extension's file and shell tools.
-- **The live progress pane and its review deck.** Not included. `modernize-status` and the report from `scripts/build_report.py` (`REPORT.html`, which works offline) give the same picture; phase `modernize-review` writes the same `RULE_REVIEWS.json` the pane would.
+- **`.claude/settings.json` deny rules (phase `modernize-preflight`).** Claude Code permission rules do not exist in Biorouter. Skip writing them, say in the preflight report that this protection is not available here, and keep the rule that `legacy/` and the linked source are never edited.
+- **The live progress pane and its review deck.** Not included; ignore phase text that says the pane reads a file. `modernize-status` and the report from `scripts/build_report.py` (`REPORT.html`, which works offline) give the same picture; phase `modernize-review` writes the same `RULE_REVIEWS.json` the pane would.
 - **Scripts.** `scripts/*.py` are standard-library Python 3; run them as `python3 "$SKILL_DIR/scripts/<name>.py"` with the arguments the phase gives.
 
 ## Related skills

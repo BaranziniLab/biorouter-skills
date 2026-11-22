@@ -1,4 +1,4 @@
-<!-- From anthropics/claude-plugins-official plugins/code-modernization/commands/modernize.md (Apache-2.0, v1.1.0 at commit 73c8cf3, which includes d7d3279; see LICENSE-UPSTREAM). Changes: `${CLAUDE_PLUGIN_ROOT}` became `$SKILL_DIR` and slash commands became phase-file references. Read SKILL.md's 'Running this in Biorouter' section first: it says how Claude Code tools named here map to Biorouter. -->
+<!-- From anthropics/claude-plugins-official plugins/code-modernization/commands/modernize.md (Apache-2.0, v1.1.0 at commit 73c8cf3, which includes d7d3279; see LICENSE-UPSTREAM). Changes: `${CLAUDE_PLUGIN_ROOT}` became `$SKILL_DIR`, `commands/` became `phases/`, and slash commands became phase-file references. Read SKILL.md's 'Running this in Biorouter' section first: it maps the Claude Code tools named here (AskUserQuestion, Workflow and its workflows/*.js scripts, the progress pane, .claude/settings.json) to Biorouter. -->
 
 ---
 description: Start here — say what you want done with your code and get the plan and the first step
@@ -66,5 +66,5 @@ first and let the assessment's recommended pattern pick the road. Name the place
 
 Give the exact command with everything filled in, for example
 phase `modernize-preflight` (`phases/modernize-preflight.md`) billing "<the target from INTENT.md>" --source /work/billing`, and ask "Shall I start it?". On yes, or in a
-headless run, read `$SKILL_DIR/commands/modernize-preflight.md` and carry it out with those arguments as if they had
+headless run, read `$SKILL_DIR/phases/modernize-preflight.md` and carry it out with those arguments as if they had
 typed it. After it finishes, name the next command.
