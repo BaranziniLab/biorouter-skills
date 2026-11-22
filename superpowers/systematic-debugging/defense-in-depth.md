@@ -54,6 +54,7 @@ function initializeWorkspace(projectDir: string, sessionId: string) {
 
 ```typescript
 async function gitInit(directory: string) {
+  // In tests, refuse git init outside temp directories
   if (process.env.NODE_ENV === 'test') {
     const normalized = normalize(resolve(directory));
     const tmpDir = normalize(resolve(tmpdir()));
@@ -92,12 +93,30 @@ When you find a bug:
 3. **Add validation at each layer** - Entry, business, environment, debug
 4. **Test each layer** - Try to bypass layer 1, verify layer 2 catches it
 
+## Example from Session
+
+Bug: Empty `projectDir` caused `git init` in source code
+
+**Data flow:**
+1. Test setup → empty string
+2. `Project.create(name, '')`
+3. `WorkspaceManager.createWorkspace('')`
+4. `git init` runs in `process.cwd()`
+
+**Four layers added:**
+- Layer 1: `Project.create()` validates not empty/exists/writable
+- Layer 2: `WorkspaceManager` validates projectDir not empty
+- Layer 3: `WorktreeManager` refuses git init outside tmpdir in tests
+- Layer 4: Stack trace logging before git init
+
+**Result:** All 1847 tests passed, bug impossible to reproduce
+
 ## Key Insight
 
-All four layers are often necessary. During testing, each layer catches bugs the others miss:
-- Different code paths bypass entry validation
-- Mocks bypass business logic checks
-- Edge cases on different platforms need environment guards
-- Debug logging identifies structural misuse
+All four layers were necessary. During testing, each layer caught bugs the others missed:
+- Different code paths bypassed entry validation
+- Mocks bypassed business logic checks
+- Edge cases on different platforms needed environment guards
+- Debug logging identified structural misuse
 
 **Don't stop at one validation point.** Add checks at every layer.

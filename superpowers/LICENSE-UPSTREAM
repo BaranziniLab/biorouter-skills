@@ -1,0 +1,38 @@
+Third-party material in this skill
+==================================
+
+This skill includes material adapted from the projects listed below. Each is used
+under its own licence, reproduced in full under its entry. Biorouter's own text and
+changes are licensed under Apache-2.0 (the LICENSE file of
+BaranziniLab/biorouter-skills). The skill's `license` line is the SPDX expression of
+everything in this folder.
+
+------------------------------------------------------------------------------
+obra/superpowers
+Source: https://github.com/obra/superpowers (skills/: brainstorming, dispatching-parallel-agents, executing-plans, finishing-a-development-branch, receiving-code-review, requesting-code-review, subagent-driven-development, systematic-debugging, test-driven-development, using-git-worktrees, verification-before-completion, writing-plans, writing-skills)
+Commit: 22f0b463e7a5e579904dd6211a520321035526f7 (v7.0.2)
+Licence: MIT
+Changes: resynced from v5.1.0 (f2cbfbe) to v7.0.2; the using-superpowers and diagnosing-superpowers harness bootstraps, writing-skills' copy of Anthropic's best-practices page and its CLAUDE.md test transcripts, and systematic-debugging's test and creation-log files are not included; superpowers: prefixes removed from cross-references; Biorouter notes added to finishing-a-development-branch, verification-before-completion, requesting-code-review, writing-skills and the visual companion's launch steps; frontmatter gains licence, user-invocable and version metadata.
+
+MIT License
+
+Copyright (c) 2025 Jesse Vincent
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
