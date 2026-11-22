@@ -1,54 +1,123 @@
 ---
 name: scientific-data-engineering
-description: Plan and review scalable scientific data workflows with Polars, Dask, Zarr, TileDB, Arrow/Parquet, HDF5, and dataset versioning. Use when scientific data is too large for naive pandas/R data frames or when the user asks about chunking, columnar storage, lazy execution, cloud/object storage, or reproducible data pipelines.
+description: Choose storage formats, chunking, engines and versioning for scientific data that outgrows pandas or R data frames, then build the pipeline with Polars, Dask, Zarr, Vaex, DataLad or LaminDB. Use when data is larger than memory, slow to load, split across many files or cloud buckets, needs lazy or parallel execution, chunked N-D arrays, Parquet or Arrow layout, dataset versioning and provenance, or a curated biological data registry.
 user-invocable: true
-license: Apache-2.0
+license: Apache-2.0 AND MIT AND BSD-3-Clause
+metadata:
+  version: "1.1.0"
+  origin: adapted
+  upstream: "K-Dense-AI/scientific-agent-skills@ec59a29a03d5c40f73ab40878df04860bc00e876 (skills/polars, skills/dask, skills/zarr-python, skills/vaex, skills/datalad, skills/lamindb)"
 ---
 
 # Scientific Data Engineering
 
-Source adaptation: BioRouter-original synthesis inspired by broad Scientific Agent Skills and Auto-Empirical Research Skills capability patterns, rewritten under Apache-2.0. Do not copy upstream text; use this as a native BioRouter routing and quality-control checklist.
+This skill decides how scientific data should be stored, read and moved before anyone writes
+analysis code, and then points at a detailed, tested guide for the engine chosen. The six guides
+under `references/` are adapted from K-Dense Scientific Agent Skills; their licences and changes
+are listed in `LICENSE-UPSTREAM`.
 
-## When to Use
+## Start with three measurements
 
-Use this skill when the user asks for Data Engineering. Load more specific BioSkills, BRXT extensions, or language skills when the task touches a concrete dataset, file format, package, or platform.
+Before choosing a tool, find out (run the commands; do not guess):
 
-## Intake
+1. **Size and shape.** Bytes on disk, row and column counts, or array shape and dtype. For a
+   folder, `du -sh` plus a file count. For CSV, also the delimiter and whether the header repeats.
+2. **Access pattern.** Which subset a typical question reads: a few columns of every row, a time
+   window, a spatial tile, a set of samples. The access pattern decides the layout far more than
+   total size does.
+3. **Memory and compute.** RAM on the machine that will run it, cores, and whether a cluster
+   (Wynton through `ucsf-hpc`) or a GPU is available.
 
-Collect the minimum context before acting:
+If the data fits comfortably in memory (under about a fifth of RAM after loading) and is read
+once, plain pandas or data.table is fine. Say so and stop: the cheapest pipeline is the one you
+do not build.
 
-- Research question or operational goal.
-- Data source, file format, platform, package, or API involved.
-- Unit of analysis and expected output.
-- Privacy, credential, licensing, and compute constraints.
-- Whether the user wants a plan, executable code, review, or installed-tool workflow.
+## Choose the engine
 
-## Native BioRouter Routing
+| Situation | Use | Guide |
+| --- | --- | --- |
+| Tabular data, single machine, fits or nearly fits in RAM; joins, group-bys, window functions | Polars (eager), or lazy `scan_parquet`/`scan_csv` with streaming | `references/polars.md` |
+| Tabular data much larger than RAM, or custom Python functions over many partitions, or a cluster | Dask DataFrame with `dask.distributed` | `references/dask.md` |
+| N-D numeric arrays (imaging stacks, simulations, climate, expression cubes) read by slices | Zarr v3 arrays, chunked to the access pattern; Dask Array or Xarray on top | `references/zarr-python.md`, `references/dask.md` |
+| Existing HDF5 or Arrow file, interactive filtering and binned statistics without loading | Vaex (memory-mapped, lazy expressions) | `references/vaex.md` |
+| Data that must be versioned, fetched from OpenNeuro, DANDI or a DataLad dataset, or an analysis whose provenance must be machine-readable | DataLad (`datalad get`, `datalad run`) | `references/datalad.md` |
+| Biological datasets that need registration, schema validation, ontology annotation and lineage across a lab | LaminDB (with LaminDBAgent when installed) | `references/lamindb.md` |
 
-Prefer these BioRouter-native routes before writing new glue code:
+Prefer Polars over Dask on one machine: it is faster to write, faster to run and has fewer
+failure modes. Reach for Dask when the work genuinely needs more memory than one machine has,
+or when the computation is arbitrary Python that Polars expressions cannot express.
 
-- Use relevant BRXT extensions when platform/API access is needed.
-- Use `scientific-research` for broad research orchestration.
-- Use `citation-temporal-integrity` and `claim-evidence-integrity` for evidence-heavy deliverables.
-- Use `replication-package-audit` when outputs must be reproducible.
-- Use `python-scripting`, `r-scripting`, or BioSkills for package-specific code style.
+## Layout rules that hold for every engine
 
-## Quality Gates
+- **Columnar for tables.** Convert repeatedly read CSV to Parquet once, with explicit dtypes,
+  and keep the conversion script. Partition by the column most queries filter on (date, cohort,
+  chromosome), aiming for files of roughly 100 MB to 1 GB; thousands of tiny files are slower
+  than one large file.
+- **Chunks follow reads.** A Zarr or HDF5 chunk should hold what one typical read touches.
+  Time-series per voxel wants long chunks in time; image tiles want square spatial chunks.
+  Uncompressed chunk sizes of about 1 to 16 MB are a good start; measure before tuning.
+- **Types are decisions.** Fix categorical columns, nullable integers, time zones and units at
+  ingest. Record them in a schema file or LaminDB schema, not in comments.
+- **Identifiers survive.** Sample, subject, cell and run identifiers are never reindexed,
+  reordered or regenerated by the pipeline. Check them after every join (row counts before and
+  after, duplicate keys, unmatched keys).
+- **Raw is read-only.** Keep raw inputs immutable; write derived data to a separate path or a
+  new DataLad commit. A pipeline step that overwrites its input cannot be rerun.
+- **Paths are not secrets, but credentials are.** Cloud paths (`s3://`, `gs://`) need fsspec
+  backends and credentials from the environment or a profile. Never write keys into scripts,
+  notebooks or Zarr attributes.
 
-Before presenting results as final:
+## Workflow
 
-1. State the data provenance and tool/package versions.
-2. Separate exploratory output from confirmatory evidence.
-3. Check that identifiers, coordinates, sample ids, citations, or run ids are preserved.
-4. Identify assumptions that could change the conclusion.
-5. Provide a rerunnable command, notebook cell, or workflow outline when execution is involved.
-6. Mark anything requiring credentials, proprietary data, or external services as unverified unless it was actually checked.
+1. Measure (above) and write the target layout down: format, partition or chunk scheme,
+   compression codec, schema, and where outputs go.
+2. Convert a small sample first (one partition, one chunk row). Check dtypes, identifier
+   preservation and a few known values against the source.
+3. Run the full conversion as a script, not interactively, and log input checksums or the
+   DataLad commit it read.
+4. Validate the output: row or element counts, null counts per column, min and max of key
+   numeric columns, and a round trip of a handful of records.
+5. Benchmark the typical query on the new layout. If it is not faster than the old one,
+   revisit the chunking or partitioning before building on it.
+6. For anything shared or published, record provenance: `datalad run` for commands, LaminDB
+   transforms and runs for registered artifacts, or at minimum a manifest with checksums.
 
-## Output Pattern
+## Pitfalls the guides cover in depth
 
-Return a compact work plan first, then the implementation or review. For each result, include:
+- Polars lazy queries that silently collect everything because a step is not streamable; call
+  `explain()` and check for the streaming engine (`references/polars.md`).
+- Dask graphs with millions of tiny tasks, repeated `compute()` calls that recompute the
+  same graph, and Pandas operations that force a full shuffle (`references/dask.md`).
+- Zarr v2 and v3 format confusion, sharding, and codecs that other readers cannot decode
+  (`references/zarr-python.md`, `references/zarr-python/references/v3_migration.md`).
+- Vaex operations that materialise data or need Python 3.12 or older
+  (`references/vaex.md`).
+- DataLad files that read as broken symlinks or small pointer files because content was never
+  fetched with `datalad get` (`references/datalad.md`).
+- LaminDB artifacts registered without a schema, so validation never ran
+  (`references/lamindb.md`).
 
-- Decision made.
-- Evidence or file/API source.
-- Failure modes.
-- Next verification step.
+## In Biorouter
+
+- Run conversions and benchmarks with the Developer shell; long jobs belong on Wynton through
+  `ucsf-hpc`, and GPU dataframes (cuDF, cupy) through `gpu-compute-optimization`.
+- LaminDBAgent, when installed, registers and queries LaminDB artifacts as tools; this skill
+  holds the method it should follow.
+- For profiling the content of the data (distributions, missingness, outliers), use
+  `exploratory-data-analysis`; for whole-project reproducibility checks, use
+  `replication-package-audit`; for multi-step bioinformatics pipelines, use
+  `workflow-management`.
+
+## Guides in this skill
+
+| Guide | Covers |
+| --- | --- |
+| `references/polars.md` | Expressions, lazy vs eager, joins, pivots, window functions, I/O, pandas migration, performance |
+| `references/dask.md` | DataFrames, Arrays, Bags, Futures, schedulers, best practices, debugging |
+| `references/zarr-python.md` | Zarr v3 arrays, groups, chunking and compression, storage backends, Dask and Xarray integration |
+| `references/vaex.md` | Memory-mapped DataFrames, expressions, binned statistics, conversion, ML preprocessing |
+| `references/datalad.md` | Getting and versioning datasets, `datalad run` provenance, containers, publishing |
+| `references/lamindb.md` | Artifacts, schemas and curation, Bionty ontologies, lineage, storage and deployment |
+
+Each guide has its own `references/<name>/references/` folder of deeper notes, linked from the
+guide.
