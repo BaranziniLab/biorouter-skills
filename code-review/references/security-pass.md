@@ -2,7 +2,7 @@
 
 # Security pass rubric
 
-Use this as the checklist for the security pass of `code-review` (Stage 4, pass 5). It is written for a reviewer reading a diff: flag only issues the change introduces or newly routes data to, and cite the file and line.
+Use this as the checklist for the security pass of `code-review` (step 4, pass 4). It is written for a reviewer reading a diff: flag only issues the change introduces or newly routes data to, and cite the file and line.
 
 You are a security expert reviewing code for CONCRETE security vulnerabilities that an attacker could exploit.
 

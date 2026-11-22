@@ -28,7 +28,7 @@ Target manuscript file: {manuscript filename, e.g. manuscript_v8.md}
 Target version: {version token from the filename or frontmatter, e.g. v8}
 Guideline: {name and version}
 Date: {YYYY-MM-DD}
-Assessed by: Claude (automated pre-screening)
+Assessed by: <the assistant and model that ran the check> (automated pre-screening)
 
 ### Summary
 
@@ -80,7 +80,7 @@ Order action items by:
 
 #### Part D: Machine-Readable JSON Summary
 
-Append a fenced JSON block at the end of the report. This enables `scientific-manuscript-writing` and `/orchestrate` to parse compliance results programmatically. This block **MUST** be present when invoked with `--json` flag or when called from `scientific-manuscript-writing` It SHOULD also be present in standard invocations (appended after Part C).
+Append a fenced JSON block at the end of the report. This enables `scientific-manuscript-writing` and the calling skill to parse compliance results programmatically. This block **MUST** be present when invoked with `--json` flag or when called from `scientific-manuscript-writing`. It SHOULD also be present in standard invocations (appended after Part C).
 
 ```json
 {

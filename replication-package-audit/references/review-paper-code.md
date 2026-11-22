@@ -1,4 +1,4 @@
-<!-- Adapted for Biorouter from claesbackman/AI-research-feedback Skills/review-paper-code/SKILL.md (MIT, commit 949d827; licence in LICENSE-UPSTREAM). Changes: Claude Code's Agent tool and $ARGUMENTS replaced with Biorouter's subagent tool and the request; otherwise unchanged. -->
+<!-- Adapted for Biorouter from claesbackman/AI-research-feedback Skills/review-paper-code/SKILL.md (MIT, commit 949d827; licence in LICENSE-UPSTREAM). Changes: Claude Code's Agent tool and the request replaced with Biorouter's subagent tool and the request; otherwise unchanged. -->
 
 # Review Paper Code
 
@@ -32,7 +32,7 @@ Use Glob to search for `**/*.tex`, excluding obvious build folders such as `_min
 Identify the main paper file as the best candidate containing `\documentclass` or `\begin{document}`.
 
 If multiple candidates exist, first discard files whose document class is `beamer` (slides) and files whose name or folder suggests an old draft or a response letter (`response*`, `letter*`, `slides*`, `old*`, `archive/`, etc.). Then prefer:
-1. A path explicitly provided in `$ARGUMENTS`
+1. A path explicitly provided in the request
 2. A file in `Writing/`, `writing/`, `Paper/`, `paper/`, `Draft/`, or the repo root
 3. The file that appears to include the most component files via `\input{}` / `\include{}`
 

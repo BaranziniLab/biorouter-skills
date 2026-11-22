@@ -19,7 +19,7 @@ A pipeline for taking a research question from a one-line prompt to a verified, 
 
 ## When this fires
 
-Use `/scientific-research` (or let it auto-load) when the request is a *research task*, not a code task:
+Ask for it by name (or let it load on its own) when the request is a *research task*, not a code task:
 
 - "What's known about X?" / "Survey the literature on Y."
 - "Generate hypotheses for why Z happens."

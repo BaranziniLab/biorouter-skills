@@ -1,5 +1,7 @@
 <!-- From posit-dev/skills posit-dev/review-testing/SKILL.md (MIT, commit 9519594; see LICENSE-UPSTREAM). Changes: frontmatter removed. -->
 
+> **Biorouter note:** where this file says to use the AskUserQuestion tool, ask in the chat. The `r-testthat` skill it names is part of the `r-package-development` bundle when that bundle is installed.
+
 You are reviewing test code written alongside a feature implementation or bug fix. Ensure the tests are well-designed, thorough, and maintainable — not just that they pass. Tests that merely mirror implementation details create false confidence and become a maintenance burden during refactoring.
 
 ## Review Scope

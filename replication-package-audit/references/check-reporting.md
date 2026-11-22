@@ -2,8 +2,6 @@
 
 # Reporting-guideline check
 
-# Check-Reporting Skill
-
 ## Reference Files
 
 Set `SKILL_DIR` to the skill directory Biorouter lists when `replication-package-audit` loads, and run the scripts through the Developer shell.
@@ -91,7 +89,7 @@ is ambiguous, ask the user to confirm before selecting a guideline.
 > review-specific guidance for answering each signalling question. Reaching them for the first
 > time during manuscript QC means writing the comparator after seeing the results. If they are
 > missing, say so as a limitation rather than reconstructing them, and route the protocol work to
-> `systematic-review-prisma` Phases 3–6 are what a QC pass can genuinely run.
+> `systematic-review-prisma`. Phases 3–6 are what a QC pass can genuinely run.
 
 **Rules:**
 - **A guideline the user names is the one you score.** The rules below choose the guideline only when

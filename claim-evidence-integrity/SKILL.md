@@ -66,7 +66,7 @@ Flag:
 
 ## 5. Run the reference verifier
 
-The scripts in `scripts/` are standard-library Python 3 and need no install. Set `SKILL_DIR` to the skill directory Biorouter lists when this skill loads, then run from the project root through the Developer shell:
+The scripts in `scripts/` are standard-library Python 3 and need no install. Set `SKILL_DIR` to the skill directory Biorouter lists when this skill loads, then run from the project root through the Developer shell (the wrapper writes `qc/` under the nearest folder above the manuscript that contains `submission/`, or else beside the manuscript):
 
 ```bash
 python3 "$SKILL_DIR/scripts/verify_refs.py" manuscript.md --project-root .

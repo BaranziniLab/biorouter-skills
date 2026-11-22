@@ -78,8 +78,8 @@ Stop here unless the person asked to post.
 
 Re-run step 1 first: the pull request may have closed while you worked.
 
-- No issues: write "## Code review", a blank line and "No issues found. Checked for bugs, security and project-instruction compliance." to `comment.md`, then `gh pr comment <PR> --body-file comment.md`.
-- Issues: post one review with one inline comment per unique issue. Write the comments to `review.json` and send them with `gh api repos/<owner>/<repo>/pulls/<PR>/reviews --method POST --input review.json`, where the file holds `{"commit_id": "<full head sha>", "event": "COMMENT", "body": "Code review", "comments": [{"path": "<file>", "line": <n>, "side": "RIGHT", "body": "<comment>"}]}`.
+- No issues: write "## Code review", a blank line and "No issues found. Checked for bugs, security and project-instruction compliance." to `comment.md` in a temporary folder outside the repository, then `gh pr comment <PR> --body-file comment.md`.
+- Issues: post one review with one inline comment per unique issue. Write the comments to `review.json` in a temporary folder outside the repository and send them with `gh api repos/<owner>/<repo>/pulls/<PR>/reviews --method POST --input review.json`, where the file holds `{"commit_id": "<full head sha>", "event": "COMMENT", "body": "Code review", "comments": [{"path": "<file>", "line": <n>, "side": "RIGHT", "body": "<comment>"}]}`.
 - Each comment: a short description of the issue and the fix. Add a committable suggestion block only for a small, self-contained fix that resolves the issue completely; describe larger fixes in words.
 - Cite each issue. Link code as `https://github.com/<owner>/<repo>/blob/<full sha>/<path>#L<start>-L<end>`, with the full 40-character sha and at least one line of context on each side, and link any instruction file you quote.
 
