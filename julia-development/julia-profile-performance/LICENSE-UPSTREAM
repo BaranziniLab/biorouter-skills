@@ -1,0 +1,56 @@
+julia-development 1.0.0: upstream notices
+
+Biorouter's own additions and changes in this folder are licensed under the Apache License 2.0 (see the LICENSE file of BaranziniLab/biorouter-skills).
+
+========================================================================
+julia-development includes material from timholy/claude_config (skills/freshen-package, skills/freshen-gitignore, skills/freshen-aqua, skills/freshen-explicit-imports, skills/review-api, agents/julia-api-inventory.md, skills/review-common/interview.md, skills/review-common/plan-file.md, skills/review-implement, rules/code-comments.md, skills/freshen-generic-axes, rules/julia-generic-indexing.md, skills/freshen-coverage, skills/freshen-docstrings, agents/docstring-auditor.md, julia-code/ClaudeUtils/src/audit_docstrings.jl, skills/freshen-docs, skills/profile-performance, rules/julia-inbounds.md, commit 225ce60094c1ecb823b3cb7abf2fd390185643ef),
+Copyright (c) 2026 Tim Holy, licensed under MIT. Changes: skills renamed with a julia- prefix; Claude Code paths, slash commands and subagent names replaced with Biorouter equivalents; the rules, review-common files, two subagent prompts, the docstring audit script and the Julia style section of CLAUDE.md copied into each skill's references.
+
+This agentic coding configuration is licensed under the MIT "Expat" License:
+
+> Copyright (c) 2026: Tim Holy.
+> 
+> Permission is hereby granted, free of charge, to any person obtaining a copy
+> of this software and associated documentation files (the "Software"), to deal
+> in the Software without restriction, including without limitation the rights
+> to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+> copies of the Software, and to permit persons to whom the Software is
+> furnished to do so, subject to the following conditions:
+> 
+> The above copyright notice and this permission notice shall be included in all
+> copies or substantial portions of the Software.
+> 
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+> SOFTWARE.
+>
+
+========================================================================
+julia-development includes material from JuliaLang/DocBrowser.jl (skills/julia-docs, commit 0146653c42f926e309c4b1739479ad54fc0f9694),
+Copyright (c) 2026 Ian Butterworth, Kristoffer Carlsson and contributors, licensed under MIT. Changes: frontmatter rewritten for Biorouter; text kept.
+
+MIT License
+
+Copyright (c) 2026 Ian Butterworth, Kristoffer Carlsson and contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
