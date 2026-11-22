@@ -329,7 +329,26 @@ export function runCheck({ root = REPO_ROOT, catalog, builtins, jobs = null, ext
   const ms = methodSkillWarnings(all);
   raw.push(...ms.failures);
   warnings.push(...ms.warnings);
-  raw.push(...ruleD2(all, builtinNames));
+  // A retired item's id stays reserved (D2), with the one written exception the
+  // landing check also makes: a retired row may pass its name to the active
+  // item in the other catalog that took over its job (UCSFHPCAgent's name to
+  // the ucsf-hpc skill), stated as retired.name_passes_to on the retired row.
+  const rowOf = (ref) => {
+    const [kind, id] = ref.split(':');
+    if (kind === 'extension') return (extensions?.items ?? []).find((r) => r.id === id) ?? null;
+    if (kind === 'skill') return rows.find((r) => r.id === id) ?? null;
+    return null;
+  };
+  raw.push(
+    ...ruleD2(all, builtinNames).filter((f) => {
+      const owners = [...new Set(f.refs)];
+      if (owners.length !== 2) return true;
+      const [a, b] = owners.map(rowOf);
+      if (!a || !b) return true;
+      const passes = (old, ref) => old.status !== 'active' && old.retired?.name_passes_to === ref;
+      return !(passes(a, owners[1]) && b.status === 'active') && !(passes(b, owners[0]) && a.status === 'active');
+    })
+  );
   raw.push(...ruleD3(rowsOnly.filter((i) => i.kind !== 'bundled-skill'), { threshold, genericWords }));
   raw.push(...ruleD4(all, builtinNames));
   raw.push(...ruleD5(all, { threshold: componentThreshold, genericWords, builtins: builtinNames }));

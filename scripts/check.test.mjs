@@ -174,3 +174,18 @@ test("a bundle's optional biorouter-package.json must agree with its row", () =>
   const bad = run(({ write }) => write('bio-skills/gamma/biorouter-package.json', JSON.stringify({ id: 'gamma', displayName: 'Gamma', version: '0.9.0' })));
   assert.deepEqual(rules(bad), ['package:package-json:gamma']);
 });
+
+test('a retired extension may pass its name to the skill that took over its job, and only by saying so', () => {
+  const ext = (retired) => ({
+    format: 1,
+    items: [{ id: 'alphaagent', display_name: 'Alpha Agent', status: 'retired', job: 'fixture.alpha-remote', retired }],
+  });
+  const check = (extensions) => {
+    const fx = makeFixture();
+    return runCheck({ root: fx.root, catalog: clone(fx.catalog), builtins: BUILTINS, extensions });
+  };
+  const d2 = (res) => rules(res).filter((r) => r.startsWith('D2:'));
+  assert.deepEqual(d2(check(ext({ reason: 'x', name_passes_to: 'skill:alpha' }))), []);
+  assert.equal(d2(check(ext({ reason: 'x' }))).length, 1);
+  assert.equal(d2(check(ext({ reason: 'x', name_passes_to: 'skill:beta' }))).length, 1);
+});
