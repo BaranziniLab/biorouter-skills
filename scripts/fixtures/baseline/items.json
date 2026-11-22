@@ -1,0 +1,3491 @@
+{
+ "taken": "2026-11-22",
+ "note": "Baseline catalogs (BAAM before the November 2026 refresh): rule items for the D3 calibration test. Never edit; it records the state the threshold was calibrated on.",
+ "items": [
+  {
+   "ref": "skill:scientific-research",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "scientific-research",
+   "display_name": "Scientific Research",
+   "status": "active",
+   "job": "research.question-orchestration",
+   "distinct_from": [],
+   "text": [
+    "Scientific Research",
+    "End-to-end research: scopes the question, reviews real literature, generates hypotheses, plans and verifies the analysis, then writes a cited draft. Delegates biomedical data queries to whichever data extensions are installed. It never fabricates a citation or result.",
+    "scientific-research",
+    "auto",
+    "research",
+    "literature",
+    "review",
+    "hypothesis",
+    "verification",
+    "citations",
+    "pubmed",
+    "Run a research question end to end — scoping, literature review, hypothesis generation, analysis planning, result verification, and a cited write-up. Use when the user wants to investigate a topic, survey prior work, plan or critique an analysis, draft a paper section, or run a multi-step \"do the research for me\" task. Delegates biomedical data access to the bio-skills bundle and to BioRouter extensions (SPOKE, CDW, OMOP, MedCP)."
+   ]
+  },
+  {
+   "ref": "skill:empirical-research-router",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "empirical-research-router",
+   "display_name": "Empirical Research Router",
+   "status": "active",
+   "job": "research.empirical-stage-gates",
+   "distinct_from": [
+    {
+     "id": "replication-package-audit",
+     "boundary": "empirical-research-router runs the stage gates of an empirical study; replication-package-audit is the reproducibility gate it calls"
+    },
+    {
+     "id": "econometrics-toolkit",
+     "boundary": "empirical-research-router orchestrates a study's stages; econometrics-toolkit holds the econometric methods used inside them"
+    },
+    {
+     "id": "causal-identification-gates",
+     "boundary": "empirical-research-router runs the stage gates; causal-identification-gates is the identification gate it calls"
+    }
+   ],
+   "text": [
+    "Empirical Research Router",
+    "Stage-gated empirical research workflow: design register, data audit, identification, estimation, robustness, replication, and reporting.",
+    "empirical-research-router",
+    "empirical",
+    "research",
+    "causal",
+    "inference",
+    "econometrics",
+    "reproducibility",
+    "design",
+    "register",
+    "replication",
+    "apache",
+    "Route empirical research requests through scoped stages: question framing, design register, data audit, identification strategy, estimation, robustness, replication package, and manuscript-ready reporting. Use when a user asks for applied statistics, causal inference, econometrics, epidemiology, social-science style empirical analysis, or a full research workflow rather than one isolated command."
+   ]
+  },
+  {
+   "ref": "skill:causal-identification-gates",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "causal-identification-gates",
+   "display_name": "Causal Identification Gates",
+   "status": "active",
+   "job": "stats.causal-identification-audit",
+   "distinct_from": [
+    {
+     "id": "empirical-benchmark-harness",
+     "boundary": "causal-identification-gates audits whether a real study's design supports causal language; empirical-benchmark-harness builds known-answer tests for the agents that run such analyses"
+    }
+   ],
+   "text": [
+    "Causal Identification Gates",
+    "Audits whether RCT, observational, IV, RDD, DiD, synthetic-control, matching, DML, or survival designs support causal language.",
+    "causal-identification-gates",
+    "causal",
+    "inference",
+    "iv",
+    "rdd",
+    "did",
+    "synthetic",
+    "control",
+    "matching",
+    "dml",
+    "survival",
+    "apache",
+    "Audit causal inference designs before estimation or interpretation, including randomized trials, observational adjustment, IV, RDD, DiD, staggered adoption, event studies, synthetic control, matching, DML, survival designs, and bad-control risks. Use when a user asks whether an empirical design supports causal language."
+   ]
+  },
+  {
+   "ref": "skill:replication-package-audit",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "replication-package-audit",
+   "display_name": "Replication Package Audit",
+   "status": "active",
+   "job": "reproducibility.replication-package-audit",
+   "distinct_from": [
+    {
+     "id": "claim-evidence-integrity",
+     "boundary": "replication-package-audit checks that the code and data reproduce the results; claim-evidence-integrity checks that the claims and citations match those results"
+    }
+   ],
+   "text": [
+    "Replication Package Audit",
+    "Checks research packages for clean-run reproducibility, relative paths, environment capture, seeds, logs, and table/figure mapping.",
+    "replication-package-audit",
+    "reproducibility",
+    "package",
+    "relative",
+    "paths",
+    "seeds",
+    "logs",
+    "environment",
+    "apache",
+    "Audit a research project for reproducibility: master script, relative paths, environment capture, seeds, data provenance, restricted data notes, figure/table mapping, logs, and clean-run evidence. Use before declaring an analysis, manuscript, or package ready to share or submit."
+   ]
+  },
+  {
+   "ref": "skill:claim-evidence-integrity",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "claim-evidence-integrity",
+   "display_name": "Claim Evidence Integrity",
+   "status": "active",
+   "job": "evidence.claim-and-citation-audit",
+   "distinct_from": [
+    {
+     "id": "scientific-artifacts",
+     "boundary": "claim-evidence-integrity audits claims against evidence; scientific-artifacts plans and builds the documents, figures and slides that carry them"
+    }
+   ],
+   "text": [
+    "Claim Evidence Integrity",
+    "Verifies that manuscript claims, numbers, citations, figures, and tables are grounded in traceable evidence.",
+    "claim-evidence-integrity",
+    "claims",
+    "evidence",
+    "manuscript",
+    "numbers",
+    "figures",
+    "tables",
+    "audit",
+    "apache",
+    "Check that a manuscript, report, slide deck, or analysis summary has every major claim, number, table, figure, and citation grounded in evidence. Use before finalizing research prose or when auditing consistency between results and text."
+   ]
+  },
+  {
+   "ref": "skill:citation-temporal-integrity",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "citation-temporal-integrity",
+   "display_name": "Citation Temporal Integrity",
+   "status": "active",
+   "job": "evidence.claim-and-citation-audit",
+   "distinct_from": [],
+   "text": [
+    "Citation Temporal Integrity",
+    "Confirms citations are real, relevant, current enough for the claim, and temporally valid.",
+    "citation-temporal-integrity",
+    "citation",
+    "doi",
+    "pmid",
+    "openalex",
+    "pubmed",
+    "stale",
+    "claims",
+    "apache",
+    "Verify that citations are real, relevant, current enough for the claim, and temporally valid. Use for literature reviews, manuscripts, grant text, reports, and any task where fabricated or stale references would be harmful."
+   ]
+  },
+  {
+   "ref": "skill:empirical-benchmark-harness",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "empirical-benchmark-harness",
+   "display_name": "Empirical Benchmark Harness",
+   "status": "active",
+   "job": "evaluation.empirical-agent-benchmarks",
+   "distinct_from": [],
+   "text": [
+    "Empirical Benchmark Harness",
+    "Known-answer benchmark patterns for testing whether empirical-analysis agents avoid common causal and reproducibility failures.",
+    "empirical-benchmark-harness",
+    "benchmark",
+    "eval",
+    "weak",
+    "iv",
+    "rdd",
+    "did",
+    "bad",
+    "controls",
+    "apache",
+    "Validate empirical-analysis agents against small known-answer benchmark tasks such as bad controls, weak IV, RDD, staggered DiD, matching imbalance, event studies, DML, and replication setup. Use when testing whether a workflow or skill produces methodologically sound empirical research outputs."
+   ]
+  },
+  {
+   "ref": "skill:scientific-artifacts",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "scientific-artifacts",
+   "display_name": "Scientific Artifacts",
+   "status": "active",
+   "job": "documents.scientific-exhibits",
+   "distinct_from": [],
+   "text": [
+    "Scientific Artifacts",
+    "Plans and verifies DOCX/PDF/PPTX/XLSX/LaTeX/scientific figure artifacts with source-to-exhibit mapping.",
+    "scientific-artifacts",
+    "docx",
+    "pdf",
+    "pptx",
+    "xlsx",
+    "latex",
+    "figures",
+    "slides",
+    "apache",
+    "Plan and produce research artifacts such as DOCX manuscripts, PDF reports, PPTX slide decks, XLSX result workbooks, LaTeX posters, scientific schematics, and figure packages with reproducible source mapping. Use when the user wants publication or presentation files rather than only analysis code."
+   ]
+  },
+  {
+   "ref": "skill:open-science-review",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "open-science-review",
+   "display_name": "Open Science Review",
+   "status": "active",
+   "job": "reproducibility.replication-package-audit",
+   "distinct_from": [],
+   "text": [
+    "Open Science Review",
+    "Reviews data/code availability, reporting checklists, protocols, ethics/privacy notes, and open-science readiness.",
+    "open-science-review",
+    "prisma",
+    "consort",
+    "strobe",
+    "reporting",
+    "checklist",
+    "data",
+    "code",
+    "availability",
+    "apache",
+    "Review a research project for open-science readiness: transparent methods, preregistration or protocol notes, PRISMA/systematic-review structure, data/code availability, reporting checklists, and responsible sharing. Use before public release, submission, or collaborative handoff."
+   ]
+  },
+  {
+   "ref": "skill:scientific-data-engineering",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "scientific-data-engineering",
+   "display_name": "Scientific Data Engineering",
+   "status": "active",
+   "job": "data.scalable-storage-and-pipelines",
+   "distinct_from": [],
+   "text": [
+    "Scientific Data Engineering",
+    "Plans scalable scientific data workflows with Polars, Dask, Zarr, TileDB, Arrow/Parquet, HDF5, and dataset versioning.",
+    "scientific-data-engineering",
+    "polars",
+    "dask",
+    "zarr",
+    "tiledb",
+    "parquet",
+    "hdf5",
+    "apache",
+    "Plan and review scalable scientific data workflows with Polars, Dask, Zarr, TileDB, Arrow/Parquet, HDF5, and dataset versioning. Use when scientific data is too large for naive pandas/R data frames or when the user asks about chunking, columnar storage, lazy execution, cloud/object storage, or reproducible data pipelines."
+   ]
+  },
+  {
+   "ref": "skill:statistical-modeling-bayes",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "statistical-modeling-bayes",
+   "display_name": "Statistical Modeling and Bayes",
+   "status": "active",
+   "job": "stats.statistical-and-bayesian-modeling",
+   "distinct_from": [],
+   "text": [
+    "Statistical Modeling and Bayes",
+    "Designs and critiques statistical, Bayesian, survival, hierarchical, power, and uncertainty-reporting workflows.",
+    "statistical-modeling-bayes",
+    "pymc",
+    "statsmodels",
+    "survival",
+    "power",
+    "bayesian",
+    "apache",
+    "Design and critique statistical models with statsmodels, PyMC, survival models, hierarchical models, power analysis, posterior predictive checks, and uncertainty reporting. Use when a request needs principled statistical modeling rather than a generic machine-learning fit."
+   ]
+  },
+  {
+   "ref": "skill:scientific-machine-learning",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "scientific-machine-learning",
+   "display_name": "Scientific Machine Learning",
+   "status": "active",
+   "job": "ml.scientific-modeling",
+   "distinct_from": [
+    {
+     "id": "machine-learning",
+     "boundary": "scientific-machine-learning covers ML on any scientific data with leakage and reproducibility gates; the machine-learning bundle covers omics classifiers, biomarker models and their explanation"
+    }
+   ],
+   "text": [
+    "Scientific Machine Learning",
+    "Plans scientific ML with leakage checks, transformers, graph neural networks, active learning, SHAP, and reproducibility gates.",
+    "scientific-machine-learning",
+    "transformers",
+    "torch",
+    "graph",
+    "neural",
+    "networks",
+    "shap",
+    "leakage",
+    "apache",
+    "Plan scientific ML workflows with scikit-learn, PyTorch Lightning, transformers, graph neural networks, active learning, SHAP/explainability, and leakage checks. Use when applying ML to biomedical, materials, chemistry, imaging, or other scientific datasets."
+   ]
+  },
+  {
+   "ref": "skill:geospatial-science",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "geospatial-science",
+   "display_name": "Geospatial Science",
+   "status": "active",
+   "job": "geo.spatial-analysis",
+   "distinct_from": [],
+   "text": [
+    "Geospatial Science",
+    "Handles geospatial analysis with CRS checks, spatial joins, rasters/vectors, maps, and spatial statistics.",
+    "geospatial-science",
+    "geopandas",
+    "raster",
+    "vector",
+    "crs",
+    "maps",
+    "spatial",
+    "apache",
+    "Handle geospatial research workflows with GeoPandas, raster/vector data, coordinate reference systems, spatial joins, maps, and spatial statistics. Use when data has locations, regions, polygons, rasters, tracks, or environmental/geographic covariates."
+   ]
+  },
+  {
+   "ref": "skill:neurophysiology-analysis",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "neurophysiology-analysis",
+   "display_name": "Neurophysiology Analysis",
+   "status": "active",
+   "job": "neuro.biosignals-and-electrophysiology",
+   "distinct_from": [],
+   "text": [
+    "Neurophysiology Analysis",
+    "Plans biosignal and neural-recording analysis: ECG/EDA/PPG, spike sorting, Neuropixels metadata, and peri-event QC.",
+    "neurophysiology-analysis",
+    "neurokit",
+    "neuropixels",
+    "ecg",
+    "eda",
+    "ppg",
+    "spike",
+    "sorting",
+    "apache",
+    "Plan analysis for biosignals and neural recordings: ECG/EDA/PPG with NeuroKit2, spike sorting/Neuropixels metadata, peri-event analysis, quality control, and reproducible signal-processing pipelines."
+   ]
+  },
+  {
+   "ref": "skill:quantum-scientific-computing",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "quantum-scientific-computing",
+   "display_name": "Quantum Scientific Computing",
+   "status": "active",
+   "job": "physics.quantum-computing",
+   "distinct_from": [
+    {
+     "id": "physical-science-computing",
+     "boundary": "quantum-scientific-computing covers quantum circuits and open quantum systems; physical-science-computing covers astronomy, units, spectra and classical numerical work"
+    }
+   ],
+   "text": [
+    "Quantum Scientific Computing",
+    "Routes quantum and scientific simulation work across Qiskit, Cirq, PennyLane, QuTiP, and validation checks.",
+    "quantum-scientific-computing",
+    "qiskit",
+    "cirq",
+    "pennylane",
+    "qutip",
+    "hamiltonian",
+    "apache",
+    "Route and review quantum/scientific simulation work using Qiskit, Cirq, PennyLane, QuTiP, variational circuits, quantum chemistry, and simulation validation. Use when a task mentions quantum circuits, quantum ML, Hamiltonians, or open quantum systems."
+   ]
+  },
+  {
+   "ref": "skill:materials-informatics",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "materials-informatics",
+   "display_name": "Materials Informatics",
+   "status": "active",
+   "job": "chemistry.materials-informatics",
+   "distinct_from": [],
+   "text": [
+    "Materials Informatics",
+    "Guides computational materials workflows with structures, crystals, compositions, phase diagrams, and dataset provenance.",
+    "materials-informatics",
+    "pymatgen",
+    "crystals",
+    "compositions",
+    "phase",
+    "diagrams",
+    "descriptors",
+    "apache",
+    "Guide computational materials and molecular-structure workflows with pymatgen, ASE-style structures, crystals, compositions, phase diagrams, descriptors, and provenance for materials datasets."
+   ]
+  },
+  {
+   "ref": "skill:biomedical-imaging-pathology",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "biomedical-imaging-pathology",
+   "display_name": "Biomedical Imaging and Pathology",
+   "status": "active",
+   "job": "imaging.radiology-and-pathology",
+   "distinct_from": [],
+   "text": [
+    "Biomedical Imaging and Pathology",
+    "Plans DICOM/pathology/PACS workflows with tiling, metadata, QC, cohort provenance, and privacy-safe reporting.",
+    "biomedical-imaging-pathology",
+    "dicom",
+    "pathology",
+    "pacs",
+    "pathml",
+    "histolab",
+    "privacy",
+    "apache",
+    "Plan biomedical imaging workflows across DICOM, pathology slides, PACS metadata, PathML/histolab-style tiling, image QC, cohort metadata, and privacy-safe reporting."
+   ]
+  },
+  {
+   "ref": "skill:citation-library-management",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "citation-library-management",
+   "display_name": "Citation Library Management",
+   "status": "active",
+   "job": "references.citation-library",
+   "distinct_from": [],
+   "text": [
+    "Citation Library Management",
+    "Builds, cleans, verifies, and deduplicates Zotero/BibTeX/RIS/CSL citation libraries.",
+    "citation-library-management",
+    "zotero",
+    "bibtex",
+    "ris",
+    "csl",
+    "doi",
+    "deduplicate",
+    "apache",
+    "Use Zotero, DOI/PMID lookup, Crossref/OpenAlex, MarkItDown, and citation-file hygiene to build, clean, and verify reference libraries and bibliographies. Use when the user asks for Zotero, BibTeX, RIS, CSL, citation cleanup, or source-library deduplication."
+   ]
+  },
+  {
+   "ref": "skill:laboratory-automation-planning",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "laboratory-automation-planning",
+   "display_name": "Laboratory Automation Planning",
+   "status": "active",
+   "job": "lab.automation-planning",
+   "distinct_from": [],
+   "text": [
+    "Laboratory Automation Planning",
+    "Plans Opentrons/cloud-lab workflows with plate maps, protocol simulation, sample metadata, and execution gates.",
+    "laboratory-automation-planning",
+    "opentrons",
+    "ginkgo",
+    "cloud",
+    "lab",
+    "plate",
+    "maps",
+    "protocols",
+    "apache",
+    "Plan safe lab-automation workflows for Opentrons, cloud labs, Ginkgo-style APIs, plate maps, run metadata, and protocol simulation. Use when a request involves robots, wet-lab run planning, samples, plates, liquid handling, or cloud-lab execution."
+   ]
+  },
+  {
+   "ref": "skill:econometrics-toolkit",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "econometrics-toolkit",
+   "display_name": "Econometrics Toolkit",
+   "status": "active",
+   "job": "econ.applied-econometrics",
+   "distinct_from": [],
+   "text": [
+    "Econometrics Toolkit",
+    "Plans applied econometrics in Python, R, or Stata: panel data, IV, DiD, RDD, clustering, and replication tables.",
+    "econometrics-toolkit",
+    "stata",
+    "r",
+    "python",
+    "panels",
+    "fixed",
+    "effects",
+    "iv",
+    "did",
+    "rdd",
+    "apache",
+    "Plan applied econometrics workflows in Python, R, or Stata: panel data, fixed effects, IV, DiD/event studies, regression discontinuity, clustering, marginal effects, and table replication. Use for social-science, finance, accounting, public-policy, or economics empirical analysis."
+   ]
+  },
+  {
+   "ref": "skill:systematic-review-prisma",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "systematic-review-prisma",
+   "display_name": "Systematic Review and PRISMA",
+   "status": "active",
+   "job": "evidence.systematic-review-and-meta-analysis",
+   "distinct_from": [],
+   "text": [
+    "Systematic Review and PRISMA",
+    "Runs systematic-review workflows: PICO, search strings, screening logs, PRISMA flow, extraction, risk of bias, and synthesis.",
+    "systematic-review-prisma",
+    "pico",
+    "screening",
+    "prisma",
+    "extraction",
+    "risk",
+    "bias",
+    "evidence",
+    "apache",
+    "Run systematic-review workflows: protocol/PICO framing, search strings, screening logs, PRISMA flow, extraction tables, risk-of-bias checks, and evidence synthesis with citation verification."
+   ]
+  },
+  {
+   "ref": "skill:taste-skill",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "taste-skill",
+   "display_name": "Taste (Frontend Design)",
+   "status": "active",
+   "job": "design.frontend",
+   "distinct_from": [],
+   "text": [
+    "Taste (Frontend Design)",
+    "Anti-slop frontend design for landing pages, dashboards, lab tools, and paper companion sites. Reads the brief, picks a real design direction, and ships interfaces that don't look templated.",
+    "taste-skill",
+    "design",
+    "frontend",
+    "ui",
+    "landing",
+    "page",
+    "dashboard",
+    "anti-slop",
+    "Anti-slop frontend skill for landing pages, portfolios, and redesigns. The agent reads the brief, infers the right design direction, and ships interfaces that do not look templated. Real design systems when applicable, audit-first on redesigns, strict pre-flight check. Use when building or restyling a web UI, dashboard, lab tool, or paper companion site."
+   ]
+  },
+  {
+   "ref": "skill:simulation-optimization",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "simulation-optimization",
+   "display_name": "Simulation and Optimization",
+   "status": "active",
+   "job": "modeling.simulation-and-optimization",
+   "distinct_from": [],
+   "text": [
+    "Simulation and Optimization",
+    "Plans discrete-event simulation, multi-objective optimization, sensitivity analysis, scheduling, and what-if modeling.",
+    "simulation-optimization",
+    "simpy",
+    "pymoo",
+    "fluidsim",
+    "optimization",
+    "sensitivity",
+    "scheduling",
+    "apache",
+    "Plan simulation and optimization workflows using SimPy, PyMOO, FluidSim-style models, discrete-event simulation, multi-objective optimization, sensitivity analysis, and validation against known cases. Use when a scientific problem asks for simulation, optimization, scheduling, resource allocation, design search, or what-if modeling."
+   ]
+  },
+  {
+   "ref": "skill:physical-science-computing",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "physical-science-computing",
+   "display_name": "Physical Science Computing",
+   "status": "active",
+   "job": "physics.scientific-computing",
+   "distinct_from": [],
+   "text": [
+    "Physical Science Computing",
+    "Routes astronomy, physics, units, coordinate systems, spectra, numerical experiments, and physical-science workflows.",
+    "physical-science-computing",
+    "astropy",
+    "physics",
+    "astronomy",
+    "units",
+    "spectra",
+    "numerical",
+    "apache",
+    "Route astronomy, physics, chemistry, and numerical-science workflows with Astropy, QuTiP-style simulations, units, coordinate systems, numerical solvers, and reproducible physical constants. Use when requests mention astronomy, physics, physical chemistry, units, coordinate transforms, spectra, or numerical experiments."
+   ]
+  },
+  {
+   "ref": "skill:metabolic-modeling-cobrapy",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "metabolic-modeling-cobrapy",
+   "display_name": "Metabolic Modeling with COBRApy",
+   "status": "active",
+   "job": "bio.systems-biology",
+   "distinct_from": [],
+   "text": [
+    "Metabolic Modeling with COBRApy",
+    "Guides COBRApy/FBA metabolic modeling with GPR rules, media constraints, knockouts, objectives, and provenance.",
+    "metabolic-modeling-cobrapy",
+    "cobrapy",
+    "fba",
+    "flux",
+    "balance",
+    "gpr",
+    "knockouts",
+    "apache",
+    "Guide constraint-based metabolic modeling with COBRApy, flux balance analysis, gene-protein-reaction rules, media constraints, knockouts, objective functions, and model provenance. Use when users ask about genome-scale metabolic models or flux predictions."
+   ]
+  },
+  {
+   "ref": "skill:drug-discovery-benchmarks",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "drug-discovery-benchmarks",
+   "display_name": "Drug Discovery Benchmarks",
+   "status": "active",
+   "job": "bio.chemoinformatics",
+   "distinct_from": [],
+   "text": [
+    "Drug Discovery Benchmarks",
+    "Plans ADMET, virtual-screening, molecular-property, scaffold-split, leakage, and assay-provenance benchmark checks.",
+    "drug-discovery-benchmarks",
+    "pytdc",
+    "torchdrug",
+    "molfeat",
+    "admet",
+    "scaffold",
+    "split",
+    "apache",
+    "Plan drug-discovery benchmark workflows with TDC-style datasets, ADMET, virtual screening, molecular property prediction, scaffold splits, leakage checks, and assay provenance. Use when evaluating compound models, benchmarks, or drug-discovery ML results."
+   ]
+  },
+  {
+   "ref": "skill:clinical-decision-support-review",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "clinical-decision-support-review",
+   "display_name": "Clinical Decision Support Review",
+   "status": "active",
+   "job": "clinical.decision-support-review",
+   "distinct_from": [
+    {
+     "id": "clinical-ai-modeling",
+     "boundary": "clinical-decision-support-review reviews decision-support content, treatment plans and reports for evidence and safety; clinical-ai-modeling builds and validates predictive models on EHR cohorts"
+    }
+   ],
+   "text": [
+    "Clinical Decision Support Review",
+    "Reviews clinical decision support, treatment plans, and reports for evidence grounding, safety scope, and no-PHI handling.",
+    "clinical-decision-support-review",
+    "pyhealth",
+    "treatment",
+    "plans",
+    "clinical",
+    "reports",
+    "cds",
+    "no",
+    "phi",
+    "apache",
+    "Review clinical decision support, treatment-plan, and clinical-report workflows for evidence grounding, patient-safety language, scope limits, and no-PHI handling. Use when a task asks for CDS, care pathways, treatment plans, or clinical report drafting."
+   ]
+  },
+  {
+   "ref": "skill:scientific-visual-communication",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "scientific-visual-communication",
+   "display_name": "Scientific Visual Communication",
+   "status": "active",
+   "job": "documents.scientific-exhibits",
+   "distinct_from": [],
+   "text": [
+    "Scientific Visual Communication",
+    "Plans schematics, posters, slides, figure panels, infographics, visual abstracts, and source-to-visual traceability.",
+    "scientific-visual-communication",
+    "schematics",
+    "infographics",
+    "posters",
+    "slides",
+    "visual",
+    "abstracts",
+    "apache",
+    "Plan scientific schematics, infographics, posters, slides, figure panels, Mermaid diagrams, and visual abstracts with source-to-visual traceability. Use when users need a visual explanation, figure plan, poster, slide deck, schematic, or graphical abstract."
+   ]
+  },
+  {
+   "ref": "skill:grant-funding-strategy",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "grant-funding-strategy",
+   "display_name": "Grant and Funding Strategy",
+   "status": "active",
+   "job": "writing.grant-proposals",
+   "distinct_from": [],
+   "text": [
+    "Grant and Funding Strategy",
+    "Structures research grants, specific aims, milestones, reviewer-risk responses, and funder-fit checks.",
+    "grant-funding-strategy",
+    "research",
+    "grants",
+    "specific",
+    "aims",
+    "milestones",
+    "funder",
+    "fit",
+    "apache",
+    "Structure research grants, specific aims, significance/innovation/approach, reviewer-risk responses, milestones, and funder-fit checks. Use when users ask for grant planning, NIH-style aims, fellowship statements, or funding strategy."
+   ]
+  },
+  {
+   "ref": "skill:regulatory-quality-systems",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "regulatory-quality-systems",
+   "display_name": "Regulatory and Quality Systems",
+   "status": "active",
+   "job": "quality.regulatory-validation",
+   "distinct_from": [],
+   "text": [
+    "Regulatory and Quality Systems",
+    "Reviews scientific software, device, and lab processes against quality, validation, traceability, and design-control gates.",
+    "regulatory-quality-systems",
+    "iso",
+    "13485",
+    "qms",
+    "validation",
+    "design",
+    "controls",
+    "audit",
+    "apache",
+    "Review scientific software, medical-device, and lab-process work against ISO 13485-style quality systems, design controls, validation evidence, traceability, and risk management. Use when tasks mention regulatory readiness, quality management, validation, design controls, or audit trails."
+   ]
+  },
+  {
+   "ref": "skill:gpu-compute-optimization",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "gpu-compute-optimization",
+   "display_name": "GPU Compute Optimization",
+   "status": "active",
+   "job": "compute.gpu-optimization",
+   "distinct_from": [],
+   "text": [
+    "GPU Compute Optimization",
+    "Plans GPU-bound training/inference, batching, profiling, memory pressure, mixed precision, and reproducible compute.",
+    "gpu-compute-optimization",
+    "cuda",
+    "pytorch",
+    "memory",
+    "profiling",
+    "mixed",
+    "precision",
+    "apache",
+    "Plan and review GPU/scientific-compute optimization across PyTorch, CUDA-aware batching, memory pressure, mixed precision, profiling, and reproducibility. Use when workflows are slow, GPU-bound, memory-bound, or need scalable training/inference plans."
+   ]
+  },
+  {
+   "ref": "skill:research-evaluation-venues",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "research-evaluation-venues",
+   "display_name": "Research Evaluation and Venues",
+   "status": "active",
+   "job": "publishing.venue-and-impact-evaluation",
+   "distinct_from": [],
+   "text": [
+    "Research Evaluation and Venues",
+    "Evaluates papers, scholars, venues, impact claims, reviewer fit, and publication positioning.",
+    "research-evaluation-venues",
+    "scholar",
+    "evaluation",
+    "venue",
+    "templates",
+    "journals",
+    "impact",
+    "apache",
+    "Evaluate papers, scholars, venues, impact claims, publication fit, reviewer expectations, and research positioning without overclaiming bibliometrics. Use when users ask where to submit, how strong a paper is, or how to evaluate a scholar/topic."
+   ]
+  },
+  {
+   "ref": "skill:qualitative-thematic-analysis",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "qualitative-thematic-analysis",
+   "display_name": "Qualitative Thematic Analysis",
+   "status": "active",
+   "job": "social.qualitative-coding",
+   "distinct_from": [],
+   "text": [
+    "Qualitative Thematic Analysis",
+    "Plans qualitative coding, thematic analysis, codebooks, memoing, inter-rater checks, and audit trails.",
+    "qualitative-thematic-analysis",
+    "thematic",
+    "analysis",
+    "codebook",
+    "interviews",
+    "memoing",
+    "audit",
+    "apache",
+    "Plan qualitative coding, thematic analysis, codebooks, memoing, inter-rater checks, audit trails, and mixed-methods evidence synthesis. Use when data are interviews, free text, field notes, survey responses, or qualitative documents."
+   ]
+  },
+  {
+   "ref": "skill:financial-accounting-econometrics",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "financial-accounting-econometrics",
+   "display_name": "Financial and Accounting Econometrics",
+   "status": "active",
+   "job": "econ.applied-econometrics",
+   "distinct_from": [],
+   "text": [
+    "Financial and Accounting Econometrics",
+    "Plans empirical finance/accounting workflows with event studies, abnormal returns, panel data, and table replication.",
+    "financial-accounting-econometrics",
+    "crsp",
+    "compustat",
+    "event",
+    "study",
+    "abnormal",
+    "returns",
+    "accounting",
+    "apache",
+    "Plan empirical finance/accounting workflows with Compustat/CRSP-style panels, event studies, abnormal returns, clustering, fixed effects, disclosure measures, and table replication. Use for accounting, finance, corporate, or market-data empirical research."
+   ]
+  },
+  {
+   "ref": "skill:stata-research-workbench",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "stata-research-workbench",
+   "display_name": "Stata Research Workbench",
+   "status": "active",
+   "job": "econ.applied-econometrics",
+   "distinct_from": [],
+   "text": [
+    "Stata Research Workbench",
+    "Plans Stata .do/.dta research workflows: audits, logs, tables, graph export, replication, and R&R updates.",
+    "stata-research-workbench",
+    "stata",
+    "do",
+    "files",
+    "dta",
+    "logs",
+    "tables",
+    "replication",
+    "apache",
+    "Plan, review, and package Stata empirical research workflows: .do files, data audit, logs, graph export, table building, replication, linting, and referee-response updates. Use when a user works in Stata or asks for .do/.dta research workflows."
+   ]
+  },
+  {
+   "ref": "skill:survey-weights-complex-samples",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "survey-weights-complex-samples",
+   "display_name": "Survey Weights and Complex Samples",
+   "status": "active",
+   "job": "stats.complex-survey-inference",
+   "distinct_from": [],
+   "text": [
+    "Survey Weights and Complex Samples",
+    "Handles complex survey designs with strata, PSUs, replicate weights, domain analysis, calibration, and weighted inference.",
+    "survey-weights-complex-samples",
+    "cps",
+    "acs",
+    "nhanes",
+    "strata",
+    "psu",
+    "replicate",
+    "weights",
+    "apache",
+    "Guide complex survey analysis with strata, PSUs, replicate weights, domain analysis, calibration, weighted GLMs, and design-aware inference. Use for CPS, ACS, NHANES, survey microdata, polling, or any weighted sample design."
+   ]
+  },
+  {
+   "ref": "skill:psychometrics-sem-measurement",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "psychometrics-sem-measurement",
+   "display_name": "Psychometrics, SEM, and Measurement",
+   "status": "active",
+   "job": "stats.psychometrics-and-sem",
+   "distinct_from": [],
+   "text": [
+    "Psychometrics, SEM, and Measurement",
+    "Plans reliability, CFA/SEM, mediation/moderation, invariance, item analysis, and APA-style measurement reporting.",
+    "psychometrics-sem-measurement",
+    "reliability",
+    "cfa",
+    "sem",
+    "mediation",
+    "moderation",
+    "invariance",
+    "apache",
+    "Plan measurement workflows: scale reliability, CFA/SEM, mediation/moderation, latent constructs, invariance, item analysis, and APA-style reporting. Use for surveys, instruments, behavioral measures, or psychometric validation."
+   ]
+  },
+  {
+   "ref": "skill:social-science-text-as-data",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "social-science-text-as-data",
+   "display_name": "Social Science Text as Data",
+   "status": "active",
+   "job": "social.text-as-data",
+   "distinct_from": [],
+   "text": [
+    "Social Science Text as Data",
+    "Plans dictionaries, topic models, embeddings, sentiment, supervised coding, LLM-label validation, and measurement-error checks.",
+    "social-science-text-as-data",
+    "topic",
+    "models",
+    "embeddings",
+    "sentiment",
+    "dictionaries",
+    "llm",
+    "coding",
+    "apache",
+    "Plan quantitative text-as-data workflows: dictionaries, topic models, embeddings, sentiment, supervised coding, LLM-assisted labels, validation, and measurement-error checks. Use for corpora, speeches, filings, interviews, open text, or policy documents."
+   ]
+  },
+  {
+   "ref": "skill:econ-finance-data-sources",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "econ-finance-data-sources",
+   "display_name": "Economics and Finance Data Sources",
+   "status": "active",
+   "job": "econ.applied-econometrics",
+   "distinct_from": [],
+   "text": [
+    "Economics and Finance Data Sources",
+    "Routes empirical econ/finance sources including WRDS, CRSP, Compustat, SEC/EDGAR, NBER, SSRN, and public datasets.",
+    "econ-finance-data-sources",
+    "wrds",
+    "crsp",
+    "compustat",
+    "edgar",
+    "nber",
+    "ssrn",
+    "openalex",
+    "apache",
+    "Route empirical econ/finance data-source work across WRDS, CRSP, Compustat, SEC/EDGAR, NBER, SSRN, OpenAlex, Unpaywall, and common public finance/econ datasets. Use when the blocker is finding, joining, licensing, or documenting source data."
+   ]
+  },
+  {
+   "ref": "skill:empirical-paper-submission-rr",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "empirical-paper-submission-rr",
+   "display_name": "Empirical Paper Submission and R&R",
+   "status": "active",
+   "job": "publishing.econ-revise-and-resubmit",
+   "distinct_from": [],
+   "text": [
+    "Empirical Paper Submission and R&R",
+    "Plans journal targeting, referee reports, response letters, revise-and-resubmit execution, and appendix organization.",
+    "empirical-paper-submission-rr",
+    "referee",
+    "reports",
+    "response",
+    "letters",
+    "journal",
+    "targeting",
+    "revision",
+    "apache",
+    "Plan social-science paper submission, journal targeting, referee reports, response letters, revise-and-resubmit execution, house style conversion, and robustness appendix organization. Use when moving an empirical paper toward submission or revision."
+   ]
+  },
+  {
+   "ref": "skill:structural-economics-theory",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "structural-economics-theory",
+   "display_name": "Structural Economics and Theory",
+   "status": "active",
+   "job": "econ.structural-theory",
+   "distinct_from": [],
+   "text": [
+    "Structural Economics and Theory",
+    "Routes game theory, equilibrium, DSGE/HANK, structural IO, calibration, simulation, and identification-proof workflows.",
+    "structural-economics-theory",
+    "game",
+    "theory",
+    "dsge",
+    "hank",
+    "structural",
+    "io",
+    "equilibrium",
+    "apache",
+    "Route structural economics and theory work: equilibrium models, game theory, DSGE/HANK, IO demand/supply, identification proofs, calibration, simulation, and estimation design. Use when reduced-form causal tools are not enough."
+   ]
+  },
+  {
+   "ref": "skill:causal-heterogeneity-policy-learning",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "causal-heterogeneity-policy-learning",
+   "display_name": "Causal Heterogeneity and Policy Learning",
+   "status": "active",
+   "job": "stats.heterogeneous-treatment-effects",
+   "distinct_from": [],
+   "text": [
+    "Causal Heterogeneity and Policy Learning",
+    "Plans CATE, causal forests, meta-learners, policy learning, conformal causal inference, fairness, and subgroup reporting.",
+    "causal-heterogeneity-policy-learning",
+    "cate",
+    "causal",
+    "forests",
+    "meta",
+    "learners",
+    "policy",
+    "learning",
+    "fairness",
+    "apache",
+    "Plan CATE, causal forests, meta-learners, policy learning, conformal causal inference, fairness audits, subgroup stability, and heterogeneous-effect reporting. Use when causal effects vary across people, places, time, or policy rules."
+   ]
+  },
+  {
+   "ref": "skill:autoskill-workflow-discovery",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "autoskill-workflow-discovery",
+   "display_name": "Autoskill Workflow Discovery",
+   "status": "active",
+   "job": "skill.workflow-discovery",
+   "distinct_from": [],
+   "text": [
+    "Autoskill Workflow Discovery",
+    "Detects repeated workflows and drafts native Biorouter skills, hooks, checklist updates, or extension plans.",
+    "autoskill-workflow-discovery",
+    "skill",
+    "creation",
+    "hooks",
+    "workflow",
+    "discovery",
+    "repeated",
+    "work",
+    "guardrails",
+    "apache",
+    "Detect repeated user workflows and draft native BioRouter skills, hooks, or checklist updates from observed work patterns. Use when users ask to turn repeated work, screen-history patterns, project routines, or recurring guardrails into reusable BioRouter skills."
+   ]
+  },
+  {
+   "ref": "skill:arbor-optimization",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "arbor-optimization",
+   "display_name": "Arbor Optimization",
+   "status": "active",
+   "job": "optimization.evaluator-guided-search",
+   "distinct_from": [],
+   "text": [
+    "Arbor Optimization",
+    "Runs evaluator-driven branch-and-prune exploration for improving research artifacts, prompts, analyses, and designs.",
+    "arbor-optimization",
+    "evaluator",
+    "optimization",
+    "branch",
+    "prune",
+    "rubric",
+    "hypothesis",
+    "tree",
+    "alternatives",
+    "apache",
+    "Run evaluator-driven hypothesis trees for improving research artifacts, prompts, analyses, and designs. Use when a task needs branch-and-prune exploration, rubric scoring, iterative refinement, or explicit comparison of competing scientific/workflow alternatives."
+   ]
+  },
+  {
+   "ref": "skill:hugging-science-resource-discovery",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "hugging-science-resource-discovery",
+   "display_name": "Hugging Science Resource Discovery",
+   "status": "active",
+   "job": "ml.resource-discovery",
+   "distinct_from": [],
+   "text": [
+    "Hugging Science Resource Discovery",
+    "Finds and evaluates Hugging Face scientific models, datasets, Spaces, and papers with license and provenance checks.",
+    "hugging-science-resource-discovery",
+    "hugging",
+    "face",
+    "models",
+    "datasets",
+    "spaces",
+    "model",
+    "cards",
+    "benchmark",
+    "license",
+    "apache",
+    "Find and evaluate Hugging Face scientific models, datasets, Spaces, and papers with license, provenance, benchmark, and fit checks. Use when users ask for scientific ML resources, model cards, datasets, embeddings, checkpoints, or reproducible AI assets from Hugging Face."
+   ]
+  },
+  {
+   "ref": "skill:molecular-dynamics",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "molecular-dynamics",
+   "display_name": "Molecular Dynamics",
+   "status": "active",
+   "job": "chemistry.molecular-dynamics",
+   "distinct_from": [],
+   "text": [
+    "Molecular Dynamics",
+    "Plans MD setup and trajectory analysis with OpenMM, GROMACS, AmberTools, MDAnalysis, MDTraj, and reproducibility checks.",
+    "molecular-dynamics",
+    "openmm",
+    "gromacs",
+    "ambertools",
+    "mdanalysis",
+    "mdtraj",
+    "trajectory",
+    "force",
+    "fields",
+    "apache",
+    "Plan and review molecular dynamics simulations and trajectory analysis with OpenMM, GROMACS, AmberTools, MDAnalysis, MDTraj, and reproducibility checks. Use when users ask about MD setup, force fields, equilibration, production runs, trajectories, RMSD/RMSF, or binding/stability dynamics."
+   ]
+  },
+  {
+   "ref": "skill:general-time-series-forecasting",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "general-time-series-forecasting",
+   "display_name": "General Time-Series Forecasting",
+   "status": "active",
+   "job": "stats.time-series-forecasting",
+   "distinct_from": [],
+   "text": [
+    "General Time-Series Forecasting",
+    "Plans non-omics forecasting with classical models, ML, foundation models, backtesting, leakage checks, and uncertainty.",
+    "general-time-series-forecasting",
+    "arima",
+    "prophet",
+    "sktime",
+    "statsforecast",
+    "backtesting",
+    "leakage",
+    "uncertainty",
+    "apache",
+    "Plan and review general time-series forecasting with classical models, ML, foundation models, backtesting, leakage checks, and uncertainty. Use for non-omics forecasting, sensor streams, operations, finance, clinical vitals, demand, or irregular temporal data."
+   ]
+  },
+  {
+   "ref": "skill:bids-neuroimaging",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "bids-neuroimaging",
+   "display_name": "BIDS Neuroimaging",
+   "status": "active",
+   "job": "imaging.bids-neuroimaging",
+   "distinct_from": [],
+   "text": [
+    "BIDS Neuroimaging",
+    "Audits BIDS neuroimaging datasets, derivatives, validation, metadata, and reproducible preprocessing readiness.",
+    "bids-neuroimaging",
+    "bids",
+    "fmri",
+    "mri",
+    "eeg",
+    "meg",
+    "ieeg",
+    "dicom",
+    "fmriprep",
+    "bids-validator",
+    "apache",
+    "Plan and audit BIDS neuroimaging datasets, derivatives, validation, metadata, and reproducible preprocessing. Use when users mention BIDS, fMRI, MRI, EEG/MEG/iEEG, DICOM conversion, dataset_description.json, participants.tsv, or neuroimaging derivatives."
+   ]
+  },
+  {
+   "ref": "skill:clinical-ai-modeling",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "clinical-ai-modeling",
+   "display_name": "Clinical AI Modeling",
+   "status": "active",
+   "job": "clinical.ai-modeling",
+   "distinct_from": [],
+   "text": [
+    "Clinical AI Modeling",
+    "Plans clinical AI modeling workflows with EHR cohorts, validation, bias checks, calibration, safety, and no-PHI handling.",
+    "clinical-ai-modeling",
+    "ehr",
+    "pyhealth",
+    "clinical",
+    "prediction",
+    "calibration",
+    "bias",
+    "fairness",
+    "no",
+    "phi",
+    "apache",
+    "Plan and review clinical AI modeling workflows with EHR cohorts, PyHealth-style tasks, validation, bias checks, calibration, safety boundaries, and no-PHI handling. Use when users ask about clinical prediction models, risk scores, treatment-response ML, medical reports, or clinical model evaluation."
+   ]
+  },
+  {
+   "ref": "skill:computational-fluid-dynamics",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "computational-fluid-dynamics",
+   "display_name": "Computational Fluid Dynamics",
+   "status": "active",
+   "job": "physics.computational-fluid-dynamics",
+   "distinct_from": [],
+   "text": [
+    "Computational Fluid Dynamics",
+    "Plans CFD workflows with meshes, boundary conditions, turbulence models, solver validation, and convergence checks.",
+    "computational-fluid-dynamics",
+    "cfd",
+    "fluid",
+    "dynamics",
+    "navier",
+    "stokes",
+    "openfoam",
+    "mesh",
+    "turbulence",
+    "convergence",
+    "apache",
+    "Plan and review computational fluid dynamics workflows with meshes, boundary conditions, turbulence models, OpenFOAM/FluidSim-style solvers, validation cases, convergence checks, and reproducible simulation artifacts. Use when users mention CFD, fluid dynamics, Navier-Stokes, meshing, turbulence, OpenFOAM, or flow simulation."
+   ]
+  },
+  {
+   "ref": "skill:anti-ai-writing",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "anti-ai-writing",
+   "display_name": "Anti-AI Writing",
+   "status": "active",
+   "job": "writing.ai-tell-removal",
+   "distinct_from": [],
+   "text": [
+    "Anti-AI Writing",
+    "A pass/fail checklist for spotting AI writing patterns before generating prose, articles, or essays.",
+    "Anti-AI writing scale. Reference this before generating any prose, article, summary, essay, or substantial written content to avoid common AI writing patterns."
+   ]
+  },
+  {
+   "ref": "skill:ggplot-visualization",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "ggplot-visualization",
+   "display_name": "ggplot2 Visualization",
+   "status": "active",
+   "job": "figures.r-style",
+   "distinct_from": [
+    {
+     "id": "r-scripting",
+     "boundary": "ggplot-visualization holds the R plotting style; r-scripting holds general R code style and defers plots to it"
+    },
+    {
+     "id": "python-scripting",
+     "boundary": "ggplot-visualization is the R plotting style; python-scripting is Python code style and does not cover plots"
+    }
+   ],
+   "text": [
+    "ggplot2 Visualization",
+    "Applies ggplot2 best-practice style when writing R plotting code.",
+    "ggplot-visualization",
+    "ggplot2",
+    "r",
+    "plotting",
+    "style",
+    "theme",
+    "palette",
+    "export",
+    "ggplot2 visualization style rules. Apply whenever writing or modifying any ggplot2 plotting code in R."
+   ]
+  },
+  {
+   "ref": "skill:r-scripting",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "r-scripting",
+   "display_name": "R Scripting",
+   "status": "active",
+   "job": "r.code-style",
+   "distinct_from": [
+    {
+     "id": "python-scripting",
+     "boundary": "r-scripting holds R code conventions; python-scripting holds Python code conventions"
+    }
+   ],
+   "text": [
+    "R Scripting",
+    "Applies tidyverse conventions and documentation standards when writing or reviewing R code.",
+    "R scripting conventions. Apply whenever writing, editing, or reviewing any R code."
+   ]
+  },
+  {
+   "ref": "skill:python-scripting",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "python-scripting",
+   "display_name": "Python Scripting",
+   "status": "active",
+   "job": "python.code-style",
+   "distinct_from": [
+    {
+     "id": "code-simplifier",
+     "boundary": "python-scripting sets Python conventions for new code; code-simplifier simplifies recently changed code in any language and defers style to python-scripting"
+    }
+   ],
+   "text": [
+    "Python Scripting",
+    "Applies Python naming, typing, error handling, and project structure conventions when writing Python code.",
+    "Python scripting conventions. Apply whenever writing, editing, or reviewing any Python code."
+   ]
+  },
+  {
+   "ref": "skill:ralph",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "ralph",
+   "display_name": "RALPH",
+   "status": "active",
+   "job": "agent.autonomous-loop-planning",
+   "distinct_from": [],
+   "text": [
+    "RALPH",
+    "End-to-end planning for the Ralph autonomous agent loop. Drafts a markdown PRD from a feature idea, then converts it to prd.json. Each story is sized for one hands-off iteration.",
+    "Plan a feature end-to-end for the Ralph autonomous agent loop. Use when starting a new feature, writing requirements, drafting a PRD, or producing prd.json. Generates a markdown PRD from a feature description, then converts it to the prd.json format Ralph executes one story at a time."
+   ]
+  },
+  {
+   "ref": "skill:superpowers",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "superpowers",
+   "display_name": "Superpowers Collection",
+   "status": "active",
+   "job": "engineering.development-discipline",
+   "distinct_from": [],
+   "text": [
+    "Superpowers Collection",
+    "Engineering discipline skills: brainstorming, TDD, systematic debugging, parallel agents, plan writing, code review, git worktrees. Workflows tested on long-running engineering tasks."
+   ]
+  },
+  {
+   "ref": "skill:ucsf-hpc",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "ucsf-hpc",
+   "display_name": "UCSF HPC",
+   "status": "active",
+   "job": "compute.ucsf-hpc-cluster",
+   "distinct_from": [],
+   "text": [
+    "UCSF HPC",
+    "SSH setup, SLURM job templates (CPU/GPU/H200), file transfer, module management, and common pitfalls for the UCSF CHPC cluster.",
+    "Use when working with the UCSF CHPC HPC cluster — setting up SSH access, transferring files, submitting SLURM jobs, installing software, or exploring cluster resources."
+   ]
+  },
+  {
+   "ref": "skill:code-review",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "code-review",
+   "display_name": "Code Review",
+   "status": "active",
+   "job": "code.review",
+   "distinct_from": [],
+   "text": [
+    "Code Review",
+    "Multi-stage, confidence-scored review of a pull request or local diff. Drops low-confidence findings and posts a formatted PR comment via gh.",
+    "code-review",
+    "pull",
+    "request",
+    "pr",
+    "gh",
+    "confidence",
+    "diff",
+    "Review a pull request through a multi-stage, confidence-scored pipeline and post a single PR comment with only high-confidence findings. Use when asked to review a PR, or to review the local working-tree/branch diff when no PR exists."
+   ]
+  },
+  {
+   "ref": "skill:code-simplifier",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "code-simplifier",
+   "display_name": "Code Simplifier",
+   "status": "active",
+   "job": "code.simplification",
+   "distinct_from": [],
+   "text": [
+    "Code Simplifier",
+    "Simplifies recently-changed code for clarity and consistency while preserving exact behavior. Defers language style to the Python and R skills.",
+    "code-simplifier",
+    "refactor",
+    "cleanup",
+    "simplify",
+    "clarity",
+    "Simplify and refine recently-modified code for clarity, consistency, and maintainability while preserving exact functionality. Use after writing or editing code, or when asked to clean up / simplify a change."
+   ]
+  },
+  {
+   "ref": "skill:commit-commands",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "commit-commands",
+   "display_name": "Commit Commands",
+   "status": "active",
+   "job": "git.commit-and-pull-request",
+   "distinct_from": [],
+   "text": [
+    "Commit Commands",
+    "Three git workflows: a clean single commit; commit + push + open a PR; and cleanup of [gone] branches and their worktrees.",
+    "commit-commands",
+    "git",
+    "commit",
+    "push",
+    "pr",
+    "worktree",
+    "gone",
+    "branches",
+    "Git commit workflows — create one focused commit; commit, push and open a PR; or clean up local branches whose remote is gone. Use when asked to commit, push and PR, or prune stale branches."
+   ]
+  },
+  {
+   "ref": "skill:skill-creator",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "skill-creator",
+   "display_name": "Skill Creator",
+   "status": "active",
+   "job": "skill.authoring",
+   "distinct_from": [],
+   "text": [
+    "Skill Creator",
+    "The canonical guide to authoring Biorouter skills: frontmatter, progressive disclosure, packaging, and testing.",
+    "skill-creator",
+    "authoring",
+    "meta",
+    "frontmatter",
+    "packaging",
+    "Author new BioRouter skills and improve existing ones — write the SKILL.md, get the description triggering reliably, structure bundled resources, and package for release. Use whenever the user wants to create a skill from scratch, edit or optimize a skill, fix a skill that won't trigger, or package a skill as a zip."
+   ]
+  },
+  {
+   "ref": "skill:develop-biorouter-extension",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "develop-biorouter-extension",
+   "display_name": "Develop Biorouter Extension",
+   "status": "active",
+   "job": "extension.authoring",
+   "distinct_from": [],
+   "text": [
+    "Develop Biorouter Extension",
+    "Step-by-step guide for building a .brxt extension: manifest, MCP server, packaging, validation, and bundled skills.",
+    "develop-biorouter-extension",
+    "brxt",
+    "extension",
+    "mcp",
+    "manifest",
+    "bundled",
+    "skills",
+    "packaging",
+    "apache",
+    "Guide for building a BioRouter extension (.brxt file) — covers required structure, manifest schema, Python MCP server setup, and optional bundled skills."
+   ]
+  },
+  {
+   "ref": "skill:hookify",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "hookify",
+   "display_name": "Hookify (Hooks)",
+   "status": "active",
+   "job": "biorouter.project-hooks",
+   "distinct_from": [],
+   "text": [
+    "Hookify (Hooks)",
+    "Turns project guardrails (warn/block rules) into real Biorouter hooks in .biorouter/hooks.yaml. A block rule stops the action; a warn rule shows a notice. Requires allow_project_hooks: true.",
+    "hookify",
+    "guardrails",
+    "warn",
+    "block",
+    "safety",
+    "rules",
+    "Turn project guardrails into real, enforced Biorouter hooks — rules that warn on or block unwanted behavior (destructive shell commands, debug prints, edits to sensitive files, finishing without passing tests). Use when the user wants to add a guardrail, prevent a behavior, \"stop doing X\", or gate an action the agent must clear before proceeding."
+   ]
+  },
+  {
+   "ref": "skill:code-modernization",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "code-modernization",
+   "display_name": "Code Modernization",
+   "status": "active",
+   "job": "code.legacy-modernization",
+   "distinct_from": [],
+   "text": [
+    "Code Modernization",
+    "Phased legacy-modernization workflow (preflight, assess, map, extract rules, brief, transform, harden, status) for COBOL, legacy Java/C++, and monoliths.",
+    "code-modernization",
+    "legacy",
+    "migration",
+    "cobol",
+    "monolith",
+    "refactor",
+    "Phased legacy-modernization workflow for COBOL, legacy Java/C++, and monoliths — assess, map, extract business rules, plan, transform module-by-module, and harden. Use when the user wants to understand, document, or modernize a legacy system."
+   ]
+  },
+  {
+   "ref": "skill:playground",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "playground",
+   "display_name": "Playground",
+   "status": "active",
+   "job": "design.interactive-html-playgrounds",
+   "distinct_from": [],
+   "text": [
+    "Playground",
+    "Generates self-contained single-file interactive HTML playgrounds for configuring something visually, then copying out a ready-to-use prompt.",
+    "playground",
+    "interactive",
+    "html",
+    "explorer",
+    "controls",
+    "preview",
+    "Creates interactive HTML playgrounds — self-contained single-file explorers that let users configure something visually through controls, see a live preview, and copy out a prompt. Use when the user asks to make a playground, explorer, or interactive tool for a topic."
+   ]
+  },
+  {
+   "ref": "skill:frontend-design",
+   "catalog": "skills",
+   "kind": "skill",
+   "id": "frontend-design",
+   "display_name": "Frontend Design",
+   "status": "active",
+   "job": "design.frontend",
+   "distinct_from": [],
+   "text": [
+    "Frontend Design",
+    "Anthropic's anti-slop frontend guidance for distinctive, production-grade UIs. Complements the Taste skill above.",
+    "frontend-design",
+    "ui",
+    "anti-slop",
+    "aesthetic",
+    "css",
+    "design",
+    "Create distinctive, production-grade frontend interfaces with high design quality. Use when the user asks to build web components, pages, or applications. Generates creative, polished code that avoids generic AI aesthetics."
+   ]
+  },
+  {
+   "ref": "skill:alignment",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "alignment",
+   "display_name": "Alignment",
+   "status": "active",
+   "job": "bio.alignment",
+   "distinct_from": [
+    {
+     "id": "sequence-io",
+     "boundary": "alignment computes pairwise and multiple alignments; sequence-io reads, writes and converts sequence files"
+    },
+    {
+     "id": "sequence-manipulation",
+     "boundary": "alignment aligns sequences to each other; sequence-manipulation edits, translates and transforms sequences one at a time"
+    }
+   ],
+   "text": [
+    "Alignment",
+    "Multiple sequence alignment and pairwise alignment.",
+    "alignment",
+    "mafft",
+    "biopython",
+    "foldseek"
+   ]
+  },
+  {
+   "ref": "skill:alignment-files",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "alignment-files",
+   "display_name": "Alignment Files",
+   "status": "active",
+   "job": "bio.alignment-files",
+   "distinct_from": [],
+   "text": [
+    "Alignment Files",
+    "SAM/BAM/CRAM manipulation, sorting, indexing, dedup, and stats.",
+    "alignment-files",
+    "samtools",
+    "pysam",
+    "bam"
+   ]
+  },
+  {
+   "ref": "skill:alternative-splicing",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "alternative-splicing",
+   "display_name": "Alternative Splicing",
+   "status": "active",
+   "job": "bio.alternative-splicing",
+   "distinct_from": [],
+   "text": [
+    "Alternative Splicing",
+    "RNA isoform and splice-junction analysis from short- and long-read data.",
+    "alternative-splicing",
+    "rmats",
+    "suppa2",
+    "isoforms"
+   ]
+  },
+  {
+   "ref": "skill:atac-seq",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "atac-seq",
+   "display_name": "ATAC-seq",
+   "status": "active",
+   "job": "bio.atac-seq",
+   "distinct_from": [
+    {
+     "id": "chip-seq",
+     "boundary": "atac-seq measures chromatin accessibility without an antibody; chip-seq measures protein-DNA binding with one (ChIP-seq, CUT&RUN, CUT&Tag)"
+    }
+   ],
+   "text": [
+    "ATAC-seq",
+    "Chromatin accessibility, peak calling, footprinting, and deep-learning ATAC.",
+    "atac-seq",
+    "macs3",
+    "tobias",
+    "chrombpnet"
+   ]
+  },
+  {
+   "ref": "skill:causal-genomics",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "causal-genomics",
+   "display_name": "Causal Genomics",
+   "status": "active",
+   "job": "bio.causal-genomics",
+   "distinct_from": [],
+   "text": [
+    "Causal Genomics",
+    "Mendelian randomization, colocalization, fine-mapping, and TWAS.",
+    "causal-genomics",
+    "mr",
+    "coloc",
+    "twas"
+   ]
+  },
+  {
+   "ref": "skill:chemoinformatics",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "chemoinformatics",
+   "display_name": "Chemoinformatics",
+   "status": "active",
+   "job": "bio.chemoinformatics",
+   "distinct_from": [],
+   "text": [
+    "Chemoinformatics",
+    "Molecular structure handling, descriptors, and drug-discovery utilities.",
+    "chemoinformatics",
+    "rdkit",
+    "smiles"
+   ]
+  },
+  {
+   "ref": "skill:chip-seq",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "chip-seq",
+   "display_name": "ChIP-seq",
+   "status": "active",
+   "job": "bio.chip-seq",
+   "distinct_from": [],
+   "text": [
+    "ChIP-seq",
+    "Transcription-factor and histone-mark peak calling and differential binding.",
+    "chip-seq",
+    "macs2",
+    "chipseeker"
+   ]
+  },
+  {
+   "ref": "skill:clinical-biostatistics",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "clinical-biostatistics",
+   "display_name": "Clinical Biostatistics",
+   "status": "active",
+   "job": "bio.clinical-biostatistics",
+   "distinct_from": [],
+   "text": [
+    "Clinical Biostatistics",
+    "Survival, mixed models, and clinical-trial statistical analysis.",
+    "clinical-biostatistics",
+    "survival",
+    "r",
+    "lme4"
+   ]
+  },
+  {
+   "ref": "skill:clinical-databases",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "clinical-databases",
+   "display_name": "Clinical Databases",
+   "status": "active",
+   "job": "bio.clinical-databases",
+   "distinct_from": [],
+   "text": [
+    "Clinical Databases",
+    "ClinVar, OMIM, COSMIC, gnomAD, and phenotype DB queries.",
+    "clinical-databases",
+    "clinvar",
+    "omim",
+    "gnomad"
+   ]
+  },
+  {
+   "ref": "skill:clip-seq",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "clip-seq",
+   "display_name": "CLIP-seq",
+   "status": "active",
+   "job": "bio.clip-seq",
+   "distinct_from": [
+    {
+     "id": "small-rna-seq",
+     "boundary": "clip-seq maps protein-RNA binding sites from CLIP libraries; small-rna-seq profiles small RNA abundance"
+    },
+    {
+     "id": "differential-expression",
+     "boundary": "clip-seq analyzes protein-RNA binding; differential-expression tests gene expression between conditions"
+    }
+   ],
+   "text": [
+    "CLIP-seq",
+    "Protein-RNA interaction mapping from iCLIP/eCLIP/PAR-CLIP data.",
+    "clip-seq",
+    "pureclip",
+    "eclip"
+   ]
+  },
+  {
+   "ref": "skill:comparative-genomics",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "comparative-genomics",
+   "display_name": "Comparative Genomics",
+   "status": "active",
+   "job": "bio.comparative-genomics",
+   "distinct_from": [
+    {
+     "id": "population-genetics",
+     "boundary": "comparative-genomics compares genomes between species; population-genetics studies variation within one"
+    }
+   ],
+   "text": [
+    "Comparative Genomics",
+    "Cross-species synteny, orthology, and selection scans.",
+    "comparative-genomics",
+    "orthofinder",
+    "synteny"
+   ]
+  },
+  {
+   "ref": "skill:copy-number",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "copy-number",
+   "display_name": "Copy Number",
+   "status": "active",
+   "job": "bio.copy-number",
+   "distinct_from": [],
+   "text": [
+    "Copy Number",
+    "CNV detection, visualization, and segmentation.",
+    "copy-number",
+    "cnvkit",
+    "gatk",
+    "cnv"
+   ]
+  },
+  {
+   "ref": "skill:crispr-screens",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "crispr-screens",
+   "display_name": "CRISPR Screens",
+   "status": "active",
+   "job": "bio.crispr-screens",
+   "distinct_from": [],
+   "text": [
+    "CRISPR Screens",
+    "Pooled screen counting, MAGeCK analysis, and hit prioritization.",
+    "crispr-screens",
+    "mageck",
+    "screens"
+   ]
+  },
+  {
+   "ref": "skill:data-visualization",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "data-visualization",
+   "display_name": "Data Visualization",
+   "status": "active",
+   "job": "bio.data-visualization",
+   "distinct_from": [],
+   "text": [
+    "Data Visualization",
+    "Publication-quality plots: heatmaps, volcano, Manhattan, dimplots.",
+    "data-visualization",
+    "ggplot2",
+    "matplotlib",
+    "complexheatmap"
+   ]
+  },
+  {
+   "ref": "skill:database-access",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "database-access",
+   "display_name": "Database Access",
+   "status": "active",
+   "job": "bio.database-access",
+   "distinct_from": [],
+   "text": [
+    "Database Access",
+    "NCBI, UniProt, Ensembl, and biological database APIs.",
+    "database-access",
+    "entrez",
+    "uniprot",
+    "ensembl"
+   ]
+  },
+  {
+   "ref": "skill:differential-expression",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "differential-expression",
+   "display_name": "Differential Expression",
+   "status": "active",
+   "job": "bio.differential-expression",
+   "distinct_from": [
+    {
+     "id": "methylation-analysis",
+     "boundary": "differential-expression tests RNA counts between conditions; methylation-analysis handles bisulfite and array methylation data"
+    },
+    {
+     "id": "small-rna-seq",
+     "boundary": "differential-expression is bulk mRNA DE; small-rna-seq owns small RNA libraries, including their differential tests"
+    },
+    {
+     "id": "spatial-transcriptomics",
+     "boundary": "differential-expression is bulk RNA DE; spatial-transcriptomics analyzes spatially resolved expression, including its own spatial tests"
+    }
+   ],
+   "text": [
+    "Differential Expression",
+    "RNA-seq DE testing with DESeq2, edgeR, and limma-voom.",
+    "differential-expression",
+    "deseq2",
+    "edger",
+    "limma"
+   ]
+  },
+  {
+   "ref": "skill:ecological-genomics",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "ecological-genomics",
+   "display_name": "Ecological Genomics",
+   "status": "active",
+   "job": "bio.ecological-genomics",
+   "distinct_from": [],
+   "text": [
+    "Ecological Genomics",
+    "Environmental DNA, ecological population genomics, and biodiversity.",
+    "ecological-genomics",
+    "edna",
+    "popgen"
+   ]
+  },
+  {
+   "ref": "skill:epidemiological-genomics",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "epidemiological-genomics",
+   "display_name": "Epidemiological Genomics",
+   "status": "active",
+   "job": "bio.epidemiological-genomics",
+   "distinct_from": [],
+   "text": [
+    "Epidemiological Genomics",
+    "Pathogen typing, outbreak phylogeography, and surveillance.",
+    "epidemiological-genomics",
+    "nextstrain",
+    "pathogens"
+   ]
+  },
+  {
+   "ref": "skill:epitranscriptomics",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "epitranscriptomics",
+   "display_name": "Epitranscriptomics",
+   "status": "active",
+   "job": "bio.epitranscriptomics",
+   "distinct_from": [],
+   "text": [
+    "Epitranscriptomics",
+    "m6A and other RNA modification detection from sequencing.",
+    "epitranscriptomics",
+    "m6a",
+    "rna",
+    "mods"
+   ]
+  },
+  {
+   "ref": "skill:experimental-design",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "experimental-design",
+   "display_name": "Experimental Design",
+   "status": "active",
+   "job": "bio.experimental-design",
+   "distinct_from": [],
+   "text": [
+    "Experimental Design",
+    "Power analysis and sample-size calculation for omics studies.",
+    "experimental-design",
+    "power",
+    "design"
+   ]
+  },
+  {
+   "ref": "skill:expression-matrix",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "expression-matrix",
+   "display_name": "Expression Matrix",
+   "status": "active",
+   "job": "bio.expression-matrix",
+   "distinct_from": [
+    {
+     "id": "gene-regulatory-networks",
+     "boundary": "expression-matrix loads, joins and checks count matrices; gene-regulatory-networks infers regulators and networks from them"
+    }
+   ],
+   "text": [
+    "Expression Matrix",
+    "Count normalization, gene ID mapping, and matrix QC.",
+    "expression-matrix",
+    "tpm",
+    "mygene"
+   ]
+  },
+  {
+   "ref": "skill:flow-cytometry",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "flow-cytometry",
+   "display_name": "Flow Cytometry",
+   "status": "active",
+   "job": "bio.flow-cytometry",
+   "distinct_from": [],
+   "text": [
+    "Flow Cytometry",
+    "FCS parsing, gating, and high-dimensional cytometry analysis.",
+    "flow-cytometry",
+    "flowcore",
+    "flowsom"
+   ]
+  },
+  {
+   "ref": "skill:gene-regulatory-networks",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "gene-regulatory-networks",
+   "display_name": "Gene Regulatory Networks",
+   "status": "active",
+   "job": "bio.gene-regulatory-networks",
+   "distinct_from": [],
+   "text": [
+    "Gene Regulatory Networks",
+    "TF-target network inference from expression and chromatin data.",
+    "gene-regulatory-networks",
+    "scenic",
+    "grnboost2"
+   ]
+  },
+  {
+   "ref": "skill:genome-annotation",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "genome-annotation",
+   "display_name": "Genome Annotation",
+   "status": "active",
+   "job": "bio.genome-annotation",
+   "distinct_from": [
+    {
+     "id": "genome-engineering",
+     "boundary": "genome-annotation predicts and labels genes on an assembly; genome-engineering designs CRISPR and other edits"
+    }
+   ],
+   "text": [
+    "Genome Annotation",
+    "Gene prediction, repeat masking, and functional annotation.",
+    "genome-annotation",
+    "augustus",
+    "interproscan"
+   ]
+  },
+  {
+   "ref": "skill:genome-assembly",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "genome-assembly",
+   "display_name": "Genome Assembly",
+   "status": "active",
+   "job": "bio.genome-assembly",
+   "distinct_from": [],
+   "text": [
+    "Genome Assembly",
+    "De novo assembly, polishing, and assembly QC.",
+    "genome-assembly",
+    "flye",
+    "hifiasm",
+    "quast"
+   ]
+  },
+  {
+   "ref": "skill:genome-engineering",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "genome-engineering",
+   "display_name": "Genome Engineering",
+   "status": "active",
+   "job": "bio.genome-engineering",
+   "distinct_from": [],
+   "text": [
+    "Genome Engineering",
+    "CRISPR guide design, off-target prediction, and editing analysis.",
+    "genome-engineering",
+    "crispor",
+    "cas9"
+   ]
+  },
+  {
+   "ref": "skill:genome-intervals",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "genome-intervals",
+   "display_name": "Genome Intervals",
+   "status": "active",
+   "job": "bio.genome-intervals",
+   "distinct_from": [],
+   "text": [
+    "Genome Intervals",
+    "BED/GTF arithmetic, overlap, and feature manipulation.",
+    "genome-intervals",
+    "bedtools",
+    "pybedtools"
+   ]
+  },
+  {
+   "ref": "skill:hi-c-analysis",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "hi-c-analysis",
+   "display_name": "Hi-C Analysis",
+   "status": "active",
+   "job": "bio.hi-c-analysis",
+   "distinct_from": [],
+   "text": [
+    "Hi-C Analysis",
+    "3D chromatin contacts, TAD calling, and loop detection.",
+    "hi-c-analysis",
+    "cooler",
+    "hic-pro"
+   ]
+  },
+  {
+   "ref": "skill:imaging-mass-cytometry",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "imaging-mass-cytometry",
+   "display_name": "Imaging Mass Cytometry",
+   "status": "active",
+   "job": "bio.imaging-mass-cytometry",
+   "distinct_from": [
+    {
+     "id": "proteomics",
+     "boundary": "imaging-mass-cytometry segments and phenotypes cells in IMC images; proteomics handles bulk peptide and protein mass spectrometry"
+    }
+   ],
+   "text": [
+    "Imaging Mass Cytometry",
+    "Single-cell spatial proteomics from IMC and MIBI data.",
+    "imaging-mass-cytometry",
+    "imc",
+    "steinbock"
+   ]
+  },
+  {
+   "ref": "skill:immunoinformatics",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "immunoinformatics",
+   "display_name": "Immunoinformatics",
+   "status": "active",
+   "job": "bio.immunoinformatics",
+   "distinct_from": [],
+   "text": [
+    "Immunoinformatics",
+    "MHC binding, neoantigen prediction, and HLA typing.",
+    "immunoinformatics",
+    "netmhc",
+    "hla"
+   ]
+  },
+  {
+   "ref": "skill:liquid-biopsy",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "liquid-biopsy",
+   "display_name": "Liquid Biopsy",
+   "status": "active",
+   "job": "bio.liquid-biopsy",
+   "distinct_from": [],
+   "text": [
+    "Liquid Biopsy",
+    "Cell-free DNA fragmentomics, tumor fraction, and methylation cfDNA.",
+    "liquid-biopsy",
+    "cfdna",
+    "ichorcna"
+   ]
+  },
+  {
+   "ref": "skill:long-read-sequencing",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "long-read-sequencing",
+   "display_name": "Long-read Sequencing",
+   "status": "active",
+   "job": "bio.long-read-sequencing",
+   "distinct_from": [],
+   "text": [
+    "Long-read Sequencing",
+    "ONT and PacBio basecalling, alignment, and structural-variant workflows.",
+    "long-read-sequencing",
+    "nanopore",
+    "pacbio",
+    "minimap2"
+   ]
+  },
+  {
+   "ref": "skill:machine-learning",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "machine-learning",
+   "display_name": "Machine Learning",
+   "status": "active",
+   "job": "bio.machine-learning",
+   "distinct_from": [],
+   "text": [
+    "Machine Learning",
+    "Biomarker discovery, model training, and cross-validation pipelines.",
+    "machine-learning",
+    "scikit-learn",
+    "ml"
+   ]
+  },
+  {
+   "ref": "skill:metabolomics",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "metabolomics",
+   "display_name": "Metabolomics",
+   "status": "active",
+   "job": "bio.metabolomics",
+   "distinct_from": [
+    {
+     "id": "proteomics",
+     "boundary": "metabolomics handles small-molecule MS and NMR data; proteomics handles peptide and protein MS data"
+    }
+   ],
+   "text": [
+    "Metabolomics",
+    "Mass-spec metabolite identification, alignment, and quantification.",
+    "metabolomics",
+    "xcms",
+    "metaboanalyst"
+   ]
+  },
+  {
+   "ref": "skill:metagenomics",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "metagenomics",
+   "display_name": "Metagenomics",
+   "status": "active",
+   "job": "bio.metagenomics",
+   "distinct_from": [],
+   "text": [
+    "Metagenomics",
+    "Shotgun microbial profiling, assembly, and binning.",
+    "metagenomics",
+    "kraken2",
+    "metaphlan"
+   ]
+  },
+  {
+   "ref": "skill:methylation-analysis",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "methylation-analysis",
+   "display_name": "Methylation Analysis",
+   "status": "active",
+   "job": "bio.methylation-analysis",
+   "distinct_from": [],
+   "text": [
+    "Methylation Analysis",
+    "Bisulfite alignment and differential methylation testing.",
+    "methylation-analysis",
+    "bismark",
+    "methylkit"
+   ]
+  },
+  {
+   "ref": "skill:microbiome",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "microbiome",
+   "display_name": "Microbiome",
+   "status": "active",
+   "job": "bio.microbiome",
+   "distinct_from": [],
+   "text": [
+    "Microbiome",
+    "16S rRNA amplicon and microbiota community profiling.",
+    "microbiome",
+    "qiime2",
+    "dada2"
+   ]
+  },
+  {
+   "ref": "skill:multi-omics-integration",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "multi-omics-integration",
+   "display_name": "Multi-omics Integration",
+   "status": "active",
+   "job": "bio.multi-omics-integration",
+   "distinct_from": [],
+   "text": [
+    "Multi-omics Integration",
+    "Cross-modality fusion: MOFA, DIABLO, WNN, totalVI.",
+    "multi-omics-integration",
+    "mofa",
+    "diablo"
+   ]
+  },
+  {
+   "ref": "skill:pathway-analysis",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "pathway-analysis",
+   "display_name": "Pathway Analysis",
+   "status": "active",
+   "job": "bio.pathway-analysis",
+   "distinct_from": [],
+   "text": [
+    "Pathway Analysis",
+    "GO, KEGG, Reactome, and GSEA enrichment testing.",
+    "pathway-analysis",
+    "clusterprofiler",
+    "gsea"
+   ]
+  },
+  {
+   "ref": "skill:phasing-imputation",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "phasing-imputation",
+   "display_name": "Phasing & Imputation",
+   "status": "active",
+   "job": "bio.phasing-imputation",
+   "distinct_from": [],
+   "text": [
+    "Phasing & Imputation",
+    "Haplotype phasing and genotype imputation with SHAPEIT and Beagle.",
+    "phasing-imputation",
+    "shapeit",
+    "beagle"
+   ]
+  },
+  {
+   "ref": "skill:phylogenetics",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "phylogenetics",
+   "display_name": "Phylogenetics",
+   "status": "active",
+   "job": "bio.phylogenetics",
+   "distinct_from": [],
+   "text": [
+    "Phylogenetics",
+    "Tree construction with IQ-TREE, RAxML, BEAST, and ancestral state.",
+    "phylogenetics",
+    "iq-tree",
+    "beast"
+   ]
+  },
+  {
+   "ref": "skill:population-genetics",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "population-genetics",
+   "display_name": "Population Genetics",
+   "status": "active",
+   "job": "bio.population-genetics",
+   "distinct_from": [],
+   "text": [
+    "Population Genetics",
+    "GWAS, population structure, LD, and selection scans.",
+    "population-genetics",
+    "plink",
+    "gwas"
+   ]
+  },
+  {
+   "ref": "skill:primer-design",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "primer-design",
+   "display_name": "Primer Design",
+   "status": "active",
+   "job": "bio.primer-design",
+   "distinct_from": [],
+   "text": [
+    "Primer Design",
+    "PCR and qPCR primer generation with Primer3 and primerBLAST.",
+    "primer-design",
+    "primer3",
+    "qpcr"
+   ]
+  },
+  {
+   "ref": "skill:proteomics",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "proteomics",
+   "display_name": "Proteomics",
+   "status": "active",
+   "job": "bio.proteomics",
+   "distinct_from": [
+    {
+     "id": "rna-quantification",
+     "boundary": "proteomics quantifies proteins from mass spectrometry; rna-quantification quantifies transcripts from sequencing reads"
+    }
+   ],
+   "text": [
+    "Proteomics",
+    "Mass-spec quantification and protein abundance pipelines.",
+    "proteomics",
+    "maxquant",
+    "fragpipe"
+   ]
+  },
+  {
+   "ref": "skill:read-alignment",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "read-alignment",
+   "display_name": "Read Alignment",
+   "status": "active",
+   "job": "bio.read-alignment",
+   "distinct_from": [],
+   "text": [
+    "Read Alignment",
+    "Short-read mapping with BWA-MEM2, Bowtie2, STAR, HISAT2.",
+    "read-alignment",
+    "bwa-mem2",
+    "star"
+   ]
+  },
+  {
+   "ref": "skill:read-qc",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "read-qc",
+   "display_name": "Read QC",
+   "status": "active",
+   "job": "bio.read-qc",
+   "distinct_from": [],
+   "text": [
+    "Read QC",
+    "FastQC, fastp, trimming, and contamination screening.",
+    "read-qc",
+    "fastqc",
+    "fastp",
+    "kraken2"
+   ]
+  },
+  {
+   "ref": "skill:reporting",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "reporting",
+   "display_name": "Reporting",
+   "status": "active",
+   "job": "bio.reporting",
+   "distinct_from": [],
+   "text": [
+    "Reporting",
+    "Reproducible HTML, Quarto, and R Markdown reports.",
+    "reporting",
+    "quarto",
+    "rmarkdown"
+   ]
+  },
+  {
+   "ref": "skill:restriction-analysis",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "restriction-analysis",
+   "display_name": "Restriction Analysis",
+   "status": "active",
+   "job": "bio.restriction-analysis",
+   "distinct_from": [],
+   "text": [
+    "Restriction Analysis",
+    "Restriction-enzyme mapping and digestion prediction.",
+    "restriction-analysis",
+    "rebase",
+    "digestion"
+   ]
+  },
+  {
+   "ref": "skill:ribo-seq",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "ribo-seq",
+   "display_name": "Ribo-seq",
+   "status": "active",
+   "job": "bio.ribo-seq",
+   "distinct_from": [],
+   "text": [
+    "Ribo-seq",
+    "Ribosome profiling and translation-efficiency analysis.",
+    "ribo-seq",
+    "ribowaltz",
+    "ribo-tish"
+   ]
+  },
+  {
+   "ref": "skill:rna-quantification",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "rna-quantification",
+   "display_name": "RNA Quantification",
+   "status": "active",
+   "job": "bio.rna-quantification",
+   "distinct_from": [
+    {
+     "id": "small-rna-seq",
+     "boundary": "rna-quantification quantifies genes and transcripts from RNA-seq reads; small-rna-seq handles miRNA and other small RNA libraries"
+    }
+   ],
+   "text": [
+    "RNA Quantification",
+    "Gene and transcript abundance with Salmon, kallisto, RSEM.",
+    "rna-quantification",
+    "salmon",
+    "kallisto"
+   ]
+  },
+  {
+   "ref": "skill:rna-structure",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "rna-structure",
+   "display_name": "RNA Structure",
+   "status": "active",
+   "job": "bio.rna-structure",
+   "distinct_from": [],
+   "text": [
+    "RNA Structure",
+    "Secondary-structure prediction with RNAfold, IPknot.",
+    "rna-structure",
+    "rnafold",
+    "viennarna"
+   ]
+  },
+  {
+   "ref": "skill:sequence-io",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "sequence-io",
+   "display_name": "Sequence I/O",
+   "status": "active",
+   "job": "bio.sequence-io",
+   "distinct_from": [
+    {
+     "id": "sequence-manipulation",
+     "boundary": "sequence-io reads and writes sequence file formats; sequence-manipulation transforms sequences once they are loaded"
+    }
+   ],
+   "text": [
+    "Sequence I/O",
+    "FASTA/FASTQ parsing, conversion, and indexing.",
+    "sequence-io",
+    "biopython",
+    "seqkit"
+   ]
+  },
+  {
+   "ref": "skill:sequence-manipulation",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "sequence-manipulation",
+   "display_name": "Sequence Manipulation",
+   "status": "active",
+   "job": "bio.sequence-manipulation",
+   "distinct_from": [],
+   "text": [
+    "Sequence Manipulation",
+    "Transcription, translation, ORF finding, and motif search.",
+    "sequence-manipulation",
+    "biopython",
+    "emboss"
+   ]
+  },
+  {
+   "ref": "skill:single-cell",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "single-cell",
+   "display_name": "Single-cell",
+   "status": "active",
+   "job": "bio.single-cell",
+   "distinct_from": [],
+   "text": [
+    "Single-cell",
+    "scRNA-seq clustering, annotation, trajectory, and integration.",
+    "single-cell",
+    "scanpy",
+    "seurat",
+    "scvi"
+   ]
+  },
+  {
+   "ref": "skill:small-rna-seq",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "small-rna-seq",
+   "display_name": "Small RNA-seq",
+   "status": "active",
+   "job": "bio.small-rna-seq",
+   "distinct_from": [],
+   "text": [
+    "Small RNA-seq",
+    "miRNA, piRNA, and small-RNA quantification.",
+    "small-rna-seq",
+    "mirdeep2",
+    "isomirs"
+   ]
+  },
+  {
+   "ref": "skill:spatial-transcriptomics",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "spatial-transcriptomics",
+   "display_name": "Spatial Transcriptomics",
+   "status": "active",
+   "job": "bio.spatial-transcriptomics",
+   "distinct_from": [],
+   "text": [
+    "Spatial Transcriptomics",
+    "Visium, Slide-seq, and high-resolution tissue expression.",
+    "spatial-transcriptomics",
+    "visium",
+    "squidpy"
+   ]
+  },
+  {
+   "ref": "skill:structural-biology",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "structural-biology",
+   "display_name": "Structural Biology",
+   "status": "active",
+   "job": "bio.structural-biology",
+   "distinct_from": [],
+   "text": [
+    "Structural Biology",
+    "PDB parsing, AlphaFold, ESMFold, and structure analysis.",
+    "structural-biology",
+    "alphafold",
+    "pymol"
+   ]
+  },
+  {
+   "ref": "skill:systems-biology",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "systems-biology",
+   "display_name": "Systems Biology",
+   "status": "active",
+   "job": "bio.systems-biology",
+   "distinct_from": [],
+   "text": [
+    "Systems Biology",
+    "Metabolic flux balance, kinetic modelling, network analysis.",
+    "systems-biology",
+    "cobrapy",
+    "fba"
+   ]
+  },
+  {
+   "ref": "skill:tcr-bcr-analysis",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "tcr-bcr-analysis",
+   "display_name": "TCR/BCR Analysis",
+   "status": "active",
+   "job": "bio.tcr-bcr-analysis",
+   "distinct_from": [],
+   "text": [
+    "TCR/BCR Analysis",
+    "Immune-receptor repertoire profiling and clonal-family analysis.",
+    "tcr-bcr-analysis",
+    "mixcr",
+    "scirpy"
+   ]
+  },
+  {
+   "ref": "skill:temporal-genomics",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "temporal-genomics",
+   "display_name": "Temporal Genomics",
+   "status": "active",
+   "job": "bio.temporal-genomics",
+   "distinct_from": [],
+   "text": [
+    "Temporal Genomics",
+    "Time-series and circadian expression analysis.",
+    "temporal-genomics",
+    "metacycle",
+    "jtk_cycle"
+   ]
+  },
+  {
+   "ref": "skill:variant-calling",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "variant-calling",
+   "display_name": "Variant Calling",
+   "status": "active",
+   "job": "bio.variant-calling",
+   "distinct_from": [],
+   "text": [
+    "Variant Calling",
+    "SNPs, indels, SVs with GATK, DeepVariant, Manta, Delly.",
+    "variant-calling",
+    "gatk",
+    "deepvariant",
+    "manta"
+   ]
+  },
+  {
+   "ref": "skill:workflow-management",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "workflow-management",
+   "display_name": "Workflow Management",
+   "status": "active",
+   "job": "bio.workflow-management",
+   "distinct_from": [],
+   "text": [
+    "Workflow Management",
+    "Snakemake, Nextflow, CWL, WDL pipeline scaffolding.",
+    "workflow-management",
+    "snakemake",
+    "nextflow"
+   ]
+  },
+  {
+   "ref": "skill:workflows",
+   "catalog": "skills",
+   "kind": "bundle",
+   "id": "workflows",
+   "display_name": "End-to-end Workflows",
+   "status": "active",
+   "job": "bio.workflows",
+   "distinct_from": [],
+   "text": [
+    "End-to-end Workflows",
+    "Ready-to-run analysis pipelines combining multiple skills.",
+    "workflows",
+    "pipelines",
+    "end-to-end"
+   ]
+  },
+  {
+   "ref": "extension:cdwagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "cdwagent",
+   "display_name": "CDWAgent",
+   "status": "active",
+   "job": "clinical.ucsf-cdw-access",
+   "distinct_from": [
+    {
+     "id": "ucsfomopagent",
+     "boundary": "CDWAgent queries UCSF's identified Clinical Data Warehouse, notes and imaging included; UCSFOMOPAgent queries the de-identified OMOP CDM copy"
+    }
+   ],
+   "text": [
+    "CDWAgent",
+    "Multimodal access to the UCSF Clinical Data Warehouse through natural language. One-call cohort building across diagnoses, medications, procedures, labs, radiology/imaging, immunizations, allergies, and vitals; clinical-notes/NLP search; read-only queries, schema discovery, and structured results. Requires UCSF network credentials (CAMPUS\\username and password).",
+    "UCSF",
+    "MCP",
+    "CDW",
+    "Clinical"
+   ]
+  },
+  {
+   "ref": "extension:ucsfomopagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "ucsfomopagent",
+   "display_name": "UCSFOMOPAgent",
+   "status": "active",
+   "job": "clinical.ucsf-omop-access",
+   "distinct_from": [],
+   "text": [
+    "UCSFOMOPAgent",
+    "Natural language SQL on the UCSF OMOP de-identified clinical database. Read-only access to standardized EHR data under the OMOP Common Data Model. v0.2.0 adds built-in OMOP/SQL-Server context plus concept-search, lab-finder, and live schema tools so the agent reaches the right data faster and more reliably. Requires UCSF credentials.",
+    "UCSF",
+    "MCP",
+    "OMOP",
+    "EHR"
+   ]
+  },
+  {
+   "ref": "extension:playwrightagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "playwrightagent",
+   "display_name": "Playwright Agent",
+   "status": "active",
+   "job": "browser.web-automation",
+   "distinct_from": [],
+   "text": [
+    "Playwright Agent",
+    "Browser automation via Microsoft's @playwright/mcp. Navigate websites, extract data, fill forms, and run web research workflows using structured accessibility snapshots. No vision model required. Requires Node.js on the host.",
+    "MCP",
+    "Browser",
+    "Automation"
+   ]
+  },
+  {
+   "ref": "extension:spokeagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "spokeagent",
+   "display_name": "SPOKEAgent",
+   "status": "active",
+   "job": "knowledge-graph.spoke",
+   "distinct_from": [],
+   "text": [
+    "SPOKEAgent",
+    "Structure-aware access to the SPOKE biomedical knowledge graph (43M nodes): live schema introspection, entity/identifier resolution, node profiling, shortest-path finding, and guarded read-only Cypher across diseases, genes, proteins, drugs, and pathways. Includes a bundled spoke-knowledge-graph skill. Requires a SPOKEAGENT_PASSCODE (see credentials page).",
+    "UCSF",
+    "MCP",
+    "Knowledge Graph"
+   ]
+  },
+  {
+   "ref": "extension:codegraphagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "codegraphagent",
+   "display_name": "CodeGraph Agent",
+   "status": "active",
+   "job": "code.knowledge-graph-index",
+   "distinct_from": [],
+   "text": [
+    "CodeGraph Agent",
+    "Pre-indexed code knowledge graph. Ask \"who calls X?\", \"what does Y call?\", or \"what breaks if I change Z?\" across 23 languages including R, Julia, MATLAB, Perl. Vendored fork of CodeGraph on tree-sitter.",
+    "MCP",
+    "Code Intelligence",
+    "R",
+    "Tree-sitter"
+   ]
+  },
+  {
+   "ref": "extension:bioroffice",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "bioroffice",
+   "display_name": "BiorOffice",
+   "status": "active",
+   "job": "office.cli-document-editing",
+   "distinct_from": [],
+   "text": [
+    "BiorOffice",
+    "Create, read, and edit Word (.docx), Excel (.xlsx), and PowerPoint (.pptx) files from chat. Handles headings, tables, charts, and 150+ Excel functions with live formula evaluation. Built on the open-source OfficeCLI engine, so no Microsoft Office install is needed. Ships four bundled skills for the office suite, Word, Excel, and PowerPoint.",
+    "MCP",
+    "Office",
+    "Documents",
+    "Word",
+    "Excel",
+    "PowerPoint"
+   ]
+  },
+  {
+   "ref": "extension:benchlingagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "benchlingagent",
+   "display_name": "BenchlingAgent",
+   "status": "active",
+   "job": "lab.benchling-notebook",
+   "distinct_from": [
+    {
+     "id": "labarchivesagent",
+     "boundary": "BenchlingAgent reads Benchling's notebook and registry; LabArchivesAgent reads a LabArchives notebook; different vendors and accounts"
+    }
+   ],
+   "text": [
+    "BenchlingAgent",
+    "Read-only and confirmation-gated MCP access to Benchling projects, registry records, notebook entries, and assay metadata for scientific workflow review.",
+    "MCP",
+    "Benchling",
+    "ELN",
+    "Registry",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:dnanexusagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "dnanexusagent",
+   "display_name": "DNAnexusAgent",
+   "status": "active",
+   "job": "compute.dnanexus-platform",
+   "distinct_from": [],
+   "text": [
+    "DNAnexusAgent",
+    "MCP access to DNAnexus project, file, app, workflow, and job metadata with guarded API calls for cloud bioinformatics runs.",
+    "MCP",
+    "DNAnexus",
+    "Cloud",
+    "Workflows",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:latchbioagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "latchbioagent",
+   "display_name": "LatchBioAgent",
+   "status": "active",
+   "job": "compute.latch-platform",
+   "distinct_from": [],
+   "text": [
+    "LatchBioAgent",
+    "MCP access to LatchBio workspace, workflow, file, and execution metadata with guarded API request helpers for reproducible computational biology workflows.",
+    "MCP",
+    "LatchBio",
+    "Workflow",
+    "Compute",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:labarchivesagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "labarchivesagent",
+   "display_name": "LabArchivesAgent",
+   "status": "active",
+   "job": "lab.labarchives-notebook",
+   "distinct_from": [],
+   "text": [
+    "LabArchivesAgent",
+    "MCP access to LabArchives electronic lab notebook metadata and entries, with read-first notebook inspection and confirmation-gated API requests.",
+    "MCP",
+    "LabArchives",
+    "ELN",
+    "Notebook",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:omeroagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "omeroagent",
+   "display_name": "OMEROAgent",
+   "status": "active",
+   "job": "imaging.omero-server",
+   "distinct_from": [
+    {
+     "id": "idcagent",
+     "boundary": "OMEROAgent reads a lab's own OMERO image server; IDCAgent searches the NCI Imaging Data Commons public collections"
+    }
+   ],
+   "text": [
+    "OMEROAgent",
+    "MCP access pattern for OMERO image repositories, project/dataset/image metadata, and web/API endpoint inspection for microscopy data review.",
+    "MCP",
+    "OMERO",
+    "Imaging",
+    "Microscopy",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:protocolsioagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "protocolsioagent",
+   "display_name": "ProtocolsIOAgent",
+   "status": "active",
+   "job": "lab.protocols-io",
+   "distinct_from": [],
+   "text": [
+    "ProtocolsIOAgent",
+    "MCP access to Protocols.io public and authenticated protocol metadata for method discovery, citation, and reproducible protocol review.",
+    "MCP",
+    "Protocols.io",
+    "Methods",
+    "Protocols",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:opennotebookagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "opennotebookagent",
+   "display_name": "OpenNotebookAgent",
+   "status": "active",
+   "job": "knowledge.open-notebook",
+   "distinct_from": [],
+   "text": [
+    "OpenNotebookAgent",
+    "MCP adapter for self-hosted or lab-hosted open-notebook systems, exposing guarded notebook entry search, retrieval, and provenance checks.",
+    "MCP",
+    "Open Notebook",
+    "Provenance",
+    "Notebook",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:modalagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "modalagent",
+   "display_name": "ModalAgent",
+   "status": "active",
+   "job": "compute.modal-cloud",
+   "distinct_from": [],
+   "text": [
+    "ModalAgent",
+    "MCP helper for Modal compute projects, deployment planning, environment validation, and guarded command/API invocation for cloud scientific jobs.",
+    "MCP",
+    "Modal",
+    "Compute",
+    "Jobs",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:idcagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "idcagent",
+   "display_name": "IDCAgent",
+   "status": "active",
+   "job": "imaging.idc-collections",
+   "distinct_from": [],
+   "text": [
+    "IDCAgent",
+    "MCP access to NCI Imaging Data Commons metadata endpoints for cancer imaging cohort discovery, DICOM collection review, and reproducible image-data queries.",
+    "MCP",
+    "IDC",
+    "Cancer Imaging",
+    "DICOM",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:literatureagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "literatureagent",
+   "display_name": "LiteratureAgent",
+   "status": "active",
+   "job": "literature.scholarly-api",
+   "distinct_from": [],
+   "text": [
+    "LiteratureAgent",
+    "MCP access pattern for PubMed, OpenAlex, Crossref, Semantic Scholar, and literature evidence workflows, with provenance-first search and guarded API calls.",
+    "MCP",
+    "Literature",
+    "PubMed",
+    "Evidence",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:ncbiagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "ncbiagent",
+   "display_name": "NCBIAgent",
+   "status": "active",
+   "job": "bio.public-database-lookup",
+   "distinct_from": [],
+   "text": [
+    "NCBIAgent",
+    "MCP access to NCBI database discovery and Entrez-style workflows for PubMed, Gene, SRA, GEO, ClinVar, dbSNP, and sequence metadata review.",
+    "MCP",
+    "NCBI",
+    "Entrez",
+    "Genomics",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:folklore-clinical-variant-interpretation-mcp",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "folklore-clinical-variant-interpretation-mcp",
+   "display_name": "Folklore Clinical Variant Interpretation MCP",
+   "status": "active",
+   "job": "clinical.variant-interpretation",
+   "distinct_from": [],
+   "text": [
+    "Folklore Clinical Variant Interpretation MCP",
+    "Biorouter rebuild of Folklore MCP 2.0.0: eleven public tools for GRCh38 germline variant classification under ACMG/AMP, gene profiles, ClinGen associations and scientific literature. Use public inputs only; do not send patient or private case data. Results require qualified professional review and are not a diagnosis or treatment recommendation.",
+    "MCP",
+    "Variants",
+    "Literature",
+    "ACMG/AMP",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:clinicalvariantagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "clinicalvariantagent",
+   "display_name": "ClinicalVariantAgent",
+   "status": "active",
+   "job": "clinical.variant-database-lookup",
+   "distinct_from": [],
+   "text": [
+    "ClinicalVariantAgent",
+    "MCP access pattern for variant annotation resources such as ClinVar, VEP, MyVariant, and gnomAD, with normalization and clinical-evidence review safeguards.",
+    "MCP",
+    "ClinVar",
+    "Variants",
+    "Annotation",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:workflowrunneragent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "workflowrunneragent",
+   "display_name": "WorkflowRunnerAgent",
+   "status": "active",
+   "job": "compute.workflow-runner",
+   "distinct_from": [],
+   "text": [
+    "WorkflowRunnerAgent",
+    "Guarded MCP workflow runner for Nextflow, Snakemake, Cromwell/WDL, and CWL planning, validation, dry-run review, and confirmation-gated execution.",
+    "MCP",
+    "Nextflow",
+    "Snakemake",
+    "Workflow",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:ucsfhpcagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "ucsfhpcagent",
+   "display_name": "UCSFHPCAgent",
+   "status": "active",
+   "job": "compute.ucsf-hpc-cluster",
+   "distinct_from": [],
+   "text": [
+    "UCSFHPCAgent",
+    "MCP helper for UCSF CHPC/SLURM job planning, account inspection, file transfer checks, and confirmation-gated HPC command execution.",
+    "UCSF",
+    "MCP",
+    "HPC",
+    "SLURM",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:chemoinformaticsagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "chemoinformaticsagent",
+   "display_name": "ChemoinformaticsAgent",
+   "status": "active",
+   "job": "chemistry.cheminformatics-toolkit",
+   "distinct_from": [
+    {
+     "id": "chemoinformatics",
+     "boundary": "the chemoinformatics skill bundle holds the methods; ChemoinformaticsAgent runs RDKit and ChEMBL tools for them"
+    }
+   ],
+   "text": [
+    "ChemoinformaticsAgent",
+    "MCP helper for RDKit, PubChem, ChEMBL, SMILES/InChI normalization, molecular descriptors, and guarded local cheminformatics command planning.",
+    "MCP",
+    "RDKit",
+    "ChEMBL",
+    "Molecules",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:proteinstructureagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "proteinstructureagent",
+   "display_name": "ProteinStructureAgent",
+   "status": "active",
+   "job": "bio.protein-structure-databases",
+   "distinct_from": [
+    {
+     "id": "adaptyvbiofoundryagent",
+     "boundary": "ProteinStructureAgent looks structures up in PDB and AlphaFold DB; AdaptyvBioFoundryAgent submits protein designs for wet-lab testing"
+    }
+   ],
+   "text": [
+    "ProteinStructureAgent",
+    "MCP access pattern for PDB, AlphaFold, UniProt, sequence-to-structure lookup, structure metadata review, and guarded local structure-tool planning.",
+    "MCP",
+    "PDB",
+    "AlphaFold",
+    "Proteins",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:singlecellomicsagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "singlecellomicsagent",
+   "display_name": "SingleCellOmicsAgent",
+   "status": "active",
+   "job": "bio.single-cell-census-access",
+   "distinct_from": [],
+   "text": [
+    "SingleCellOmicsAgent",
+    "MCP helper for scanpy/anndata-style single-cell workflows, h5ad metadata inspection, QC planning, clustering review, and guarded local command execution.",
+    "MCP",
+    "Single-cell",
+    "Scanpy",
+    "Omics",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:opentronsagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "opentronsagent",
+   "display_name": "OpentronsAgent",
+   "status": "active",
+   "job": "lab.opentrons-robots",
+   "distinct_from": [],
+   "text": [
+    "OpentronsAgent",
+    "MCP adapter for Opentrons robot/run APIs, protocol metadata review, simulation planning, and guarded local Opentrons command execution.",
+    "MCP",
+    "Opentrons",
+    "Robotics",
+    "Protocols",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:ginkgocloudlabagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "ginkgocloudlabagent",
+   "display_name": "GinkgoCloudLabAgent",
+   "status": "active",
+   "job": "lab.ginkgo-cloud-lab",
+   "distinct_from": [],
+   "text": [
+    "GinkgoCloudLabAgent",
+    "MCP adapter for Ginkgo-style cloud lab project, run, sample, and protocol metadata with guarded authenticated API calls.",
+    "MCP",
+    "Ginkgo",
+    "Cloud Lab",
+    "Automation",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:lamindbagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "lamindbagent",
+   "display_name": "LaminDBAgent",
+   "status": "active",
+   "job": "data.lamindb-registry",
+   "distinct_from": [],
+   "text": [
+    "LaminDBAgent",
+    "MCP adapter for LaminDB instance metadata, datasets, artifacts, collections, and guarded API/CLI planning for scientific data registries.",
+    "MCP",
+    "LaminDB",
+    "Data Registry",
+    "Lineage",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:cellxgenecensusagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "cellxgenecensusagent",
+   "display_name": "CellxGeneCensusAgent",
+   "status": "active",
+   "job": "bio.single-cell-census-access",
+   "distinct_from": [
+    {
+     "id": "depmapagent",
+     "boundary": "CellxGeneCensusAgent serves single-cell expression from the Census; DepMapAgent serves cancer cell line dependency screens"
+    }
+   ],
+   "text": [
+    "CellxGeneCensusAgent",
+    "MCP adapter for CELLxGENE Census dataset and cell metadata discovery, with guarded API calls for single-cell atlas review.",
+    "MCP",
+    "CELLxGENE",
+    "Single-cell",
+    "Atlas",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:depmapagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "depmapagent",
+   "display_name": "DepMapAgent",
+   "status": "active",
+   "job": "bio.depmap-portal",
+   "distinct_from": [],
+   "text": [
+    "DepMapAgent",
+    "MCP adapter for DepMap portal/API metadata, datasets, cell lines, genes, compounds, and cancer dependency evidence review.",
+    "MCP",
+    "DepMap",
+    "Cancer",
+    "Dependencies",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:primekgagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "primekgagent",
+   "display_name": "PrimeKGAgent",
+   "status": "active",
+   "job": "knowledge-graph.primekg",
+   "distinct_from": [
+    {
+     "id": "unifiedpublicdatabaselookupagent",
+     "boundary": "PrimeKGAgent walks the PrimeKG precision-medicine graph; Public Bio Databases looks identifiers up in UniProt, Ensembl, NCBI and similar services"
+    }
+   ],
+   "text": [
+    "PrimeKGAgent",
+    "MCP adapter for PrimeKG-style biomedical knowledge graph files and APIs, with guarded metadata lookup and graph-resource summaries.",
+    "MCP",
+    "PrimeKG",
+    "Knowledge Graph",
+    "Biomedical",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:zoteroagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "zoteroagent",
+   "display_name": "ZoteroAgent",
+   "status": "active",
+   "job": "references.zotero-library",
+   "distinct_from": [],
+   "text": [
+    "ZoteroAgent",
+    "MCP adapter for Zotero libraries, collections, items, tags, and citation metadata with read-first and mutation-gated API access.",
+    "MCP",
+    "Zotero",
+    "Citations",
+    "Library",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:markitdownagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "markitdownagent",
+   "display_name": "MarkItDownAgent",
+   "status": "active",
+   "job": "documents.markitdown-conversion",
+   "distinct_from": [],
+   "text": [
+    "MarkItDownAgent",
+    "MCP helper for MarkItDown-style document-to-Markdown conversion planning, status checks, and guarded local conversion commands.",
+    "MCP",
+    "MarkItDown",
+    "Documents",
+    "Markdown",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:adaptyvbiofoundryagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "adaptyvbiofoundryagent",
+   "display_name": "AdaptyvBioFoundryAgent",
+   "status": "active",
+   "job": "lab.adaptyv-protein-foundry",
+   "distinct_from": [],
+   "text": [
+    "AdaptyvBioFoundryAgent",
+    "MCP adapter for Adaptyv-style protein engineering design-build-test workflows, sequence libraries, experiment metadata, and result retrieval with guarded API calls.",
+    "MCP",
+    "Adaptyv",
+    "Protein Engineering",
+    "Biofoundry",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:structuredpapersearchagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "structuredpapersearchagent",
+   "display_name": "StructuredPaperSearchAgent",
+   "status": "active",
+   "job": "literature.scholarly-api",
+   "distinct_from": [],
+   "text": [
+    "StructuredPaperSearchAgent",
+    "MCP adapter for structured paper and full-text metadata search across scholarly APIs, section-aware evidence extraction, and provenance-first literature queries.",
+    "MCP",
+    "Papers",
+    "Full Text",
+    "Evidence",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:scientificwebresearchagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "scientificwebresearchagent",
+   "display_name": "ScientificWebResearchAgent",
+   "status": "active",
+   "job": "literature.web-research-apis",
+   "distinct_from": [],
+   "text": [
+    "ScientificWebResearchAgent",
+    "MCP adapter for scientific web and deep-research workflows, web search APIs, source fetching, and provenance capture beyond scholarly APIs.",
+    "MCP",
+    "Web Research",
+    "Search",
+    "Sources",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:tamarindbioagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "tamarindbioagent",
+   "display_name": "TamarindBioAgent",
+   "status": "active",
+   "job": "compute.tamarind-bio-models",
+   "distinct_from": [],
+   "text": [
+    "TamarindBioAgent",
+    "MCP adapter for Tamarind Bio-style cloud protein, structure, docking, and design workflows with guarded API calls and result provenance.",
+    "MCP",
+    "Tamarind",
+    "Protein Design",
+    "Docking",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:rowanmolecularmodelingagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "rowanmolecularmodelingagent",
+   "display_name": "RowanMolecularModelingAgent",
+   "status": "active",
+   "job": "chemistry.rowan-molecular-modeling",
+   "distinct_from": [],
+   "text": [
+    "RowanMolecularModelingAgent",
+    "MCP adapter for Rowan-style cloud molecular modeling: conformers, pKa, docking, analogue docking, cofolding, and medicinal chemistry calculation provenance.",
+    "MCP",
+    "Rowan",
+    "Molecular Modeling",
+    "MedChem",
+    "Apache-2.0"
+   ]
+  },
+  {
+   "ref": "extension:unifiedpublicdatabaselookupagent",
+   "catalog": "extensions",
+   "kind": "extension",
+   "id": "unifiedpublicdatabaselookupagent",
+   "display_name": "UnifiedPublicDatabaseLookupAgent",
+   "status": "active",
+   "job": "bio.public-database-lookup",
+   "distinct_from": [],
+   "text": [
+    "UnifiedPublicDatabaseLookupAgent",
+    "MCP router for provenance-first public database lookups across biomedical, chemistry, materials, literature, regulatory, patent, and scientific data APIs.",
+    "MCP",
+    "Public Databases",
+    "Provenance",
+    "Lookup",
+    "Apache-2.0"
+   ]
+  }
+ ]
+}

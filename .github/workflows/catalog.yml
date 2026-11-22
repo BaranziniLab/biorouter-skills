@@ -1,0 +1,50 @@
+name: catalog
+
+# The skills catalog checks (catalog.json against the folders and the BAAM
+# duplicate rules), on every push and pull request. Weekly, the published
+# release assets are compared with fresh builds of their folders, and the
+# upstreams the skills were taken from are checked for movement (a report,
+# never a failure).
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Catalog check
+        run: node scripts/check-catalog.mjs
+      - name: README and NOTICE are generated from the catalog
+        run: node scripts/render-readme.mjs --check
+      - name: Merged and retired folders hold their stubs
+        run: node scripts/write-stubs.mjs --check
+      - name: Tests of the checks
+        run: node --test scripts/
+
+  releases:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Every published asset equals its folder build
+        run: node scripts/verify-release.mjs --all
+      - name: Upstream drift (report only)
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/upstream-drift.mjs

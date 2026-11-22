@@ -2,3 +2,6 @@
 # Release bundles: per-skill .zip files are built from the folders above and
 # published as GitHub Release assets (see README), not tracked in git
 /*.zip
+
+# Archives built by scripts/build-zip.mjs
+/dist/

@@ -1,0 +1,56 @@
+{
+  "format": 1,
+  "source": {
+    "repo": "BaranziniLab/biorouter",
+    "commit": "66283f3a56c3316fb4e5ac5ecf27266c269ff3e7"
+  },
+  "skills": [
+    "about-biorouter",
+    "develop-biorouter",
+    "develop-biorouter-extension",
+    "develop-biorouter-skill",
+    "knowledge-choose-a-format",
+    "knowledge-ingest-biookf",
+    "knowledge-ingest-okf",
+    "knowledge-lint",
+    "office-excel",
+    "office-pdf",
+    "office-powerpoint",
+    "office-word",
+    "update-soul"
+  ],
+  "legacy_skills": [
+    "soul-writer"
+  ],
+  "bundles": [
+    "knowledge-bases"
+  ],
+  "extensions": [
+    "Agent Drafter",
+    "Biorouter Copilot",
+    "Code Execution",
+    "Web & Documents",
+    "Workspace Control",
+    "agent_drafter",
+    "appcontrol",
+    "autovisualiser",
+    "chatrecall",
+    "code_execution",
+    "compute",
+    "computercontroller",
+    "crew",
+    "datasql",
+    "decisions",
+    "developer",
+    "dictionary",
+    "evidence",
+    "extensionmanager",
+    "files",
+    "knowledge",
+    "memory",
+    "skills",
+    "todo",
+    "webdocuments",
+    "workspace"
+  ]
+}
