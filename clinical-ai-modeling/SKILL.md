@@ -3,11 +3,15 @@ name: clinical-ai-modeling
 description: Plan and review clinical AI modeling workflows with EHR cohorts, PyHealth-style tasks, validation, bias checks, calibration, safety boundaries, and no-PHI handling. Use when users ask about clinical prediction models, risk scores, treatment-response ML, medical reports, or clinical model evaluation.
 user-invocable: true
 license: Apache-2.0
+metadata:
+  version: "1.1.0"
+  origin: native
+  upstream: "none (native rewrite, no upstream text copied)"
 ---
 
 # Clinical AI Modeling
 
-Source adaptation: BioRouter-original synthesis inspired by Scientific Agent Skills clinical AI patterns, rewritten under Apache-2.0.
+Source adaptation: Biorouter-original synthesis inspired by Scientific Agent Skills clinical AI patterns, rewritten under Apache-2.0.
 
 ## When to Use
 
@@ -41,7 +45,7 @@ Collect:
 - Robustness: temporal validation, site validation, missingness stress tests.
 - Explainability: use only as supporting evidence, not proof of safety.
 
-## BioRouter Routes
+## Biorouter Routes
 
 - Use `CDWAgent`, `UCSFOMOPAgent`, or other BRXT extensions for authenticated data access.
 - Use `causal-identification-gates` when causal treatment language appears.

@@ -3,11 +3,15 @@ name: causal-identification-gates
 description: Audit causal inference designs before estimation or interpretation, including randomized trials, observational adjustment, IV, RDD, DiD, staggered adoption, event studies, synthetic control, matching, DML, survival designs, and bad-control risks. Use when a user asks whether an empirical design supports causal language.
 user-invocable: true
 license: Apache-2.0
+metadata:
+  version: "1.1.0"
+  origin: native
+  upstream: "none (native rewrite, no upstream text copied)"
 ---
 
 # Causal Identification Gates
 
-Source adaptation: BioRouter-original synthesis from Auto-Empirical Research Skills causal-inference gates and Scientific Agent Skills statistics/tooling patterns, rewritten under Apache-2.0.
+Source adaptation: Biorouter-original synthesis from Auto-Empirical Research Skills causal-inference gates and Scientific Agent Skills statistics/tooling patterns, rewritten under Apache-2.0.
 
 Use this skill before fitting or interpreting a causal model. The deliverable is a design gate: pass, pass with caveats, or fail with required remediation.
 

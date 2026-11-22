@@ -3,15 +3,19 @@ name: general-time-series-forecasting
 description: Plan and review general time-series forecasting with classical models, ML, foundation models, backtesting, leakage checks, and uncertainty. Use for non-omics forecasting, sensor streams, operations, finance, clinical vitals, demand, or irregular temporal data.
 user-invocable: true
 license: Apache-2.0
+metadata:
+  version: "1.1.0"
+  origin: native
+  upstream: "none (native rewrite, no upstream text copied)"
 ---
 
 # General Time-Series Forecasting
 
-Source adaptation: BioRouter-original synthesis inspired by Scientific Agent Skills time-series and forecasting patterns, rewritten under Apache-2.0.
+Source adaptation: Biorouter-original synthesis inspired by Scientific Agent Skills time-series and forecasting patterns, rewritten under Apache-2.0.
 
 ## When to Use
 
-Use this skill for general forecasting or temporal prediction outside BioRouter's omics-specific `temporal-genomics` BioSkills. Use it for sensors, operations, finance, clinical vitals, weather, demand, events, or multivariate temporal panels.
+Use this skill for general forecasting or temporal prediction outside Biorouter's omics-specific `temporal-genomics` BioSkills. Use it for sensors, operations, finance, clinical vitals, weather, demand, events, or multivariate temporal panels.
 
 ## Intake
 

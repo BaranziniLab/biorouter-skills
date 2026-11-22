@@ -3,11 +3,15 @@ name: computational-fluid-dynamics
 description: Plan and review computational fluid dynamics workflows with meshes, boundary conditions, turbulence models, OpenFOAM/FluidSim-style solvers, validation cases, convergence checks, and reproducible simulation artifacts. Use when users mention CFD, fluid dynamics, Navier-Stokes, meshing, turbulence, OpenFOAM, or flow simulation.
 user-invocable: true
 license: Apache-2.0
+metadata:
+  version: "1.1.0"
+  origin: native
+  upstream: "none (native rewrite, no upstream text copied)"
 ---
 
 # Computational Fluid Dynamics
 
-Source adaptation: BioRouter-original synthesis inspired by Scientific Agent Skills computational-fluid-dynamics patterns, rewritten under Apache-2.0.
+Source adaptation: Biorouter-original synthesis inspired by Scientific Agent Skills computational-fluid-dynamics patterns, rewritten under Apache-2.0.
 
 ## When to Use
 
@@ -45,7 +49,7 @@ Do not trust a CFD result until these are addressed:
 - Comparison to an analytic, experimental, or accepted benchmark case.
 - Clear distinction between qualitative visualization and quantitative prediction.
 
-## BioRouter Routes
+## Biorouter Routes
 
 - Use `physical-science-computing` for unit systems, coordinates, and physical constants.
 - Use `simulation-optimization` when optimizing design parameters or running sweeps.

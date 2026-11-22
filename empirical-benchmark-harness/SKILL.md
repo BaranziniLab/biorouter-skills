@@ -3,11 +3,15 @@ name: empirical-benchmark-harness
 description: Validate empirical-analysis agents against small known-answer benchmark tasks such as bad controls, weak IV, RDD, staggered DiD, matching imbalance, event studies, DML, and replication setup. Use when testing whether a workflow or skill produces methodologically sound empirical research outputs.
 user-invocable: true
 license: Apache-2.0
+metadata:
+  version: "1.1.0"
+  origin: native
+  upstream: "none (native rewrite, no upstream text copied)"
 ---
 
 # Empirical Benchmark Harness
 
-Source adaptation: BioRouter-original benchmark design inspired by Auto-Empirical Research Skills eval/benchmark harness, rewritten under Apache-2.0.
+Source adaptation: Biorouter-original benchmark design inspired by Auto-Empirical Research Skills eval/benchmark harness, rewritten under Apache-2.0.
 
 Use this skill to test an agent or workflow before trusting it on user data.
 
