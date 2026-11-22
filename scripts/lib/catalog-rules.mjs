@@ -273,6 +273,8 @@ export function ruleD3(items, { threshold = DEFAULT_SIMILARITY_THRESHOLD, generi
 // D4, redirects are complete.
 
 export const STATUS_PATTERN = /^(active|retired|superseded_by:(builtin:)?[a-z0-9][a-z0-9-]*(\/[a-z0-9][a-z0-9-]*)?)$/;
+// A bundle component may also be "removed" (dropped upstream, nothing replaces it).
+export const COMPONENT_STATUS_PATTERN = /^(active|removed|superseded_by:[a-z0-9][a-z0-9-]*(\/[a-z0-9][a-z0-9-]*)?)$/;
 
 export function ruleD4(items, builtins = {}) {
   const failures = [];
@@ -282,7 +284,8 @@ export function ruleD4(items, builtins = {}) {
   const builtinSkills = new Set([...(builtins.skills ?? []), ...(builtins.bundles ?? [])]);
   const builtinExtensions = new Set((builtins.extensions ?? []).map(normalizeName));
   for (const item of items) {
-    if (!STATUS_PATTERN.test(item.status ?? '')) {
+    const pattern = item.kind === 'component' ? COMPONENT_STATUS_PATTERN : STATUS_PATTERN;
+    if (!pattern.test(item.status ?? '')) {
       failures.push({ rule: 'D4', subject: `status:${item.ref}`, refs: [item.ref],
         message: `${item.ref} has status "${item.status}", which is not active, retired or superseded_by:<id>` });
       continue;

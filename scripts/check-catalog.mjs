@@ -18,6 +18,7 @@ import {
   DEFAULT_COMPONENT_SIMILARITY_THRESHOLD,
   DEFAULT_GENERIC_WORDS,
   DEFAULT_SIMILARITY_THRESHOLD,
+  COMPONENT_STATUS_PATTERN,
   JOB_PATTERN,
   STATUS_PATTERN,
   applyBaseline,
@@ -171,7 +172,7 @@ export function checkRowFolder(root, row, catalog) {
     }
     for (const [folder, entry] of Object.entries(listed)) {
       if (entry.status === 'active' && !onDisk.has(folder)) f('components', `missing-${folder}`, `active component ${folder} has no folder`);
-      if (!STATUS_PATTERN.test(entry.status ?? '')) f('components', `status-${folder}`, `component ${folder} has status "${entry.status}"`);
+      if (!COMPONENT_STATUS_PATTERN.test(entry.status ?? '')) f('components', `status-${folder}`, `component ${folder} has status "${entry.status}"`);
       if (entry.status === 'active' && !JOB_PATTERN.test(entry.job ?? '')) f('components', `job-${folder}`, `component ${folder} has no valid job`);
     }
     for (const s of skillFilesIn(root, row.path)) skillFiles.push(s);

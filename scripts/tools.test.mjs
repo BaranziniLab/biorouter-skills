@@ -103,3 +103,24 @@ test('the repository passes its own checks', () => {
   assert.match(run('render-readme.mjs', '--check'), /current/);
   assert.match(run('write-stubs.mjs', '--check'), /every merged or retired folder holds its stub/);
 });
+
+test('merge-rows: incoming fields win, unknown fields stay, history and boundaries are united', async () => {
+  const { mergeRow } = await import('./merge-rows.mjs');
+  const fx = makeFixture();
+  const existing = { ...fx.catalog.items[2], summary: 'card text', keywords: ['k'], release: { tag: 'skill-gamma', asset: 'gamma.zip', sha256: 'a'.repeat(64) } };
+  existing.components.one.distinct_from = [{ id: 'other/x', boundary: 'b' }];
+  const incoming = {
+    id: 'gamma', version: '1.1.0', job: 'bio.gamma', aliases: ['old-gamma'],
+    history: [{ version: '1.0.0', date: '2026-07-01' }, { version: '1.1.0', date: '2026-11-22', note: 'resync' }],
+    components: { one: { status: 'active', job: 'gamma.one' }, two: { status: 'removed', job: 'gamma.two' } },
+  };
+  const m = mergeRow(existing, incoming, fx.root);
+  assert.equal(m.summary, 'card text');
+  assert.deepEqual(m.keywords, ['k']);
+  assert.equal(m.version, '1.1.0');
+  assert.equal(m.release.sha256, null, 'a new version clears the old digest');
+  assert.deepEqual(m.history.map((h) => h.version), ['1.0.0', '1.1.0']);
+  assert.equal(m.components.one.name, 'gamma-one', 'a missing component name is read from its folder');
+  assert.deepEqual(m.components.one.distinct_from, [{ id: 'other/x', boundary: 'b' }]);
+  assert.deepEqual(m.aliases, ['old-gamma']);
+});
