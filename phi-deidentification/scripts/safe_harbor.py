@@ -240,7 +240,8 @@ def birth_year_pattern(reference_year: int) -> tuple[str, re.Pattern, object]:
 PATTERNS: list[tuple[str, re.Pattern, object]] = [
     ("photo", re.compile(r"(?i)data:image/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=\s]+"), "[PHOTO]"),
     ("url", re.compile(r"(?i)\b(?:https?|s?ftp|file)://[^\s<>\"']+|\bwww\.[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:/[^\s<>\"']*)?"), "[URL]"),
-    ("email", re.compile(r"(?i)(?<![\w.+-])[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}(?![\w-])"), "[EMAIL]"),
+    # An apostrophe may sit inside the local part ("j.o'brien@...").
+    ("email", re.compile(r"(?i)(?<![\w.%+-])[a-z0-9._%+-]+(?:'[a-z0-9._%+-]+)*@[a-z0-9.-]+\.[a-z]{2,}(?![\w-])"), "[EMAIL]"),
     ("device", re.compile(r"(?i)(?<![0-9a-f:-])[0-9a-f]{2}([:-])[0-9a-f]{2}(?:\1[0-9a-f]{2}){4}(?![0-9a-f:-])"), "[DEVICE_ID]"),
     ("device", re.compile(r"(?i)(?<![0-9a-f.])[0-9a-f]{4}\.[0-9a-f]{4}\.[0-9a-f]{4}(?![0-9a-f.])"), "[DEVICE_ID]"),
     ("ip", re.compile(r"(?i)(?<![0-9a-f:])(?:[0-9a-f]{1,4}:){7}[0-9a-f]{1,4}(?![0-9a-f:])"), _ipv6),
@@ -255,7 +256,8 @@ PATTERNS: list[tuple[str, re.Pattern, object]] = [
     ("id", re.compile(r"(?i)(?<![\w&#])#\s?(?P<v>(?=[A-Z0-9-]*\d)[A-Z0-9][A-Z0-9-]{2,}[A-Z0-9])(?![\w-])"), _keep_label("[ID]")),
     ("ssn", re.compile(r"(?i)\b(?:ssn|social\s+security(?:\s+(?:number|no\.?|#))?)\s*[:#]?\s*(?P<v>\d{3}[\s-]?\d{2}[\s-]?\d{4})(?!\d)"), _keep_label("[SSN]")),
     ("ssn", re.compile(r"(?<![\d-])\d{3}-\d{2}-\d{4}(?![\d-])"), "[SSN]"),
-    ("ssn", re.compile(r"(?<![\d ])\d{3} \d{2} \d{4}(?![\d ])"), "[SSN]"),
+    # Spaced: a space before it is fine ("ss# 123 45 6789"), a digit and a space is not.
+    ("ssn", re.compile(r"(?<!\d)(?<!\d )\d{3} \d{2} \d{4}(?!\d)(?! \d)"), "[SSN]"),
     ("health_plan", re.compile(r"(?i)(?<![A-Z0-9])[1-9][AC-HJKMNP-RT-Y][AC-HJKMNP-RT-Y0-9]\d-?[AC-HJKMNP-RT-Y][AC-HJKMNP-RT-Y0-9]\d-?[AC-HJKMNP-RT-Y]{2}\d{2}(?![A-Z0-9])"), "[HEALTH_PLAN_ID]"),
     ("account", re.compile(r"(?i)(?<![A-Z0-9])[A-Z]{2}\d{2}(?:\s?[A-Z0-9]{4}){2,7}(?:\s?[A-Z0-9]{1,3})?(?![A-Z0-9])"), _iban),
     # Card-style numbers written in groups (contiguous ones fall to the long-number rule).
@@ -295,9 +297,20 @@ PATTERNS: list[tuple[str, re.Pattern, object]] = [
     ("name", re.compile(r"\b(?:Mr|Mrs|Ms|Mx|Miss|Dr|Prof)\.?\s+[A-Z][a-zA-Z'-]+(?:\s+[A-Z][a-zA-Z'-]+){0,2}"), "[NAME]"),
     ("name", re.compile(r"(?i:\b" + NAME_LABELS + r")\s*[:=]?\s*(?P<v>[A-Z][a-zA-Z'-]+(?:[\s,]+[A-Z][a-zA-Z'-]+){0,3})"), _keep_label("[NAME]")),
     # Ages over 89.
-    ("age", re.compile(r"(?i)\b(?:" + AGE_NUM + "|" + AGE_WORD + r")\s*-?\s*(?:years?(?:[\s-]*old)?|yrs?|y\.?o\.?|yo)(?![\w])"), _age90),
+    ("age", re.compile(r"(?i)\b(?:" + AGE_NUM + "|" + AGE_WORD + r")\s*-?\s*(?:years?(?:[\s-]*old)?|yrs?|y/o|y\.?o\.?|yo)(?![\w])"), _age90),
     # "(?![\d.+])" keeps "aged 90+" from matching again.
     ("age", re.compile(r"(?i)\b(?P<label>age[ds]?)\s*[:=]?\s*(?:" + AGE_NUM + r"(?![\d.+])|" + AGE_WORD + r"\b)"), _age_label),
+    # "92F" or "92 M" at the start of a cell or after "a"/"an" ("a 92F with CHF"); a
+    # temperature ("temp 98F") has neither.
+    ("age", re.compile(r"(?:^\s*|(?<=\b[Aa] )|(?<=\b[Aa]n ))(?P<v>" + AGE_NUM + r")(?=\s?[MF](?![\w]))"), _keep_label("90+")),
+    # "pt is 91", "she was 93", unless a unit follows ("he is 95 kg").
+    ("age", re.compile(r"(?i)\b(?:pt|patient|he|she|who)\s+(?:is|was)\s+(?P<v>" + AGE_NUM + r")(?![\d.%+])"
+                       r"(?!\s*(?:%|percent|kg|kgs|lbs?|pounds|cm|mm|mg|bpm|beats|mmhg|degrees|°)(?![a-z]))"),
+     _keep_label("90+")),
+    # "in her 90s", "in his late nineties"; "in the 90s" (a blood pressure or a saturation) is left alone.
+    ("age", re.compile(r"(?i)\bin\s+(?:his|her|their)\s+(?P<v>(?:(?:early|mid|late)[\s-]+)?(?:9\d'?s|nineties|1\d\d'?s|hundreds))(?![\w])"),
+     _keep_label("90+")),
+    ("age", re.compile(r"(?i)\b(?:super)?(?:nonagenarian|centenarian)s?\b"), "[90_OR_OLDER]"),
     # Photographs and biometric templates.
     ("photo", re.compile(r"(?i)(?<![\w.-])[\w./\\~:-]*[\w-]\.(?:jpe?g|png|gif|bmp|tiff?|heic|heif|webp|dcm|dicom)(?![\w])"), "[IMAGE_FILE]"),
     ("biometric", re.compile(r"(?i)(?<![0-9a-f])[0-9a-f]{32,}(?![0-9a-f])"), "[BIOMETRIC_OR_CODE]"),
@@ -584,13 +597,20 @@ def name_rule(header: str) -> tuple[str, str, str] | None:
             "city", "town", "village", "municipality", "county", "parish", "borough",
             "precinct", "neighborhood", "neighbourhood", "census tract", "census block",
             "block group", "fips", "geocode", "geohash", "latitude", "longitude",
-            "coordinates", "gps", "place of residence", "home location") \
-            or whole in ("lat", "lon", "lng", "long", "residence"):
+            "coordinates", "gps", "place of residence", "home location", "hometown",
+            "home town", "locality", "suburb", "district", "subdistrict", "township",
+            "hamlet") \
+            or whole in ("lat", "lon", "lng", "long", "residence", "pob", "pob city", "pob town"):
         return ("geography smaller than a state", "redact", "address")
 
     # 1: names of the person, relatives, household members and employers.
     if ts & {"employer", "workplace"} or _has(t, "next of kin", "emergency contact"):
         return ("relative, household member or employer", "redact", "name")
+    if whole in RELATIVE_HEADERS:
+        return ("relative or contact of the person", "redact", "name")
+    if _has(t, "fname", "lname", "mname", "forename", "forenames") or whole == "nm" \
+            or ("nm" in ts and ts & NM_PERSON_WORDS):
+        return ("name", "pseudonym_name", "name")
     if _has(t, "name", "names", "surname", "firstname", "lastname", "fullname", "middlename",
             "givenname", "familyname", "maidenname", "patientname", "ptname", "initials",
             "alias", "nickname"):
@@ -601,9 +621,63 @@ def name_rule(header: str) -> tuple[str, str, str] | None:
         if ts & NOT_A_PERSON_NAME:
             return None
         return ("name", "pseudonym_name", "name")
-    if whole in ("patient", "pt", "person", "nok"):
-        return ("name", "pseudonym_name", "name")
+    if whole in PERSON_HEADERS:
+        return ("name or identifier of the person", "pseudonym_name", "name")
     return None
+
+
+# A whole column name that is a relative or a contact: the values are that person's
+# name (or identifier). Redacted, never kept.
+RELATIVE_HEADERS = {"spouse", "mother", "father", "guardian", "husband", "wife", "caregiver",
+                    "carer", "informant"}
+# A whole column name that is the person: participant, proband, ... Pseudonymized.
+PERSON_HEADERS = {"patient", "pt", "person", "nok", "participant", "participants", "proband",
+                  "probands", "individual", "client", "respondent", "enrollee", "enrolee",
+                  "decedent", "interviewee"}
+# "nm" is a name only next to one of these ("pt_nm", "first_nm"); in "wavelength_nm"
+# it is nanometres.
+NM_PERSON_WORDS = {"pt", "patient", "first", "last", "full", "given", "family", "person",
+                   "member", "subject", "participant", "middle", "maiden", "mother", "father",
+                   "spouse", "contact", "client"}
+
+
+def _hints(words: str, finding: str, action: str, phi: str, numbers_are_ids: bool) -> dict:
+    return {w: (finding, action, phi, numbers_are_ids) for w in words.split(",")}
+
+
+# Whole column names that usually hold a person's or a place's name but have other uses
+# ("Insured" can be yes or no, "Region" a census region or a brain region). They are
+# pseudonymized or redacted by default, like any column the scanner cannot vouch for,
+# and the person can keep one with --keep after checking it.
+NAME_HINT_HEADERS = {
+    **_hints("subject,subjects,member,insured,donor,recipient,resident,policyholder",
+             "a person's name or identifier", "pseudonym_name", "name", True),
+    **_hints("first,last,given,middle,maiden,first last,last first",
+             "a first, last or given name", "pseudonym_name", "name", False),
+    **_hints("parent,parents,partner,sibling,siblings,brother,sister,son,daughter,child,"
+             "children,relative,relatives,contact,contacts,family,household,friend",
+             "a relative's or contact's name", "redact", "name", False),
+    **_hints("region,home,place,origin,community,locale",
+             "a place smaller than a state", "redact", "address", False),
+    **_hints("company,organization,organisation,business,firm,school,college,university",
+             "an employer's or a school's name", "redact", "name", False),
+}
+
+
+def name_hint_rule(header: str, values: list[str]) -> tuple[str, str, str] | None:
+    """(finding, action, phi type) for a column whose whole name is one of
+    NAME_HINT_HEADERS, unless every value is a common category word ("Yes", "Mother")
+    or, where numbers are not identifiers, every value is a number."""
+    hint = NAME_HINT_HEADERS.get(" ".join(column_tokens(header)))
+    if not hint:
+        return None
+    finding, action, phi, numbers_are_ids = hint
+    vals = _shape_values(values)
+    if not vals or all(_is_category_value(v) for v in vals):
+        return None
+    if not numbers_are_ids and all(is_number(v) for v in vals):
+        return None
+    return (f"column name: may hold {finding}", action, phi)
 
 
 def locale_name_rule(header: str, locale: dict) -> tuple[str, str, str] | None:
@@ -628,6 +702,100 @@ def _shape_values(values: list[str]) -> list[str]:
     """The values a shape rule looks at: no blanks, placeholders or missing-value words."""
     return [v.strip() for v in values
             if v.strip() and not PLACEHOLDER.fullmatch(v.strip()) and v.strip().lower() not in MISSING_VALUES]
+
+
+# Category words: a value made only of these is a coded vocabulary, not a name.
+CATEGORY_WORDS = frozenset("""
+male female man woman men women boy girl other others intersex nonbinary non-binary transgender
+trans cisgender yes no y n true false t f present absent positive negative pos neg detected
+undetected reactive nonreactive non-reactive normal abnormal high low medium mid moderate mild
+severe critical none any some all ok done pending complete completed incomplete partial final
+preliminary active inactive resolved chronic acute alive dead deceased living expired died
+death survived never former current ever past daily weekly monthly occasional occasionally
+quit smoker nonsmoker non-smoker smoking drinker nondrinker heavy light white black asian
+african american indian alaska alaskan native hawaiian pacific islander hispanic latino
+latina latinx non-hispanic caucasian multiracial multiple race mixed middle eastern arab
+south east north west southeast southwest northeast northwest central single married
+divorced widowed separated partnered domestic partner left right bilateral both midline
+unilateral placebo control controls case cases treatment treated untreated intervention
+exposed unexposed baseline screening follow-up followup randomized randomised enrolled
+withdrawn ongoing terminated inpatient outpatient emergency ambulatory observation elective
+urgent routine hospice rehab rehabilitation home nursing facility skilled health care
+discharged transferred admitted english spanish chinese mandarin cantonese vietnamese
+tagalog korean russian arabic french german portuguese japanese hindi italian polish
+monday tuesday wednesday thursday friday saturday sunday january february march april may
+june july august september october november december spring summer autumn fall winter
+mother father parent parents spouse sibling child son daughter brother sister grandparent
+grandmother grandfather guardian friend self relative husband wife aunt uncle cousin
+not or and of to the a an in on with without unknown declined refused missing applicable
+available reported stated prefer say decline answer
+""".split())
+# Column names that say what category a value belongs to; their values are not read as names.
+CATEGORY_HEADER_WORDS = frozenset("""
+sex gender race ethnicity ethnic ancestry smoking smoker tobacco alcohol drinking status
+vital outcome outcomes result results diagnosis diagnoses dx diag drug drugs medication
+medications med meds treatment treatments therapy regimen arm procedure procedures test
+tests lab labs specimen sample organism pathogen bacteria virus antibiotic condition
+conditions disease diseases problem comorbidity comorbidities symptom symptoms allergy
+allergies allergen vaccine gene genes protein variant mutation tissue cancer tumor tumour
+histology stage grade severity type subtype category class phenotype genotype response
+marital language laterality side blood specialty speciality department dept service unit
+ward disposition source route modality method indication complication complications event
+events adverse toxicity cohort group visit diet education insurance payer
+""".split())
+NAME_PARTICLES = frozenset({"van", "von", "de", "der", "den", "da", "di", "del", "della", "dos",
+                            "du", "la", "le", "bin", "ibn", "al", "el", "y", "e", "st", "ter",
+                            "ten", "ap"})
+
+
+def _is_category_value(v: str) -> bool:
+    words = re.findall(r"[^\W\d_]+(?:['’-][^\W\d_]+)*", v.lower())
+    return bool(words) and not re.search(r"\d", v) and all(w in CATEGORY_WORDS for w in words)
+
+
+def name_shaped(value: str) -> bool:
+    """True for one to four capitalised words ("Alice", "Bob Zeller", "Zeller, Alice",
+    "O'Brien", "ZELLER ALICE", "San Francisco") that are not all category words."""
+    s = value.strip()
+    if not s or PLACEHOLDER.search(s) or s.lower() in MISSING_VALUES or _is_category_value(s):
+        return False
+    words = [w for w in re.split(r"[\s,]+", s) if w]
+    if not 1 <= len(words) <= 4:
+        return False
+    title = caps = 0
+    for i, w in enumerate(words):
+        core = re.sub(r"['’.-]", "", w)
+        if not core or not core.isalpha():
+            return False
+        if i and w.lower() in NAME_PARTICLES:
+            continue
+        if len(core) == 1:
+            if not core.isupper():
+                return False
+        elif core[0].isupper() and any(c.islower() for c in core[1:]):
+            title += 1
+        elif core.isupper():
+            caps += 1
+        else:
+            return False
+    # An all-capital word alone is more often a code ("COPD", "ICU") unless it is long.
+    return bool(title or caps >= 2 or (caps == 1 and len(words) == 1 and len(words[0]) >= 4))
+
+
+def name_shape_rule(header: str, values: list[str]) -> tuple[str, str, str, int] | None:
+    """(finding, action, phi type, cells) for a text column holding values shaped like
+    names of people or places, under a name that does not say what category they are."""
+    if set(column_tokens(header)) & CATEGORY_HEADER_WORDS:
+        return None
+    vals = _shape_values(values)
+    if not vals or all(is_number(v) for v in vals):
+        return None
+    shaped = {v for v in set(vals) if name_shaped(v)}
+    if not shaped:
+        return None
+    return (f"text values shaped like names or places ({len(shaped)} of {len(set(vals))} distinct "
+            "values are capitalised words that are not common category words)", "redact", "name",
+            sum(1 for v in vals if v in shaped))
 
 
 def value_shape_rule(header: str, values: list[str], reference_year: int) -> tuple[str, str, str, int] | None:
@@ -744,6 +912,8 @@ def decide_columns(data: list[dict], headers: list[str], locale: dict, scrubber:
             elif upstream.looks_like_free_text(nonempty):
                 d.update(kind="uncertain", finding="free text (names inside text cannot be found)",
                          action="redact", phi_type="free_text")
+            elif hint := name_hint_rule(col, nonempty):
+                d.update(kind="uncertain", finding=hint[0], action=hint[1], phi_type=hint[2])
             elif (shape := value_shape_rule(col, nonempty, reference_year)) and shape[2] != "zip":
                 d.update(kind="uncertain", finding=f"values: {shape[0]}", action=shape[1], phi_type=shape[2])
             elif upstream.is_high_cardinality_numeric(nonempty):
@@ -756,8 +926,13 @@ def decide_columns(data: list[dict], headers: list[str], locale: dict, scrubber:
                 d.update(kind="uncertain",
                          finding=f"many distinct text values ({len(set(nonempty))} of {len(nonempty)}): possible names or codes",
                          action="redact", phi_type="unknown")
+            elif names := name_shape_rule(col, nonempty):
+                d.update(kind="uncertain", finding=f"values: {names[0]}", action=names[1], phi_type=names[2])
             else:
                 d.update(kind="none", finding="no identifier found", action="keep", phi_type=None)
+        # Text the scanner keeps can still hold a name it has no way to see (lower case,
+        # a category word, a single all-capital word); the plan lists these for the person.
+        d["text"] = any(not is_number(v) for v in _shape_values(values))
         decisions.append(d)
 
     # Latitude and longitude under names the rules above do not know.
@@ -960,7 +1135,8 @@ def residual_findings(rows: list[dict], headers: list[str], decisions: list[dict
     shape_checked = [(i, [str(row.get(col, "") or "") for row in rows])
                      for i, col in enumerate(headers, start=1)
                      if actions[i] == "keep" and i not in kept_on_request]
-    shapes = {i: value_shape_rule(headers[i - 1], vals, reference_year) for i, vals in shape_checked}
+    shapes = {i: value_shape_rule(headers[i - 1], vals, reference_year) or name_shape_rule(headers[i - 1], vals)
+              for i, vals in shape_checked}
     pairs = coordinate_pairs(shape_checked)
     for i, col in enumerate(headers, start=1):
         action = actions[i]
@@ -1044,6 +1220,16 @@ def print_plan(decisions: list[dict], withheld: set[int], changed: dict | None =
     kept = [display_name(d, withheld) for d in decisions if d["action"] == "keep"]
     if kept:
         print("  Kept (identifier patterns inside them are replaced): " + ", ".join(kept))
+    text = kept_text_columns(decisions)
+    if text:
+        print("  Kept text the scanner cannot fully check for names (a name in lower case, a short")
+        print("  all-capital name, or any name under a category column such as diagnosis): "
+              + ", ".join(display_name(d, withheld) for d in text))
+        print("  Ask the person to confirm these hold no names, places or other identifiers.")
+
+
+def kept_text_columns(decisions: list[dict]) -> list[dict]:
+    return [d for d in decisions if d["action"] == "keep" and d.get("text") and d["kind"] != "allowed"]
 
 
 def load_input(path: Path, scrubber: Scrubber):
@@ -1053,6 +1239,7 @@ def load_input(path: Path, scrubber: Scrubber):
     headers = list(meta.get("headers") or [])
     if not headers:
         raise UsageError("the file has no header row")
+    refuse_other_separator(headers)
     if not data:
         raise UsageError("the file has a header row but no data rows")
     looks = {i for i, h in enumerate(headers, start=1) if header_looks_like_value(h, scrubber)}
@@ -1061,6 +1248,16 @@ def load_input(path: Path, scrubber: Scrubber):
             f"the first row looks like data rather than column names ({len(looks)} of "
             f"{len(headers)} header cells look like values). Add a header row and run again.")
     return data, meta, headers, looks
+
+
+def refuse_other_separator(headers: list[str]) -> None:
+    """A file read as one column whose name holds ';', '|' or a tab uses another separator:
+    every row would be one long text value. The message names no header, which in a
+    pivoted table can be a person's name."""
+    if len(headers) == 1 and any(c in str(headers[0]) for c in ";|\t"):
+        raise UsageError("the file was read as one column whose name contains ';', '|' or a tab, so "
+                         "it uses another column separator. Save it as CSV with commas (or as .tsv "
+                         "with tabs) and run again.")
 
 
 def resolve_locale(args) -> dict:
@@ -1130,13 +1327,21 @@ def cmd_run(args) -> int:
              "name_withheld": d["index"] in withheld,
              "finding": d["finding"], "action": d["action"],
              "kept_on_request": d["kept_on_request"], "redacted_on_request": d["forced_redaction"],
-             "cells_changed": changed.get(d["column"], 0)}
+             "text": d["text"], "cells_changed": changed.get(d["column"], 0)}
             for d in decisions
         ],
         "residual_check": {
             "clean": not residual,
             "findings": [{**f, "column": None if f["index"] in withheld else f["column"]} for f in residual],
         },
+        "kept_text_columns": [
+            {"index": d["index"], "column": None if d["index"] in withheld else d["column"],
+             "kept_on_request": d["kept_on_request"]}
+            for d in kept_text_columns(decisions)
+        ],
+        "kept_text_note": ("Kept text columns can hold names the scanner cannot see (lower case, a short "
+                           "all-capital name, a name under a category column); the person confirms "
+                           "each one holds no identifiers."),
         "mapping_written": False,
         "human_review": ("Automated de-identification is not a Safe Harbor determination. A person "
                          "must spot-check the output, confirm that no remaining information could "
@@ -1185,6 +1390,10 @@ def cmd_run(args) -> int:
     report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print("\nResidual check passed: the output was scanned again and no identifier pattern or "
           "shape was found. This is a pattern check, not proof that the data is de-identified.")
+    text = kept_text_columns(decisions)
+    if text:
+        print(f"Kept text columns the person must confirm hold no names or places ({len(text)}): "
+              + ", ".join(display_name(d, withheld) for d in text))
     print(f"Output: {out_path}")
     print(f"Report: {report_path}")
     if mapping_path is not None:
@@ -1223,6 +1432,7 @@ def cmd_verify(args) -> int:
         raise UsageError(f"file not found: {path}")
     data, meta = upstream.load_tabular(path)
     headers = list(meta.get("headers") or [])
+    refuse_other_separator(headers)
     withheld = {i for i, h in enumerate(headers, start=1) if header_looks_like_value(h, scrubber)}
     decisions, used = report_decisions(path, headers, args.report)
     findings = residual_findings(data, headers, decisions, scrubber, args.reference_year)

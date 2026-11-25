@@ -421,7 +421,9 @@ class NamesAndShapesTheListMisses(unittest.TestCase):
                 "sc = s.Scrubber(u.load_locale('us'), 2026)\n"
                 "cases = ['aged 94', 'age: 96', '93 years old', 'aged ninety-two', 'DOB 03/04/1930',\n"
                 "         'MR# 99123', '+14155550134', '37.7749, -122.4194', 'Boston, MA 02134',\n"
-                "         'seen by Dr. Halvorsen on 2024-03-05', 'call (415) 555-0134']\n"
+                "         'seen by Dr. Halvorsen on 2024-03-05', 'call (415) 555-0134',\n"
+                "         '92 y/o female', 'a 92F with CHF', 'pt is 91', 'in her 90s', 'nonagenarian',\n"
+                "         \"j.o'brien+clinic@uni-x.ac.uk\", 'ss# 123 45 6789']\n"
                 "again = [c for c in cases if sc.find(sc.scrub(c)[0])]\n"
                 "print('again:', again)\n"
                 "raise SystemExit(1 if again else 0)\n")
@@ -440,6 +442,137 @@ class NamesAndShapesTheListMisses(unittest.TestCase):
         p, _ = self.run_file(FIXTURE)
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         self.assertIn("pattern check, not proof", p.stdout)
+
+    def test_kept_text_loses_age_email_and_ssn_shorthand(self):
+        values = ["92 y/o female", "a 92F with CHF", "pt is 91", "in her 90s", "nonagenarian",
+                  "j.o'brien+clinic@uni-x.ac.uk", "ss# 123 45 6789",
+                  # Not ages, and left alone: a temperature, a saturation, a weight.
+                  "temp 98F", "sats in the 90s", "he is 95 kg"]
+        raw = write_csv(self.tmp / "shorthand.csv", ["ref", "sex"], [[v, "F"] for v in values])
+        p, out = self.run_file(raw, "--keep", "ref")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual([r["ref"] for r in out], [
+            "90+ years female", "a 90+F with CHF", "pt is 90+", "in her 90+", "[90_OR_OLDER]",
+            "[EMAIL]", "ss# [SSN]", "temp 98F", "sats in the 90s", "he is 95 kg"])
+
+
+class NamesUnderUnlistedHeaders(unittest.TestCase):
+    """Names and places under column names the first rules did not know, with values
+    that repeat across visits, so the distinct-values rule never fires (second review
+    of 2026-11-25). Every name and place here is invented."""
+
+    PEOPLE = [("Alice", "Zeller", "Bob Zeller", "Fresno", "Bolinas", "Fatima Zeller"),
+              ("Odile", "Varga", "Imre Varga", "Tulare", "Inverness", "Hajna Varga"),
+              ("Kenji", "Moreau", "Lise Moreau", "Visalia", "Olema", "Noor Moreau")]
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="safe_harbor_test_"))
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def raw_strings(self) -> set[str]:
+        out = set()
+        for person in self.PEOPLE:
+            for v in person:
+                out.update(w for w in v.split() if len(w) >= 4)
+        return out
+
+    def run_file(self, path: Path, *extra: str) -> tuple[subprocess.CompletedProcess, list[dict], Path]:
+        out_dir = self.tmp / "out"
+        p = run("run", str(path), "-o", str(out_dir), "--reference-year", REFERENCE_YEAR, *extra)
+        out = out_dir / f"{path.stem}_deidentified.csv"
+        return p, (read_rows(out) if out.exists() else []), out_dir / "deidentification_report.json"
+
+    def test_person_relative_and_place_column_names(self):
+        header = ["First", "Last", "Spouse", "Hometown", "Suburb", "Participant", "Subject", "Proband",
+                  "Individual", "Client", "Mother", "Guardian", "Fname", "Nm", "Pt Nm", "Given",
+                  "Family", "Locality", "District", "POB", "Company", "Contact", "sex"]
+        rows = []
+        for i in range(100):
+            f, last, spouse, town, suburb, mother = self.PEOPLE[i % 3]
+            full = f"{f} {last}"
+            rows.append([f, last, spouse, town, suburb, full, full, full, full, full, mother, spouse,
+                         f, full, full, f, last, suburb, suburb, town, f"{last} Farms", spouse,
+                         "F" if i % 2 else "M"])
+        p, out, report = self.run_file(write_csv(self.tmp / "longitudinal.csv", header, rows))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        text = (self.tmp / "out" / "longitudinal_deidentified.csv").read_text(encoding="utf-8")
+        shown = p.stdout + p.stderr + report.read_text(encoding="utf-8")
+        for s in sorted(self.raw_strings()):
+            self.assertNotIn(s, text, "raw name or place in the output")
+            self.assertNotIn(s, shown, "raw name or place printed or reported")
+        for col in ("First", "Last", "Participant", "Subject", "Proband", "Individual", "Client",
+                    "Fname", "Nm", "Pt Nm", "Given"):
+            self.assertTrue(all(re.fullmatch(r"P\d{4}", r[col]) for r in out), col)
+        for col in ("Spouse", "Hometown", "Suburb", "Mother", "Guardian", "Family", "Locality",
+                    "District", "POB", "Company", "Contact"):
+            self.assertEqual({r[col] for r in out}, {"[REDACTED]"}, col)
+        self.assertEqual([r["sex"] for r in out], [row[-1] for row in rows])
+        # Rows of one person keep one pseudonym.
+        self.assertEqual(out[0]["Participant"], out[3]["Participant"])
+
+    def test_unambiguous_names_cannot_be_kept_and_ambiguous_ones_can(self):
+        header = ["Mother", "Spouse", "Hometown", "Subject", "Insured", "Children", "wavelength_nm", "sex"]
+        rows = [[p[5], p[2], p[3], f"{p[0]} {p[1]}", "Yes" if i % 2 else "No", str(i % 4), "532",
+                 "F" if i % 2 else "M"] for i, p in enumerate(self.PEOPLE * 10)]
+        raw = write_csv(self.tmp / "kinds.csv", header, rows)
+        for col in ("Mother", "Spouse", "Hometown"):
+            refused = run("plan", str(raw), "--keep", col)
+            self.assertEqual(refused.returncode, 2, col)
+            self.assertIn("cannot be kept", refused.stderr)
+        p, out, _ = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertTrue(all(re.fullmatch(r"P\d{4}", r["Subject"]) for r in out))
+        # A yes/no column and counts under such a name are kept as they are.
+        for i, col in enumerate(header):
+            if col in ("Insured", "Children", "wavelength_nm", "sex"):
+                self.assertEqual([r[col] for r in out], [row[i] for row in rows], col)
+        kept = run("plan", str(raw), "--keep", "Subject")
+        self.assertEqual(kept.returncode, 0, kept.stderr)
+        self.assertIn("[kept on request]", kept.stdout)
+
+    def test_values_shaped_like_names_under_unknown_column_names(self):
+        header = ["x1", "x2", "x3", "x4", "diagnosis", "race", "note", "code"]
+        rows = []
+        for i in range(60):
+            f, last, _, town, _, _ = self.PEOPLE[i % 3]
+            rows.append([f"{f} {last}", town, f"{last.upper()}, {f.upper()}", f"{last}, {f}",
+                         ["Asthma", "Heart Failure", "COPD"][i % 3], ["White", "Asian", "Black or African American"][i % 3],
+                         "ok" if i % 2 else "repeat", ["E11.9", "J45.909", "I50.9"][i % 3]])
+        raw = write_csv(self.tmp / "unknown.csv", header, rows)
+        p, out, report = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertIn("shaped like names or places", p.stdout)
+        for col in ("x1", "x2", "x3", "x4"):
+            self.assertEqual({r[col] for r in out}, {"[REDACTED]"}, col)
+        for i, col in enumerate(header[4:], start=4):
+            self.assertEqual([r[col] for r in out], [row[i] for row in rows], col)
+        # Kept text is listed for the person to confirm, in the output and the report.
+        self.assertIn("Kept text the scanner cannot fully check", p.stdout)
+        self.assertIn("must confirm hold no names", p.stdout)
+        listed = [d["column"] for d in json.loads(report.read_text(encoding="utf-8"))["kept_text_columns"]]
+        self.assertEqual(listed, ["diagnosis", "race", "note", "code"])
+        shown = p.stdout + p.stderr + report.read_text(encoding="utf-8")
+        for s in sorted(self.raw_strings()):
+            self.assertNotIn(s, shown)
+            self.assertNotIn(s.upper(), shown)
+        # verify finds the same names in a file that has no report.
+        bad = run("verify", str(raw), "--reference-year", REFERENCE_YEAR)
+        self.assertEqual(bad.returncode, 3, bad.stdout + bad.stderr)
+        for s in sorted(self.raw_strings()):
+            self.assertNotIn(s, bad.stdout + bad.stderr)
+
+    def test_a_file_with_another_separator_is_refused(self):
+        for name, sep in (("semi.csv", ";"), ("pipe.txt", "|"), ("tabs.csv", "\t")):
+            path = self.tmp / name
+            path.write_text(sep.join(["site", "Alice Zeller", "result"]) + "\n"
+                            + sep.join(["A", "1", "2"]) + "\n", encoding="utf-8")
+            for cmd in (["plan", str(path)], ["verify", str(path)]):
+                p = run(*cmd)
+                self.assertEqual(p.returncode, 2, (name, cmd[0], p.stdout + p.stderr))
+                self.assertIn("another column separator", p.stderr)
+                self.assertNotIn("Zeller", p.stdout + p.stderr)
 
 
 class NoNetwork(unittest.TestCase):

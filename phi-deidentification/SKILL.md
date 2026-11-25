@@ -97,16 +97,23 @@ python3 scripts/safe_harbor.py plan /path/to/export.csv
 It writes nothing and prints one line per column: the action and the reason. Show the
 person that table and explain the three groups:
 
-- **Identifiers by name** (`patient_name`, `dob`, `born`, `byear`, `age_group`, `zip_code`,
-  `mrn`, ...) are replaced and cannot be kept.
-- **Columns the scanner cannot vouch for** (free text, unique numbers, mostly distinct
-  text, some cells with identifier patterns, and numbers shaped like ZIP codes, latitude
-  and longitude, or birth years of people over 89) are redacted, or for old years grouped
-  as `[90_OR_OLDER]`. Ask the person whether any of them is safe to keep, for example a
-  diagnosis column or a pair of score columns read as coordinates. Free text can never
-  be kept.
-- **Kept columns** stay, with any identifier pattern inside a cell replaced. Ask the person
-  to confirm none of them holds names or other identifiers the patterns cannot see.
+- **Identifiers by name** (`patient_name`, `fname`, `participant`, `proband`, `mother`,
+  `spouse`, `dob`, `born`, `byear`, `age_group`, `zip_code`, `hometown`, `suburb`, `mrn`,
+  ...) are replaced and cannot be kept.
+- **Columns the scanner cannot vouch for** are redacted or pseudonymized, or for old years
+  grouped as `[90_OR_OLDER]`: free text, unique numbers, mostly distinct text, some cells
+  with identifier patterns, numbers shaped like ZIP codes, latitude and longitude, or birth
+  years of people over 89, text values shaped like names or places (capitalised words that
+  are not common category words such as Male, White or Never), and columns whose name
+  usually holds a name or a place but has other uses (`Subject`, `First`, `Last`,
+  `Contact`, `Family`, `Region`, `Home`, `Company`, `School`). Ask the person whether any of
+  them is safe to keep, for example a site column of hospital names or a pair of score
+  columns read as coordinates. Free text can never be kept.
+- **Kept columns** stay, with any identifier pattern inside a cell replaced. The plan lists
+  the kept text columns again on their own. Ask the person to confirm, column by column,
+  that none of them holds names, places or other identifiers the scanner cannot see: a
+  name in lower case, a short all-capital name, or a name in a column named for a category
+  such as diagnosis.
 
 Then add `--keep COLUMN` for each column the person confirmed, and `--redact COLUMN` for any
 column they want removed. A column can also be named `#N` (its position).
@@ -125,7 +132,7 @@ folder, then scans the output again. Exit codes:
 | Exit | Meaning | What to do |
 |---|---|---|
 | 0 | Done; the residual check found no identifier pattern or shape (a pattern check, not proof) | Report the summary and the human spot-check requirement |
-| 2 | Refused (unknown column, a request to keep an identifier or free text, a first row that looks like data, an unreadable file) | Pass on the message; fix the options, or ask the person to fix the file |
+| 2 | Refused (unknown column, a request to keep an identifier or free text, a first row that looks like data, a file separated by `;` or `\|`, an unreadable file) | Pass on the message; fix the options, or ask the person to fix the file |
 | 3 | The residual check found identifiers; nothing was written | Rerun with `--redact` for the columns it names |
 
 To check an output again later: `python3 scripts/safe_harbor.py verify <output file>`
@@ -137,6 +144,8 @@ Tell the person, in their language:
 
 - how many rows and columns were processed, which columns were replaced, redacted or kept,
   and how many cells changed (all from the report);
+- which kept columns hold text (`kept_text_columns` in the report), and that the person has
+  to confirm each one holds no names or places;
 - that the output must be spot-checked by a person before it leaves the institution, and
   what to look for: names or other identifiers in kept text columns, a ZIP code or other
   location in a column not named for it, rare values or combinations that could single
@@ -173,7 +182,9 @@ determination covers it.
 `references/safe-harbor-mode.md` lists, for each of the 18 identifiers, what the script
 replaces and what a person still has to check. In short, it does not:
 
-- find names written in kept text without a title or label ("seen by Halvorsen");
+- find names written in kept text without a title or label ("seen by Halvorsen"), names
+  in lower case or as a short all-capital word, or names in a column named for a category
+  (diagnosis, drug, race), which it does not read as names;
 - recognise a bare five-digit ZIP code inside text, a column of ZIP codes that mostly
   lost their leading zero under a name it does not know, or a local seven-digit phone
   number without a label;
