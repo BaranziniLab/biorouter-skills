@@ -5,7 +5,7 @@ license: Apache-2.0 AND MIT
 compatibility: "Python 3.9 or later, standard library only; openpyxl for .xlsx files. Runs locally and makes no network calls."
 user-invocable: true
 metadata:
-  version: "1.0.0"
+  version: "1.0.1"
   origin: "adapted"
   upstream: "Aperivue/medsci-skills/skills/deidentify@7e9d133dd0216c29b0e030729e3719c3db5e0973"
   upstream_licence: "MIT"
@@ -104,16 +104,19 @@ person that table and explain the three groups:
   grouped as `[90_OR_OLDER]`: free text, unique numbers, mostly distinct text, some cells
   with identifier patterns, numbers shaped like ZIP codes, latitude and longitude, or birth
   years of people over 89, text values shaped like names or places (capitalised words that
-  are not common category words such as Male, White or Never), and columns whose name
-  usually holds a name or a place but has other uses (`Subject`, `First`, `Last`,
-  `Contact`, `Family`, `Region`, `Home`, `Company`, `School`). Ask the person whether any of
+  are not common category words such as Male, White or Never; a category word in the
+  column name does not stop this when the name also names a person or role, as in
+  `Treatment Physician` or `Event Patient`), and columns whose name usually holds a name or
+  a place but has other uses (`Subject`, `First`, `Last`, `Contact`, `Family`, `Region`,
+  `Home`, `Company`, `School`). Ask the person whether any of
   them is safe to keep, for example a site column of hospital names or a pair of score
   columns read as coordinates. Free text can never be kept.
 - **Kept columns** stay, with any identifier pattern inside a cell replaced. The plan lists
   the kept text columns again on their own. Ask the person to confirm, column by column,
   that none of them holds names, places or other identifiers the scanner cannot see: a
-  name in lower case, a short all-capital name, or a name in a column named for a category
-  such as diagnosis.
+  name in lower case, a short all-capital name, a name in a column named for a category
+  such as diagnosis, or a place in a state or country column, which Safe Harbor lets the
+  script keep.
 
 Then add `--keep COLUMN` for each column the person confirmed, and `--redact COLUMN` for any
 column they want removed. A column can also be named `#N` (its position).
@@ -133,7 +136,7 @@ folder, then scans the output again. Exit codes:
 |---|---|---|
 | 0 | Done; the residual check found no identifier pattern or shape (a pattern check, not proof) | Report the summary and the human spot-check requirement |
 | 2 | Refused (unknown column, a request to keep an identifier or free text, a first row that looks like data, a file separated by `;` or `\|`, an unreadable file) | Pass on the message; fix the options, or ask the person to fix the file |
-| 3 | The residual check found identifiers; nothing was written | Rerun with `--redact` for the columns it names |
+| 3 | The residual check found identifiers; nothing was written | Rerun with `--redact` for the columns it names. A column named for the shape of its values (names or places, ZIP codes, coordinates, old years) may instead be kept with `--keep` once the person confirms it holds no identifiers |
 
 To check an output again later: `python3 scripts/safe_harbor.py verify <output file>`
 (it reads the report beside the file when there is one).
@@ -163,7 +166,7 @@ hosted inside the institution), read the de-identified file for the analysis.
 When the person needs a paragraph for a manuscript or an IRB, fill this in from the report:
 
 > Direct identifiers were removed before analysis with a rule-based tool run locally,
-> with no network calls (safe_harbor.py, Biorouter phi-deidentification skill 1.0.0,
+> with no network calls (safe_harbor.py, Biorouter phi-deidentification skill 1.0.1,
 > adapted from medsci-skills deidentify). The tool classified each column by name, by
 > value patterns and by the shape of its numbers for the 18 HIPAA Safe Harbor identifier
 > types. Names and record numbers
@@ -183,8 +186,9 @@ determination covers it.
 replaces and what a person still has to check. In short, it does not:
 
 - find names written in kept text without a title or label ("seen by Halvorsen"), names
-  in lower case or as a short all-capital word, or names in a column named for a category
-  (diagnosis, drug, race), which it does not read as names;
+  in lower case, as initials or as a short all-capital word, or names in a column named
+  for a category (diagnosis, drug, race) whose values repeat like a category, which it
+  does not read as names unless the column name also names a person or role;
 - recognise a bare five-digit ZIP code inside text, a column of ZIP codes that mostly
   lost their leading zero under a name it does not know, or a local seven-digit phone
   number without a label;

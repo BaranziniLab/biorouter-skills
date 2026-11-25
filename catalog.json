@@ -13425,7 +13425,7 @@
       "kind": "skill",
       "category": "core",
       "path": "phi-deidentification",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "status": "active",
       "job": "clinical.deidentification",
       "source": {
@@ -13450,6 +13450,11 @@
           "version": "1.0.0",
           "date": "2026-11-25",
           "note": "first release; security review: owner sign-off 2026-11-25"
+        },
+        {
+          "version": "1.0.1",
+          "date": "2026-11-25",
+          "note": "a category word in a column name (Treatment, Lab, Visit) no longer hides names when the name also names a person or role (Treatment Physician, Event Patient), and category columns must also repeat like categories; state and country columns pass the residual check, which honours --keep for shape findings; fewer category columns redacted (Primary Site, Biomarker, long race values)"
         }
       ],
       "card": {

@@ -81,7 +81,7 @@ logging.getLogger("deidentify").setLevel(logging.ERROR)
 # A long note in one cell would otherwise stop the CSV reader (128 KiB default).
 csv.field_size_limit(64 * 1024 * 1024)
 
-SKILL_VERSION = "1.0.0"
+SKILL_VERSION = "1.0.1"
 REPORT_NAME = "deidentification_report.json"
 
 # Three-digit ZIP prefixes whose combined population is 20,000 or fewer, which
@@ -482,6 +482,91 @@ def _is_age_token(token: str) -> bool:
     return bool(AGE_TOKEN.fullmatch(token))
 
 
+# Words that name a person or a role wherever they stand in a column name. A column
+# named with one holds people, so a category word beside it ("Treatment Physician",
+# "Lab Technician", "Physician (Treatment)") never makes its values a category.
+PERSON_ROLE_WORDS = frozenset("""
+physician doctor md surgeon nurse rn np clinician provider practitioner attending hospitalist
+intern fellow technologist midwife midwives pcp author signer cosigner signatory witness
+chaperone interpreter translator scribe courier investigator coordinator administrator manager
+supervisor director mentor leader reporter collector recorder rater reviewer scorer grader
+assessor evaluator examiner observer interviewer abstractor annotator adjudicator auditor
+referrer requester requestor submitter enterer caller spouse husband wife wives mother father
+parent guardian caregiver carer sibling brother sister son daughter kin nok friend neighbor
+neighbour roommate informant respondent proband decedent enrollee enrolee interviewee employee
+employer volunteer trainee teacher counselor counsellor chaplain navigator advocate guarantor
+policyholder visitor customer captain president deputy liaison steward assistant aide clerk
+secretary matron orderly porter registrar prescriber performer operator inspector attendant
+consultant dietitian paramedic medic emt doula nanny sitter babysitter cousin aunt uncle niece
+nephew grandparent grandmother grandfather stepparent stepmother stepfather godparent fiance
+girlfriend boyfriend housemate flatmate classmate coworker colleague boss foreman chairman
+chairperson spokesperson salesperson tenant landlord landlady lodger trustee executor heir
+custodian analyst bystander facilitator recruiter coder escort victim champion handler
+dispatcher perpetrator moderator instructor tutor educator worker staff officer
+""".split())
+# Words that name a person only as the head of the column name, its last word ("Dept
+# Head", "Source Contact", "Event Patient", "Cohort Member"). Before a category word they
+# say whose category it is ("Head Injury Type", "Contact Method", "Patient Diagnosis").
+HEAD_ROLE_WORDS = frozenset("""
+patient pt subject participant member individual person people client resident contact head
+lead chief chair principal pi owner holder donor recipient tech user consumer partner
+relative child children student monitor sponsor sender receiver surrogate proxy
+representative rep delegate driver survivor
+""".split())
+# "-ist" and "-ee" words that are not people.
+NOT_PERSON_IST = frozenset({"assist", "resist", "insist", "consist", "persist", "subsist",
+                            "desist", "exist", "twist", "wrist", "schist", "heist"})
+NOT_PERSON_EE = frozenset({"degree", "committee", "pedigree", "coffee", "toffee", "guarantee",
+                           "jubilee", "settee", "decree", "agree", "disagree", "carefree",
+                           "marquee", "matinee", "filigree", "squeegee", "frisbee", "lychee",
+                           "entree", "soiree", "goatee", "toupee", "levee", "banshee",
+                           "chimpanzee", "fricassee", "dundee", "spondee", "trochee", "bootee"})
+
+
+def _role_word(token: str, words: frozenset) -> bool:
+    if token in words or (token.endswith("s") and token[:-1] in words):
+        return True
+    if words is PERSON_ROLE_WORDS:
+        # Physician, technician; pharmacist, phlebotomist; sonographer; attendee, examinee.
+        word = token[:-1] if token.endswith("s") else token
+        if len(word) >= 7 and word.endswith("ician"):
+            return True
+        if len(word) >= 6 and word.endswith("ist") and not word.endswith("list") \
+                and word not in NOT_PERSON_IST:
+            return True
+        if len(word) >= 9 and word.endswith("grapher"):
+            return True
+        if len(word) >= 6 and word.endswith("ee") and word not in NOT_PERSON_EE:
+            return True
+    return False
+
+
+def person_role_words(tokens: list[str], trailing: frozenset = frozenset()) -> set[str]:
+    """The words of a column name that name a person or a role: one of PERSON_ROLE_WORDS
+    anywhere, one of HEAD_ROLE_WORDS as the last word (numbers and `trailing` words such
+    as "name" after it do not count), and "by" after another word ("Test Ordered By")."""
+    found = {t for t in tokens if _role_word(t, PERSON_ROLE_WORDS)}
+    found.update(t for t in tokens[1:] if t == "by")
+    rest = [t for t in tokens if not t.isdigit()]
+    while rest and rest[-1] in trailing:
+        rest.pop()
+    if rest and _role_word(rest[-1], HEAD_ROLE_WORDS):
+        found.add(rest[-1])
+    return found
+
+
+# Words a person's own name column may carry ("Study Patient Name"), as opposed to the
+# name of a clinician or another person ("Lab Technician Name").
+SELF_WORDS = frozenset({"patient", "patients", "pt", "subject", "subjects", "participant",
+                        "participants", "member", "members", "individual", "individuals",
+                        "person", "people", "client", "clients", "resident", "residents",
+                        "proband", "probands", "respondent", "respondents", "enrollee",
+                        "enrolee", "decedent", "interviewee", "donor", "donors", "recipient",
+                        "recipients"})
+NAME_TRAILING = frozenset({"name", "names", "nm", "initials", "first", "last", "full", "given",
+                           "surname", "surnames", "firstname", "lastname", "fullname"})
+
+
 def name_rule(header: str) -> tuple[str, str, str] | None:
     """(finding, action, phi type) for a column whose name marks a Safe Harbor identifier.
 
@@ -499,7 +584,10 @@ def name_rule(header: str) -> tuple[str, str, str] | None:
     if whole in ("state", "state code", "province", "country", "country code", "state province",
                  "us state", "home state", "residence state", "state of residence",
                  "country of residence", "country of birth", "birth country", "birthcountry",
-                 "state of birth", "birth state", "birthstate"):
+                 "state of birth", "birth state", "birthstate", "country of origin",
+                 "origin country", "country of citizenship", "citizenship", "nationality",
+                 "country name", "state name", "residence country", "home country",
+                 "province of residence"):
         return ("state or country (allowed)", "keep", "allowed_geography")
 
     # 17: full-face photographs and comparable images; 16: biometric identifiers.
@@ -618,7 +706,12 @@ def name_rule(header: str) -> tuple[str, str, str] | None:
             return ("name of a relative or contact", "redact", "name")
         if ts & CLINICIAN_WORDS:
             return ("name of a clinician", "redact", "name")
-        if ts & NOT_A_PERSON_NAME:
+        # A role makes it a person's name even beside "lab" or "study": "Lab Technician
+        # Name", "Specimen Collector Name"; "Study Patient Name" is the person's own.
+        roles = person_role_words(t, NAME_TRAILING)
+        if roles - SELF_WORDS:
+            return ("name of a clinician, staff member or other person", "redact", "name")
+        if ts & NOT_A_PERSON_NAME and not roles:
             return None
         return ("name", "pseudonym_name", "name")
     if whole in PERSON_HEADERS:
@@ -728,9 +821,58 @@ june july august september october november december spring summer autumn fall w
 mother father parent parents spouse sibling child son daughter brother sister grandparent
 grandmother grandfather guardian friend self relative husband wife aunt uncle cousin
 not or and of to the a an in on with without unknown declined refused missing applicable
-available reported stated prefer say decline answer
+available reported stated prefer say decline answer family household multi nuclear extended
+physician physicians doctor nurse nurses practitioner practitioners assistant assistants
+resident residents fellow fellows attending intern interns student students technician
+technologist pharmacist therapist midwife dentist surgeon clinician provider staff specialist
+consultant hospitalist md np pa rn lpn cna do registered licensed certified vocational
+medicine surgery surgical medical internal general primary secondary tertiary specialty
+practice department dept clinic unit service ward center centre hospital office telehealth
+telemedicine virtual visit phone telephone email mail letter text video portal
+breast lung lungs colon rectum rectal colorectal prostate pancreas pancreatic liver hepatic
+kidney kidneys renal bladder brain spine spinal skin bone bones marrow blood heart cardiac
+stomach gastric esophagus esophageal ovary ovarian uterus uterine cervix cervical thyroid
+neck chest abdomen abdominal pelvis pelvic lymph node nodes muscle joint knee hip shoulder
+ankle elbow eye ear nose throat mouth tongue soft tissue upper lower anterior posterior
+lateral medial proximal distal small large cell cells icu nicu picu micu sicu cvicu ccu pacu
+neuro labor delivery stepdown step-down telemetry floor wing virus
+catholic protestant christian muslim islam jewish judaism hindu hinduism buddhist buddhism
+sikh atheist agnostic mormon lds baptist methodist lutheran orthodox evangelical presbyterian
+episcopalian pentecostal adventist quaker unitarian spiritual nonreligious religious
 """.split())
-# Column names that say what category a value belongs to; their values are not read as names.
+# Word endings of medical vocabulary (specialties, diseases, procedures, drug stems), with
+# the shortest word each one counts in. No given name or surname in common use ends this
+# way at that length: "Ingram" is too short for -gram, Lithuanian surnames in -aitis are
+# not -itis.
+CLINICAL_ENDINGS = (
+    ("ology", 7), ("ologic", 8), ("ological", 9), ("iatry", 7), ("iatric", 8), ("iatrics", 9),
+    ("itis", 6), ("osis", 7), ("emia", 6), ("aemia", 7), ("oma", 7), ("omas", 8), ("ectomy", 8),
+    ("otomy", 7), ("ostomy", 8), ("plasty", 8), ("scopy", 8), ("graphy", 8), ("gram", 8),
+    ("pathy", 7), ("algia", 7), ("plegia", 8), ("penia", 8), ("trophy", 7), ("uria", 7),
+    ("ism", 6), ("mab", 7), ("tinib", 7), ("pril", 7), ("olol", 7), ("statin", 8),
+    ("sartan", 8), ("cillin", 8), ("mycin", 8), ("oxacin", 9), ("azole", 8), ("tidine", 9),
+    ("dipine", 9), ("formin", 8), ("gliptin", 9), ("glitazone", 11), ("gliflozin", 11),
+    ("glutide", 9), ("parin", 7), ("platin", 9), ("taxel", 9), ("rubicin", 10), ("ovir", 8),
+    ("avir", 8), ("ivir", 8), ("ercept", 9), ("dronate", 9), ("semide", 9), ("thiazide", 10),
+    ("oxetine", 9), ("azepam", 9), ("triptan", 10), ("lukast", 10), ("olone", 9), ("isone", 9),
+    ("profen", 9), ("fenac", 9), ("coxib", 9), ("caine", 9), ("codone", 9), ("phylline", 10),
+    ("terol", 9), ("tropium", 10), ("cycline", 10), ("penem", 9), ("bactam", 10), ("xaban", 8),
+    ("gatran", 10), ("parib", 9), ("ciclib", 10), ("lisib", 9), ("tecan", 10), ("poside", 9),
+    ("fosfamide", 12), ("phosphamide", 14), ("trexate", 11), ("abine", 9), ("sertib", 10),
+    ("zole", 8), ("xifen", 9), ("coccus", 9), ("cocci", 8), ("bacter", 10), ("monas", 10),
+    ("bacillus", 10),
+)
+NOT_CLINICAL = frozenset({"euphemia", "bohemia"})
+
+
+def _clinical_word(w: str) -> bool:
+    if w in NOT_CLINICAL or (w.endswith("itis") and w[-5:-4] in ("a", "y")):
+        return False
+    return any(len(w) >= n and w.endswith(end) for end, n in CLINICAL_ENDINGS)
+
+
+# Column names that say what category a value belongs to. Their values are not read as
+# names when they also repeat like a category and the name names no person (category_column).
 CATEGORY_HEADER_WORDS = frozenset("""
 sex gender race ethnicity ethnic ancestry smoking smoker tobacco alcohol drinking status
 vital outcome outcomes result results diagnosis diagnoses dx diag drug drugs medication
@@ -741,8 +883,18 @@ allergies allergen vaccine gene genes protein variant mutation tissue cancer tum
 histology stage grade severity type subtype category class phenotype genotype response
 marital language laterality side blood specialty speciality department dept service unit
 ward disposition source route modality method indication complication complications event
-events adverse toxicity cohort group visit diet education insurance payer
+events adverse toxicity cohort group visit diet education insurance payer biomarker biomarkers
+marker markers finding findings impression religion religious faith denomination
 """.split())
+# "site" says what category its values are only after a word that makes it a body site.
+CATEGORY_HEADER_PHRASES = ("primary site", "tumor site", "tumour site", "body site", "anatomic site",
+                           "anatomical site", "biopsy site", "injection site", "infection site",
+                           "surgical site", "metastatic site", "metastasis site", "lesion site",
+                           "cancer site", "disease site")
+# A column whose values repeat like a category: at most this many distinct values, or
+# every distinct value seen at least this many times on average.
+CATEGORY_MAX_DISTINCT = 20
+CATEGORY_MIN_REPEATS = 3
 NAME_PARTICLES = frozenset({"van", "von", "de", "der", "den", "da", "di", "del", "della", "dos",
                             "du", "la", "le", "bin", "ibn", "al", "el", "y", "e", "st", "ter",
                             "ten", "ap"})
@@ -750,7 +902,8 @@ NAME_PARTICLES = frozenset({"van", "von", "de", "der", "den", "da", "di", "del",
 
 def _is_category_value(v: str) -> bool:
     words = re.findall(r"[^\W\d_]+(?:['’-][^\W\d_]+)*", v.lower())
-    return bool(words) and not re.search(r"\d", v) and all(w in CATEGORY_WORDS for w in words)
+    return bool(words) and not re.search(r"\d", v) and all(
+        w in CATEGORY_WORDS or _clinical_word(w) for w in words)
 
 
 def name_shaped(value: str) -> bool:
@@ -769,6 +922,8 @@ def name_shaped(value: str) -> bool:
             return False
         if i and w.lower() in NAME_PARTICLES:
             continue
+        if i and w in ("family", "household"):
+            continue  # "Okafor family"
         if len(core) == 1:
             if not core.isupper():
                 return False
@@ -782,13 +937,35 @@ def name_shaped(value: str) -> bool:
     return bool(title or caps >= 2 or (caps == 1 and len(words) == 1 and len(words[0]) >= 4))
 
 
+def is_allowed_geography(header: str) -> bool:
+    """A state or country column, which Safe Harbor allows to be kept."""
+    rule = name_rule(header)
+    return bool(rule) and rule[2] == "allowed_geography"
+
+
+def category_column(header: str, vals: list[str]) -> bool:
+    """True when the column name says what category its values are ("Diagnosis", "Visit
+    Type", "Primary Site") and names no person or role, and the values repeat like a
+    category. A role anywhere in the name ("Treatment Physician", "Physician (Lab)") or a
+    person as its last word ("Event Patient") makes it a column of people, whose names
+    repeat across visits as much as any category does."""
+    t = column_tokens(header)
+    if not (set(t) & CATEGORY_HEADER_WORDS or _has(t, *CATEGORY_HEADER_PHRASES)):
+        return False
+    if person_role_words(t):
+        return False
+    distinct = len(set(vals))
+    return distinct <= CATEGORY_MAX_DISTINCT or len(vals) >= CATEGORY_MIN_REPEATS * distinct
+
+
 def name_shape_rule(header: str, values: list[str]) -> tuple[str, str, str, int] | None:
     """(finding, action, phi type, cells) for a text column holding values shaped like
-    names of people or places, under a name that does not say what category they are."""
-    if set(column_tokens(header)) & CATEGORY_HEADER_WORDS:
+    names of people or places, unless it is a category column (category_column) or a
+    state or country column, which Safe Harbor allows."""
+    if is_allowed_geography(header):
         return None
     vals = _shape_values(values)
-    if not vals or all(is_number(v) for v in vals):
+    if not vals or all(is_number(v) for v in vals) or category_column(header, vals):
         return None
     shaped = {v for v in set(vals) if name_shaped(v)}
     if not shaped:
@@ -880,8 +1057,10 @@ def decide_columns(data: list[dict], headers: list[str], locale: dict, scrubber:
         values = [str(row.get(col, "") or "") for row in data]
         nonempty = [v for v in values if v.strip()]
         d = {"index": i, "column": col, "kept_on_request": False, "forced_redaction": False}
-        # Free text is never kept: a name inside a sentence has no pattern to find.
-        d["free_text"] = bool(nonempty) and upstream.looks_like_free_text(nonempty)
+        # Free text is never kept: a name inside a sentence has no pattern to find. A long
+        # value made only of category words ("American Indian or Alaska Native") is not text.
+        prose = [v for v in nonempty if not _is_category_value(v)]
+        d["free_text"] = bool(prose) and upstream.looks_like_free_text(prose)
         rule = name_rule(col) or locale_name_rule(col, locale)
         if rule:
             finding, action, phi = rule
@@ -909,7 +1088,7 @@ def decide_columns(data: list[dict], headers: list[str], locale: dict, scrubber:
                 d.update(kind="uncertain",
                          finding=f"values: identifier patterns in {len(hits)} of {len(nonempty)} cells",
                          action="redact", phi_type="mixed")
-            elif upstream.looks_like_free_text(nonempty):
+            elif d["free_text"]:
                 d.update(kind="uncertain", finding="free text (names inside text cannot be found)",
                          action="redact", phi_type="free_text")
             elif hint := name_hint_rule(col, nonempty):
@@ -971,9 +1150,10 @@ def decide_columns(data: list[dict], headers: list[str], locale: dict, scrubber:
                 f"column {ref!r} holds free text; Safe Harbor mode cannot keep it, because names "
                 "inside sentences have no pattern to find. Leave it redacted, or have the person "
                 "review it with deidentify.py in their own terminal.")
-        if d["action"] != "keep":
-            d["action"] = "keep"
-            d["kept_on_request"] = True
+        # Recorded even for a column kept anyway, so the residual check honours the
+        # person's confirmation of its shape (it still scans the cells for patterns).
+        d["action"] = "keep"
+        d["kept_on_request"] = True
     return decisions
 
 
@@ -1223,13 +1403,15 @@ def print_plan(decisions: list[dict], withheld: set[int], changed: dict | None =
     text = kept_text_columns(decisions)
     if text:
         print("  Kept text the scanner cannot fully check for names (a name in lower case, a short")
-        print("  all-capital name, or any name under a category column such as diagnosis): "
-              + ", ".join(display_name(d, withheld) for d in text))
+        print("  all-capital name, any name under a category column such as diagnosis, or a place")
+        print("  under a state or country column): " + ", ".join(display_name(d, withheld) for d in text))
         print("  Ask the person to confirm these hold no names, places or other identifiers.")
 
 
 def kept_text_columns(decisions: list[dict]) -> list[dict]:
-    return [d for d in decisions if d["action"] == "keep" and d.get("text") and d["kind"] != "allowed"]
+    """Kept columns holding text, including state and country columns: their values are
+    not checked for the shape of a name or a place, so the person confirms each one."""
+    return [d for d in decisions if d["action"] == "keep" and d.get("text")]
 
 
 def load_input(path: Path, scrubber: Scrubber):
@@ -1340,8 +1522,8 @@ def cmd_run(args) -> int:
             for d in kept_text_columns(decisions)
         ],
         "kept_text_note": ("Kept text columns can hold names the scanner cannot see (lower case, a short "
-                           "all-capital name, a name under a category column); the person confirms "
-                           "each one holds no identifiers."),
+                           "all-capital name, a name under a category column, a place under a state "
+                           "or country column); the person confirms each one holds no identifiers."),
         "mapping_written": False,
         "human_review": ("Automated de-identification is not a Safe Harbor determination. A person "
                          "must spot-check the output, confirm that no remaining information could "
@@ -1365,7 +1547,9 @@ def cmd_run(args) -> int:
             name = f"#{f['index']} (name withheld)" if f["index"] in withheld else f["column"]
             print(f"  {name}: {f['problem']} in {f['cells']} cell(s)")
         print(f"Report: {report_path}")
-        print("Rerun with --redact for those columns. Do not read the input to find out why.")
+        print("Rerun with --redact for those columns. A column named for the shape of its values "
+              "(names or places, ZIP codes, coordinates, old years) may instead be kept with --keep "
+              "once the person confirms it holds no identifiers. Do not read the input to find out why.")
         return 3
 
     upstream.save_tabular(rows, out_path, upstream.detect_format(input_path))

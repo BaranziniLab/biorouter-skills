@@ -575,6 +575,174 @@ class NamesUnderUnlistedHeaders(unittest.TestCase):
                 self.assertNotIn("Zeller", p.stdout + p.stderr)
 
 
+class CategoryWordsDoNotHideNames(unittest.TestCase):
+    """A category word in a column name ("Treatment", "Lab", "Visit") must not stop the
+    name check when the name also names a person or a role, and a column kept as a state
+    or country must pass the residual check (third review of 2026-11-25, 1.0.1). Every
+    name and place here is invented."""
+
+    FIRST = ["Alvar", "Brisa", "Corwin", "Delphine", "Ezra", "Fenna", "Gideon", "Hollis",
+             "Isolde", "Jarrah", "Kestrel", "Lunet"]
+    LAST = ["Quillfeather", "Marrowby", "Tessaly", "Vonderhaar", "Okonjo", "Pellucidi",
+            "Ashgrove", "Brennagh", "Calloway", "Duskmoor", "Embersley", "Fawnridge"]
+    # The headers of the review, then others built the same way, so the fix is not a list
+    # of these: other roles, a role before the category word, a plural, a numbered column.
+    ROLE_HEADERS = [
+        "Treatment Physician", "Lab Technician", "Visit Provider", "Procedure Surgeon",
+        "Unit Nurse", "Group Leader", "Test Ordered By", "Event Reporter", "Specimen Collector",
+        "Service Chief", "Source Contact", "Dept Head", "Ward Nurse", "Cohort Lead", "Stage Rater",
+        "Study Group Patient", "Visit Subject", "Treatment Participant", "Cohort Member",
+        "Diagnosis Contact", "Type Spouse", "Source Informant", "Ward Resident", "Event Patient",
+        "Lab Individual", "Unit Husband", "Stage Parent", "Race Guardian",
+        "Unit Pharmacist", "Procedure Anesthesiologist", "Event Witness", "Group Coordinator",
+        "Diagnosis Reviewer", "Visit Interpreter", "Physician (Treatment)", "Treatment Physicians",
+        "Lab Technician 2", "Visit Seen By", "Cohort Investigator", "Test Dietician",
+        "Procedure Assistant", "Unit Clerk", "Test Sonographer", "Visit Attendee",
+        "Lab Phlebotomist", "Ward Aide", "Event Grandmother", "Service Liaison",
+    ]
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="safe_harbor_test_"))
+        self.pool = [f"{f} {last}" for f, last in zip(self.FIRST, self.LAST)]
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def run_file(self, path: Path, *extra: str) -> tuple[subprocess.CompletedProcess, list[dict], Path]:
+        out_dir = self.tmp / "out"
+        p = run("run", str(path), "-o", str(out_dir), "--reference-year", REFERENCE_YEAR, *extra)
+        out = out_dir / f"{path.stem}_deidentified{path.suffix}"
+        return p, (read_rows(out) if out.exists() else []), out_dir / "deidentification_report.json"
+
+    def raw_words(self) -> list[str]:
+        return self.FIRST + self.LAST
+
+    def test_names_under_a_category_word_and_a_role_word_are_redacted(self):
+        header = self.ROLE_HEADERS + ["sex"]
+        # 200 visits by a dozen people: the names repeat, so only their shape finds them.
+        rows = [[self.pool[(i * (k + 1)) % len(self.pool)] for k in range(len(self.ROLE_HEADERS))]
+                + ["F" if i % 2 else "M"] for i in range(200)]
+        raw = write_csv(self.tmp / "roles.csv", header, rows)
+        p, out, report = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        text = (self.tmp / "out" / "roles_deidentified.csv").read_text(encoding="utf-8")
+        shown = p.stdout + p.stderr + report.read_text(encoding="utf-8")
+        for w in self.raw_words():
+            self.assertNotIn(w, text, "raw name in the output")
+            self.assertNotIn(w, shown, "raw name printed or reported")
+        for col in self.ROLE_HEADERS:
+            self.assertEqual({r[col] for r in out}, {"[REDACTED]"}, col)
+        self.assertEqual([r["sex"] for r in out], [row[-1] for row in rows])
+        # The residual check finds the same names in a file that has no report.
+        bad = run("verify", str(raw), "--reference-year", REFERENCE_YEAR)
+        self.assertEqual(bad.returncode, 3, bad.stdout + bad.stderr)
+        for col in self.ROLE_HEADERS:
+            self.assertIn(f"{col}: text values shaped like names", bad.stdout)
+        for w in self.raw_words():
+            self.assertNotIn(w, bad.stdout + bad.stderr)
+
+    def test_a_name_column_of_a_role_is_an_identifier(self):
+        header = ["Lab Technician Name", "Study Patient Name", "Specimen Collector Name",
+                  "Trial Participant Name", "Drug Name", "sex"]
+        rows = [[self.pool[i % 12], self.pool[(i + 3) % 12], self.pool[(i + 5) % 12],
+                 self.pool[(i + 7) % 12], ["Metformin", "Lisinopril", "Apixaban"][i % 3],
+                 "F" if i % 2 else "M"] for i in range(60)]
+        raw = write_csv(self.tmp / "named.csv", header, rows)
+        for col in ("Lab Technician Name", "Study Patient Name", "Specimen Collector Name"):
+            refused = run("plan", str(raw), "--keep", col)
+            self.assertEqual(refused.returncode, 2, col)
+            self.assertIn("cannot be kept", refused.stderr)
+        p, out, _ = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual({r["Lab Technician Name"] for r in out}, {"[REDACTED]"})
+        self.assertEqual({r["Specimen Collector Name"] for r in out}, {"[REDACTED]"})
+        for col in ("Study Patient Name", "Trial Participant Name"):
+            self.assertTrue(all(re.fullmatch(r"P\d{4}", r[col]) for r in out), col)
+        self.assertEqual([r["Drug Name"] for r in out], [row[4] for row in rows])
+
+    def test_category_columns_keep_their_values(self):
+        cols = {
+            "Visit Type": ["Office", "Telehealth", "Inpatient", "Emergency"],
+            "Treatment Arm": ["Placebo", "Treatment A", "Treatment B"],
+            "Lab Test": ["Hemoglobin", "Creatinine", "Sodium", "Troponin"],
+            "Diagnosis": ["Heart Failure", "Type 2 Diabetes", "COPD", "Atrial Fibrillation"],
+            "Patient Status": ["Alive", "Deceased", "Lost to Follow-up"],
+            "Patient Diagnosis": ["Asthma", "Heart Failure", "Chronic Kidney Disease"],
+            "Contact Method": ["Phone", "Email", "Letter"],
+            "Provider Specialty": ["Cardiology", "Internal Medicine", "Family Medicine", "Pediatrics"],
+            "Provider Type": ["Physician", "Nurse Practitioner", "Physician Assistant"],
+            "Head Injury Type": ["Concussion", "Contusion", "Laceration"],
+            "Primary Site": ["Breast", "Lung", "Colon", "Prostate", "Pancreas"],
+            "Biomarker": ["EGFR", "HER2", "BRCA1", "KRAS"],
+            "Religion": ["Catholic", "Muslim", "Jewish", "Buddhist", "Hindu", "None"],
+            "Race": ["White", "Asian", "American Indian or Alaska Native",
+                     "Native Hawaiian or Other Pacific Islander", "Black or African American"],
+            "Finding": ["Nodule", "Effusion", "Consolidation", "Normal"],
+            "Housing": ["Single family", "Multi family"],
+        }
+        header = list(cols)
+        rows = [[cols[h][(i + k) % len(cols[h])] for k, h in enumerate(header)] for i in range(120)]
+        p, out, report = self.run_file(write_csv(self.tmp / "categories.csv", header, rows))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        for i, col in enumerate(header):
+            self.assertEqual([r[col] for r in out], [row[i] for row in rows], col)
+
+    def test_state_and_country_columns_pass_the_residual_check(self):
+        cases = {
+            "birth.csv": (["Country of Birth", "Age"], [["Mexico", "5"], ["Vietnam", "6"],
+                                                       ["Philippines", "41"], ["Mexico", "33"]]),
+            "country.csv": (["Country", "Age"], [["Mexico", "5"], ["Vietnam", "6"], ["Canada", "7"]]),
+            "state.csv": (["State", "sex"], [["California", "F"], ["Oregon", "M"],
+                                             ["New Mexico", "F"], ["Oregon", "F"]]),
+        }
+        for name, (header, rows) in cases.items():
+            raw = write_csv(self.tmp / name, header, rows)
+            for extra in ((), ("--keep", header[0])):
+                p, out, report = self.run_file(raw, *extra)
+                self.assertEqual(p.returncode, 0, (name, extra, p.stdout + p.stderr))
+                self.assertEqual([r[header[0]] for r in out], [row[0] for row in rows], name)
+                listed = [d["column"] for d in json.loads(report.read_text(encoding="utf-8"))["kept_text_columns"]]
+                self.assertIn(header[0], listed, "a kept state or country column is listed to confirm")
+                written = self.tmp / "out" / f"{raw.stem}_deidentified.csv"
+                ok = run("verify", str(written), "--reference-year", REFERENCE_YEAR)
+                self.assertEqual(ok.returncode, 0, (name, ok.stdout + ok.stderr))
+                alone = self.tmp / "alone"
+                alone.mkdir(exist_ok=True)
+                shutil.copy(written, alone / written.name)
+                guessed = run("verify", str(alone / written.name), "--reference-year", REFERENCE_YEAR)
+                self.assertEqual(guessed.returncode, 0, (name, guessed.stdout + guessed.stderr))
+                shutil.rmtree(self.tmp / "out")
+                shutil.rmtree(alone)
+
+    def test_keep_is_honoured_by_the_residual_check_for_shapes(self):
+        # A column the run keeps by itself, which the person then names with --keep, is
+        # recorded as kept on request, so the residual check does not second-guess the
+        # person's confirmation of its shape (patterns inside it are still scanned).
+        header = ["Diagnosis", "sex"]
+        rows = [[["Heart Failure", "Asthma", "COPD"][i % 3], "F"] for i in range(30)]
+        p, out, report = self.run_file(write_csv(self.tmp / "kept.csv", header, rows), "--keep", "Diagnosis")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        decision = json.loads(report.read_text(encoding="utf-8"))["decisions"][0]
+        self.assertTrue(decision["kept_on_request"])
+        self.assertEqual([r["Diagnosis"] for r in out], [row[0] for row in rows])
+        self.assertIn("[kept on request]", p.stdout)
+        # The check, reading that run's report, still finds a phone number written into it.
+        written = self.tmp / "out" / "kept_deidentified.csv"
+        rows[0][0] = "Asthma, call (415) 555-0134"
+        write_csv(written, header, rows)
+        bad = run("verify", str(written), "--reference-year", REFERENCE_YEAR)
+        self.assertEqual(bad.returncode, 3, bad.stdout + bad.stderr)
+        self.assertIn("phone pattern", bad.stdout)
+        self.assertNotIn("555-0134", bad.stdout + bad.stderr)
+
+    def test_a_surname_with_family_is_shaped_like_a_name(self):
+        header = ["household_label", "sex"]
+        rows = [[f"{self.LAST[i % 4]} family", "F"] for i in range(40)]
+        p, out, _ = self.run_file(write_csv(self.tmp / "family.csv", header, rows))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual({r["household_label"] for r in out}, {"[REDACTED]"})
+
+
 class NoNetwork(unittest.TestCase):
     def test_socket_connections_are_disabled_in_process(self):
         code = ("import runpy, socket, sys\n"
