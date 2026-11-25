@@ -1,0 +1,42 @@
+phi-deidentification 1.0.0: upstream notices
+
+Biorouter's own additions and changes in this folder are licensed under the Apache License 2.0 (see the LICENSE file of BaranziniLab/biorouter-skills).
+
+Files from the upstream, under its MIT licence below:
+  scripts/deidentify.py                  copied unchanged
+  scripts/locales/*.json                 copied unchanged
+  references/hipaa_18_identifiers.md     copied unchanged
+  references/date_shift_guide.md         copied unchanged
+  references/korean_phi_patterns.md      copied unchanged
+  tests/upstream/*                       copied; test_deidentify_scan.sh points at scripts/
+  SKILL.md                               rewritten; some passages adapted from the upstream SKILL.md
+
+Files written for Biorouter, under the Apache License 2.0:
+  scripts/safe_harbor.py, references/safe-harbor-mode.md, tests/test_safe_harbor.py,
+  tests/run_tests.sh, tests/fixtures/synthetic_18_identifiers.csv
+
+========================================================================
+phi-deidentification includes material from Aperivue/medsci-skills (skills/deidentify, commit 7e9d133dd0216c29b0e030729e3719c3db5e0973),
+Copyright (c) 2026 Aperivue (https://aperivue.com), licensed under MIT. Changes: deidentify.py, its locale packs, references and tests copied (the test now points at scripts/); SKILL.md rewritten for an agent that never sees raw data; safe_harbor.py added, a non-interactive HIPAA Safe Harbor mode with a residual check and no network access.
+
+MIT License
+
+Copyright (c) 2026 Aperivue (https://aperivue.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

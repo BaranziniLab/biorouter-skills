@@ -7,7 +7,7 @@ Skills are instruction bundles that Biorouter loads on demand to shape how the m
 This repository is curated by the [Baranzini Lab](https://baranzinilab.ucsf.edu/) at UCSF. Each top-level folder is one skill or a bundle of skills, `bio-skills/<id>/` holds the biomedical bundles, and [`catalog.json`](catalog.json) records every item, active or not.
 
 <!-- catalog:begin counts -->
-57 core skills, 12 developer skills and 63 biomedical bundles (570 skills) are active; 12 older skills have moved or retired.
+58 core skills, 12 developer skills and 63 biomedical bundles (570 skills) are active; 12 older skills have moved or retired.
 <!-- catalog:end counts -->
 
 ---
@@ -82,6 +82,7 @@ Each skill is released under the tag `skill-<id>` as `<id>.zip`. To update an in
 | [`scientific-manuscript-writing`](scientific-manuscript-writing) | 1.0.0 | Auto | Apache-2.0 AND MIT |  |
 | [`scientific-problem-selection`](scientific-problem-selection) | 1.0.0 | Auto | Apache-2.0 |  |
 | [`scientific-prose-review`](scientific-prose-review) | 1.0.0 | Auto | CC-BY-4.0 |  |
+| [`phi-deidentification`](phi-deidentification) | 1.0.0 | Auto | Apache-2.0 AND MIT | De-identifies clinical CSV, TSV and Excel tables under HIPAA Safe Harbor with a local script that has no network access; the agent never reads the raw data. |
 <!-- catalog:end core -->
 
 ---
@@ -317,6 +318,7 @@ Licence per skill, as the catalog records. Material written here is Apache-2.0; 
 | `scientific-manuscript-writing` | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (MIT), [timholy/claude_config](https://github.com/timholy/claude_config) (MIT) | Apache-2.0 AND MIT | — |
 | `scientific-problem-selection` | [anthropics/knowledge-work-plugins](https://github.com/anthropics/knowledge-work-plugins) (Apache-2.0) | Apache-2.0 | — |
 | `scientific-prose-review` | [labarba/sciwrite](https://github.com/labarba/sciwrite) (CC-BY-4.0) | CC-BY-4.0 | — |
+| `phi-deidentification` | [Aperivue/medsci-skills](https://github.com/Aperivue/medsci-skills) (MIT) | Apache-2.0 AND MIT | deidentify.py, its locale packs, references and tests copied (the test now points at scripts/); SKILL.md rewritten for an agent that never sees raw data; safe_harbor.py added, a non-interactive HIPAA Safe Harbor mode with a residual check and no network access. |
 <!-- catalog:end sources -->
 
 Maintained by the [Baranzini Lab](https://baranzinilab.ucsf.edu/) at UCSF.
