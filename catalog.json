@@ -13449,7 +13449,7 @@
         {
           "version": "1.0.0",
           "date": "2026-11-25",
-          "note": "first release"
+          "note": "first release; security review: owner sign-off 2026-11-25"
         }
       ],
       "card": {
