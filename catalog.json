@@ -13454,7 +13454,7 @@
         {
           "version": "1.0.1",
           "date": "2026-11-25",
-          "note": "a category word in a column name (Treatment, Lab, Visit) no longer hides names when the name also names a person or role (Treatment Physician, Event Patient), and category columns must also repeat like categories; state and country columns pass the residual check, which honours --keep for shape findings; fewer category columns redacted (Primary Site, Biomarker, long race values)"
+          "note": "a category word in a column name (Treatment, Lab, Visit) no longer hides names or places: category columns are recognised by their values as well (names of two or more words, and single unknown words under a non-category last word, make any column a column of names), and a role, title or place word in any form (Physician, Dr, Verifier, Team, Sign-off, Medico, Location, Area, Setting) rules a column out; type, status and payer columns of identifier words (Insurance Type, Login Status, City Type) keep category values; handles, short URLs, user@host and SN serials are scrubbed from kept text; state and country columns pass the residual check, which honours --keep for shape findings; fewer category columns redacted (Primary Site, Biomarker, Race, Occupation, Ensembl ID)"
         }
       ],
       "card": {

@@ -743,6 +743,235 @@ class CategoryWordsDoNotHideNames(unittest.TestCase):
         self.assertEqual({r["household_label"] for r in out}, {"[REDACTED]"})
 
 
+class ValuesDecideCategoryColumns(unittest.TestCase):
+    """A category word in a column name keeps a column only when its values also look
+    like a category: names and places shaped like names are found by their values
+    whatever the column is called, and a column name with a role or place word in any
+    form is never a category column (fourth review of 2026-11-25, 1.0.1). Every name,
+    handle and place here is invented."""
+
+    FIRST = ["Ilsabet", "Corvan", "Maelis", "Tobiah", "Wrenna", "Quinlan", "Saoirsa", "Davor",
+             "Elowen", "Brannoc", "Ysolde", "Ferrin"]
+    LAST = ["Thistlewaite", "Marrowgate", "Pennycastle", "Ravensmoor", "Kettleby", "Ashcombe",
+            "Fernhallow", "Wexmoor", "Dunmarrow", "Quellbright", "Sorrowind", "Vantablen"]
+    TOWNS = ["Quillbrook", "Marrowfield", "Tessaly Springs", "Duskhaven", "Fawnridge",
+             "Embersley", "Ashgrove Bay", "Vonder Flats", "Pellucid Creek", "Calloway Heights",
+             "Brennagh", "Okonjo Valley"]
+    # The column names of the review, then others built the same way that no word list
+    # names, and plain category names whose values are names.
+    ROLE_HEADERS = [
+        "Treatment Dr", "Lab Dr", "Visit Dr", "Visit Doc", "Group Prof", "Visit Docteur",
+        "Test Medecin", "Visit Medico", "Service Arzt", "Treatment Team", "Visit With",
+        "Treatment Assigned To", "Test Verifier", "Result Approver", "Treatment Authorizer",
+        "Stage Reader", "Visit Scheduler", "Group Admin", "Unit Charge", "Ward Charge",
+        "Cohort Responsible", "Group Responsable", "Visit Companion", "Visit Family",
+        "Event Emergency", "Type Nombre", "Lab Sign-off", "Test Dr", "Event Dr", "Treatment Doc",
+        "Visit Dr Name", "Test Reader", "Test Approver", "Visit Agent", "Visit Biller",
+        "Visit Pastor", "Treatment Attorney", "Lab Responsible", "Visit Médecin", "Service Ärztin",
+        "Result Validator", "Lab Releaser", "Event Organizer", "Visit Greeter", "Unit Dottore",
+        "Visit Referred To", "Sample Sent To", "Stage Signed Off",
+        "Visit Type", "Diagnosis", "Treatment Arm", "Cohort", "Lab Test", "Drug",
+    ]
+    PLACE_HEADERS = [
+        "Visit Location", "Event Location", "Test Location", "Unit Location", "Service Area",
+        "Specimen Collection Site", "Event Place", "Treatment Center", "Lab Facility",
+        "Treatment Clinic", "Dept Campus", "Diagnosis Area", "Visit Zone", "Event Setting",
+        "Lab Location", "Sample Location", "Cohort Location", "Unit Locale", "Event Venue",
+        "Tumor Location", "Service Location", "Source Location", "Ward Location",
+        "Treatment Location", "Visit Region", "Group Territory", "Visit Catchment",
+        "Event Destination", "Visit Lugar", "Visit Ubicación", "Visit Ciudad", "Event Municipio",
+    ]
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="safe_harbor_test_"))
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def run_file(self, path: Path, *extra: str) -> tuple[subprocess.CompletedProcess, list[dict], Path]:
+        out_dir = self.tmp / "out"
+        p = run("run", str(path), "-o", str(out_dir), "--reference-year", REFERENCE_YEAR, *extra)
+        out = out_dir / f"{path.stem}_deidentified{path.suffix}"
+        return p, (read_rows(out) if out.exists() else []), out_dir / "deidentification_report.json"
+
+    def raw_words(self) -> list[str]:
+        words = self.FIRST + self.LAST
+        for town in self.TOWNS:
+            words += [w for w in town.split() if len(w) >= 6]
+        return words
+
+    def name_forms(self, k: int, i: int) -> str:
+        f, last = self.FIRST[(i * (k + 1)) % 12], self.LAST[(i * (k + 1) + k) % 12]
+        return [f"{f} {last}", f"{last}, {f}", f"{f.upper()} {last.upper()}", f"{f} R. {last}",
+                f"{last}, {f} MD"][k % 5]
+
+    def assert_hidden(self, p, out_dir: Path, report: Path, words: list[str]) -> None:
+        text = "".join(f.read_text(encoding="utf-8") for f in out_dir.glob("*_deidentified.csv"))
+        shown = p.stdout + p.stderr + report.read_text(encoding="utf-8")
+        for w in words:
+            self.assertNotIn(w.lower(), text.lower(), "raw name or place in the output")
+            self.assertNotIn(w.lower(), shown.lower(), "raw name or place printed or reported")
+
+    def test_names_under_any_category_or_role_header_are_redacted(self):
+        header = self.ROLE_HEADERS + ["sex"]
+        rows = [[self.name_forms(k, i) for k in range(len(self.ROLE_HEADERS))]
+                + ["F" if i % 2 else "M"] for i in range(200)]
+        raw = write_csv(self.tmp / "roles2.csv", header, rows)
+        p, out, report = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assert_hidden(p, self.tmp / "out", report, self.FIRST + self.LAST)
+        for col in self.ROLE_HEADERS:
+            self.assertTrue(all(re.fullmatch(r"\[REDACTED\]|P\d{4}", r[col]) for r in out), col)
+        self.assertEqual([r["sex"] for r in out], [row[-1] for row in rows])
+        bad = run("verify", str(raw), "--reference-year", REFERENCE_YEAR)
+        self.assertEqual(bad.returncode, 3, bad.stdout + bad.stderr)
+        for w in self.FIRST + self.LAST:
+            self.assertNotIn(w.lower(), (bad.stdout + bad.stderr).lower())
+
+    def test_single_surnames_under_a_role_word_are_redacted(self):
+        header = ["Visit Dr", "Treatment Doc", "Group Prof", "Test Verifier", "Visit Docteur",
+                  "Unit Charge", "Visit Family", "Result Validator", "Lab Sign-off", "Visit With"]
+        rows = [[self.LAST[(i + k) % 12] for k in range(len(header))] for i in range(150)]
+        p, out, report = self.run_file(write_csv(self.tmp / "surnames.csv", header, rows))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assert_hidden(p, self.tmp / "out", report, self.LAST)
+        for col in header:
+            self.assertEqual({r[col] for r in out}, {"[REDACTED]"}, col)
+
+    def test_a_name_column_of_a_title_or_role_cannot_be_kept(self):
+        header = ["Visit Dr Name", "Test Verifier Name", "Nombre Medico", "sex"]
+        rows = [[self.name_forms(0, i), self.name_forms(1, i), self.name_forms(2, i), "F"]
+                for i in range(60)]
+        raw = write_csv(self.tmp / "drname.csv", header, rows)
+        for col in header[:3]:
+            refused = run("plan", str(raw), "--keep", col)
+            self.assertEqual(refused.returncode, 2, col)
+            self.assertIn("cannot be kept", refused.stderr)
+
+    def test_places_under_a_category_and_place_word_are_redacted(self):
+        header = self.PLACE_HEADERS + ["Cohort", "Visit Type", "sex"]
+        multi = [t for t in self.TOWNS if " " in t]
+        rows = [[self.TOWNS[(i * (k + 1)) % 12] for k in range(len(self.PLACE_HEADERS))]
+                + [multi[i % len(multi)], multi[(i + 2) % len(multi)], "F" if i % 2 else "M"]
+                for i in range(200)]
+        raw = write_csv(self.tmp / "places.csv", header, rows)
+        p, out, report = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assert_hidden(p, self.tmp / "out", report, self.raw_words())
+        for col in header[:-1]:
+            self.assertEqual({r[col] for r in out}, {"[REDACTED]"}, col)
+        bad = run("verify", str(raw), "--reference-year", REFERENCE_YEAR)
+        self.assertEqual(bad.returncode, 3, bad.stdout + bad.stderr)
+
+    def test_category_values_under_place_and_role_words_are_kept(self):
+        cols = {
+            "Tumor Location": ["Left Upper Lobe", "Right Lower Lobe", "Sigmoid Colon", "Breast"],
+            "Care Setting": ["Inpatient", "Outpatient", "Home", "Skilled Nursing Facility"],
+            "Location Type": ["Urban", "Rural", "Suburban"],
+            "Census Region": ["Northeast", "Midwest", "South", "West"],
+            "Pain Location": ["Lower Back", "Left Knee", "Abdomen", "Chest"],
+            "Treatment Team": ["Cardiology Team", "Oncology Team", "Surgery Team"],
+            "Provider Type": ["Physician", "Nurse Practitioner", "Physician Assistant"],
+            "Referred To": ["Cardiology", "Neurology", "Physical Therapy"],
+            "Tumor Marker": ["EGFR", "KRAS", "HER2", "BRCA1"],
+            "Visit Number": ["1", "2", "3", "4"],
+            "Treatment Responder": ["Responder", "Nonresponder"],
+            "Doc Type": ["Consent", "Progress Note", "Discharge Summary"],
+            "DR Grade": ["Mild", "Moderate", "Severe", "Proliferative"],
+            "Drug Admin Route": ["Oral", "Intravenous", "Subcutaneous", "Topical"],
+        }
+        header = list(cols)
+        rows = [[cols[h][(i + k) % len(cols[h])] for k, h in enumerate(header)] for i in range(120)]
+        p, out, _ = self.run_file(write_csv(self.tmp / "kept_categories.csv", header, rows))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        for i, col in enumerate(header):
+            self.assertEqual([r[col] for r in out], [row[i] for row in rows], col)
+
+    def test_ordinary_clinical_category_columns_are_kept(self):
+        cols = {
+            "Diagnosis": ["Atrial Fibrillation", "Pulmonary Embolism", "Septic Shock", "Heart Failure",
+                          "Type 2 Diabetes", "Major Depression", "Bipolar Disorder", "Iron Deficiency",
+                          "Chronic Kidney Disease", "Essential Hypertension", "Sleep Apnea",
+                          "Cerebral Palsy", "Down Syndrome", "Sickle Cell", "Herpes Zoster"],
+            "Drug": ["Insulin Glargine", "Metformin", "Lisinopril", "Potassium Chloride",
+                     "Albuterol Sulfate", "Aspirin", "Normal Saline"],
+            "Lab Test": ["Hemoglobin", "Creatinine", "Sodium", "Troponin", "Basic Metabolic Panel",
+                         "Complete Blood Count"],
+            "Visit": ["Screening", "Baseline", "End of Study", "Early Termination", "Follow Up"],
+            "Treatment Arm": ["Placebo", "Arm A", "Standard of Care", "High Dose"],
+            "Occupation": ["Teacher", "Nurse", "Engineer", "Retired", "Unemployed", "Farmer"],
+            "Cell Line": ["HeLa", "MCF-7", "HEK293", "Jurkat"],
+            "Language": ["English", "Spanish", "Haitian Creole", "American Sign Language"],
+            "Race": ["White", "Two or More Races", "Asian", "Patient Refused"],
+            "Insurance": ["Medicare", "Medicaid", "Commercial", "Self-pay"],
+            "Specialty": ["Physical Medicine and Rehabilitation", "Hematology Oncology", "Cardiology"],
+        }
+        header = list(cols)
+        rows = [[cols[h][(i + k) % len(cols[h])] for k, h in enumerate(header)] for i in range(150)]
+        p, out, _ = self.run_file(write_csv(self.tmp / "clinical.csv", header, rows))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        for i, col in enumerate(header):
+            self.assertEqual([r[col] for r in out], [row[i] for row in rows], col)
+
+    def test_type_and_status_columns_of_identifier_words_can_be_kept(self):
+        cols = {
+            "Insurance Type": ["Medicare", "Medicaid", "Commercial", "Self-pay", "Uninsured"],
+            "Insurance Status": ["Insured", "Uninsured"],
+            "Insurance Plan Type": ["HMO", "PPO", "EPO", "Medicare Advantage"],
+            "Medicare Status": ["Enrolled", "Not Enrolled", "Pending"],
+            "Medicaid Eligible": ["Yes", "No"],
+            "Subscriber Status": ["Active", "Inactive", "Terminated"],
+            "Account Type": ["Checking", "Savings", "Self-pay"],
+            "License Status": ["Active", "Suspended", "Expired"],
+            "Certificate Type": ["Birth", "Death", "Marriage"],
+            "Login Status": ["Success", "Failed", "Locked"],
+            "Passport Status": ["Valid", "Expired", "None"],
+            "City Type": ["Urban", "Rural", "Suburban"],
+            "Employer Type": ["Private", "Government", "Self-employed", "Nonprofit"],
+            "Phone Type": ["Mobile", "Home", "Work"],
+            "Type of Insurance": ["Medicare", "Commercial"],
+        }
+        header = list(cols)
+        rows = [[cols[h][(i + k) % len(cols[h])] for k, h in enumerate(header)] for i in range(90)]
+        raw = write_csv(self.tmp / "qualifiers.csv", header, rows)
+        p, out, report = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        for i, col in enumerate(header):
+            self.assertEqual([r[col] for r in out], [row[i] for row in rows], col)
+        written = self.tmp / "out" / "qualifiers_deidentified.csv"
+        alone = self.tmp / "alone"
+        alone.mkdir()
+        shutil.copy(written, alone / written.name)
+        guessed = run("verify", str(alone / written.name), "--reference-year", REFERENCE_YEAR)
+        self.assertEqual(guessed.returncode, 0, guessed.stdout + guessed.stderr)
+        # Numbers, names, towns and logins under the same names are still identifiers by name.
+        ids = write_csv(self.tmp / "qualifier_ids.csv",
+                        ["Account Type", "Insurance Status", "Employer Type", "City Type",
+                         "Login Status", "Subscriber Status", "sex"],
+                        [[f"ACCT-{4400 + i}", f"MBR{90210 + i}", self.LAST[i % 3], self.TOWNS[i % 3],
+                          self.FIRST[i % 3].lower(), f"{self.FIRST[i % 3]} {self.LAST[i % 3]}", "F"]
+                         for i in range(30)])
+        for col in ("Account Type", "Insurance Status", "Employer Type", "City Type", "Login Status",
+                    "Subscriber Status"):
+            refused = run("plan", str(ids), "--keep", col)
+            self.assertEqual(refused.returncode, 2, col)
+            self.assertIn("cannot be kept", refused.stderr)
+
+    def test_kept_text_loses_handles_short_urls_and_serials(self):
+        values = ["profile fb.me/ilsabet.thistle", "dm @wrenna_kettle", "Facebook /corvan.marrow",
+                  "login tobiah@kettlebox", "Device SN 8841-2290", "see quellbright-clinic.org/p/77",
+                  "Instagram: elowen_ash22", "Patient Name: Corvan Ashcombe",
+                  # Not identifiers, and left alone.
+                  "dose @ 2mg q.d.", "a.m. dose", "vs. baseline", "e.g. 5 mg", "Patient Refused"]
+        raw = write_csv(self.tmp / "handles.csv", ["ref", "sex"], [[v, "F"] for v in values])
+        p, out, _ = self.run_file(raw, "--keep", "ref")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual([r["ref"] for r in out], [
+            "profile [URL]", "dm [HANDLE]", "Facebook [HANDLE]", "login [EMAIL]", "Device SN [ID]",
+            "see [URL]", "Instagram: [HANDLE]", "Patient Name: [NAME]",
+            "dose @ 2mg q.d.", "a.m. dose", "vs. baseline", "e.g. 5 mg", "Patient Refused"])
+
+
 class NoNetwork(unittest.TestCase):
     def test_socket_connections_are_disabled_in_process(self):
         code = ("import runpy, socket, sys\n"

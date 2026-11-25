@@ -69,6 +69,7 @@ import logging  # noqa: E402
 import os  # noqa: E402
 import re  # noqa: E402
 import stat  # noqa: E402
+import unicodedata  # noqa: E402
 from datetime import date, datetime  # noqa: E402
 from pathlib import Path  # noqa: E402
 
@@ -132,11 +133,14 @@ ID_LABELS = (
     r"|driver'?s?\s+licen[cs]e(?:\s+(?:number|no\.?|#))?|licen[cs]e\s+plate"
     r"|licen[cs]e(?:\s+(?:number|no\.?|#))?|certificate(?:\s+(?:number|no\.?|#))?"
     r"|cert\.?(?:\s+(?:number|no\.?|#))?|dea(?:\s+(?:number|no\.?|#))?|npi"
-    r"|serial(?:\s+(?:number|no\.?|#))?|s/n|device\s+(?:id|serial|number)|udi|imei|vin"
+    r"|serial(?:\s+(?:number|no\.?|#))?|s/n|sn(?![a-z])|s\.n\.|device\s+(?:id|serial|number)|udi|imei|vin"
     r"|plate(?:\s+(?:number|no\.?|#))?|passport(?:\s+(?:number|no\.?|#))?"
     r"|case\s+(?:id|number|no\.?)|accession(?:\s+(?:number|no\.?|#))?"
     r"|specimen\s+(?:id|number|no\.?)|identifier|id)"
 )
+# Domain endings a host-and-path address is recognised by when it has no scheme or www.
+URL_TLDS = (r"(?:com|org|net|edu|gov|mil|info|biz|io|me|ly|co|us|uk|ca|au|gl|gd|tv|app|dev|ai"
+            r"|xyz|health)")
 NAME_LABELS = (r"(?:patient|pt|name|full\s+name|contact|spouse|wife|husband|partner|mother"
                r"|father|parent|son|daughter|sibling|brother|sister|guardian|caregiver"
                r"|emergency\s+contact|next\s+of\s+kin|nok|employer)")
@@ -203,6 +207,14 @@ def _state_zip(m: re.Match) -> str:
     return m.group("st") + " [ZIP]"
 
 
+def _labelled_name(m: re.Match):
+    """A name after "Patient", "Contact" or "Mother", unless it is a category word
+    ("Patient Refused", "Contact Phone")."""
+    if _is_category_value(m.group("v")):
+        return None
+    return _keep_label("[NAME]")(m)
+
+
 def _age90(m: re.Match) -> str:
     return "90+ years"
 
@@ -240,8 +252,23 @@ def birth_year_pattern(reference_year: int) -> tuple[str, re.Pattern, object]:
 PATTERNS: list[tuple[str, re.Pattern, object]] = [
     ("photo", re.compile(r"(?i)data:image/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=\s]+"), "[PHOTO]"),
     ("url", re.compile(r"(?i)\b(?:https?|s?ftp|file)://[^\s<>\"']+|\bwww\.[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:/[^\s<>\"']*)?"), "[URL]"),
+    # A host and a path with no scheme ("fb.me/jane.doe", "clinic-x.org/p/7"), and a bare
+    # domain on the commonest endings ("example.com").
+    ("url", re.compile(r"(?i)(?<![\w@./-])(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+" + URL_TLDS
+                       + r"(?::\d+)?/[^\s<>\"']*"), "[URL]"),
+    ("url", re.compile(r"(?i)(?<![\w@./-])(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+(?:com|org|net|edu|gov|io|info|biz)"
+                       r"(?![\w-])(?!\.[a-z0-9])"), "[URL]"),
     # An apostrophe may sit inside the local part ("j.o'brien@...").
     ("email", re.compile(r"(?i)(?<![\w.%+-])[a-z0-9._%+-]+(?:'[a-z0-9._%+-]+)*@[a-z0-9.-]+\.[a-z]{2,}(?![\w-])"), "[EMAIL]"),
+    # A login written as user@host, with no domain ending.
+    ("email", re.compile(r"(?i)(?<![\w.%+@-])[a-z][a-z0-9._%+-]*@[a-z][a-z0-9-]*(?![\w@-])(?!\.[a-z0-9])"), "[EMAIL]"),
+    # Social media handles: "@jane_doe", and a handle after the name of a network.
+    ("social", re.compile(r"(?<![\w@.+/-])@[A-Za-z_][A-Za-z0-9_.]{0,29}[A-Za-z0-9_](?![\w@])"), "[HANDLE]"),
+    ("social", re.compile(r"(?i)\b(?P<label>facebook|fb|instagram|ig|twitter|tiktok|snapchat|linkedin|youtube"
+                          r"|reddit|telegram|whatsapp|wechat|skype|discord|mastodon|bluesky|tumblr|pinterest"
+                          r"|github|myspace)\b\s*(?:handle|account|profile|user(?:name)?)?\s*[:=]?\s*"
+                          r"(?P<v>[/@][A-Za-z0-9_.-]{2,}|(?=[A-Za-z0-9_.-]*[A-Za-z])(?=[A-Za-z0-9_.-]*[._\d])"
+                          r"[A-Za-z0-9_][A-Za-z0-9_.-]{2,})"), _keep_label("[HANDLE]")),
     ("device", re.compile(r"(?i)(?<![0-9a-f:-])[0-9a-f]{2}([:-])[0-9a-f]{2}(?:\1[0-9a-f]{2}){4}(?![0-9a-f:-])"), "[DEVICE_ID]"),
     ("device", re.compile(r"(?i)(?<![0-9a-f.])[0-9a-f]{4}\.[0-9a-f]{4}\.[0-9a-f]{4}(?![0-9a-f.])"), "[DEVICE_ID]"),
     ("ip", re.compile(r"(?i)(?<![0-9a-f:])(?:[0-9a-f]{1,4}:){7}[0-9a-f]{1,4}(?![0-9a-f:])"), _ipv6),
@@ -295,7 +322,9 @@ PATTERNS: list[tuple[str, re.Pattern, object]] = [
     ("address", re.compile(r"\b[A-Z][a-zA-Z.'-]+(?:\s+[A-Z][a-zA-Z.'-]+){0,2},\s*(?P<st>" + US_STATES + r")\b(?=\s+\[ZIP\]|\s*$|\s*[,;.])"), _city_state),
     # Names that text marks as names.
     ("name", re.compile(r"\b(?:Mr|Mrs|Ms|Mx|Miss|Dr|Prof)\.?\s+[A-Z][a-zA-Z'-]+(?:\s+[A-Z][a-zA-Z'-]+){0,2}"), "[NAME]"),
-    ("name", re.compile(r"(?i:\b" + NAME_LABELS + r")\s*[:=]?\s*(?P<v>[A-Z][a-zA-Z'-]+(?:[\s,]+[A-Z][a-zA-Z'-]+){0,3})"), _keep_label("[NAME]")),
+    # The name may not be another label ("Patient Name: X" replaces X, not "Name").
+    ("name", re.compile(r"(?i:\b" + NAME_LABELS + r")\s*[:=]?\s*(?!(?i:" + NAME_LABELS + r")\b)"
+                        r"(?P<v>[A-Z][a-zA-Z'-]+(?:[\s,]+[A-Z][a-zA-Z'-]+){0,3})"), _labelled_name),
     # Ages over 89.
     ("age", re.compile(r"(?i)\b(?:" + AGE_NUM + "|" + AGE_WORD + r")\s*-?\s*(?:years?(?:[\s-]*old)?|yrs?|y/o|y\.?o\.?|yo)(?![\w])"), _age90),
     # "(?![\d.+])" keeps "aged 90+" from matching again.
@@ -395,7 +424,11 @@ class Scrubber:
 
 # ================================================================ columns
 def column_tokens(header: str) -> list[str]:
-    s = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", str(header))
+    # Accents are dropped first, so "Médecin" and "Ärztin" are read as medecin and arztin
+    # rather than split at the accented letter.
+    s = "".join(c for c in unicodedata.normalize("NFKD", str(header)) if not unicodedata.combining(c))
+    s = s.replace("\u00df", "ss")
+    s = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s)
     s = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", s)
     toks = [t for t in re.split(r"[^a-z0-9]+", s.lower()) if t]
     out = []
@@ -430,6 +463,11 @@ NOT_A_PERSON_NAME = {
     "instrument", "batch", "run", "plate", "well", "region", "country", "state", "location",
     "room", "bed", "service", "program", "project", "form", "question", "visit", "event",
     "pathogen", "antibiotic", "condition", "disease", "problem", "device", "implant",
+    "medicamento", "farmaco", "medicament", "medikament", "prueba", "examen", "diagnostico",
+    "diagnostic", "diagnose", "hopital", "krankenhaus", "ospedale", "clinica", "clinique",
+    "klinik", "servicio", "unidad", "unite", "centro", "estudio", "etude", "studie", "studio",
+    "producto", "produit", "produkt", "prodotto", "archivo", "fichier", "datei", "enfermedad",
+    "maladie", "krankheit", "malattia", "procedimiento", "procedure", "laboratorio", "labor",
 }
 # Words that make "id" something other than a person's or a record's identifier.
 NOT_A_PERSON_ID = {
@@ -440,6 +478,8 @@ NOT_A_PERSON_ID = {
     "plan", "loinc", "concept", "icd", "cpt", "snomed", "rxnorm", "ndc", "analyte", "assay",
     "instrument", "batch", "run", "plate", "well", "region", "country", "state", "program",
     "project", "form", "question", "file", "pathogen", "antibiotic", "condition", "disease",
+    "ensembl", "entrez", "hgnc", "uniprot", "refseq", "transcript", "snp", "rsid", "dbsnp",
+    "probe", "probeset", "pathway", "kegg", "reactome", "pubchem", "chembl", "omim", "mesh",
 }
 DATE_WORDS = ("date", "dt", "datetime", "timestamp", "dob", "dod", "birthdate", "birthday",
               "date of birth", "date of death", "deathdate")
@@ -503,15 +543,70 @@ girlfriend boyfriend housemate flatmate classmate coworker colleague boss forema
 chairperson spokesperson salesperson tenant landlord landlady lodger trustee executor heir
 custodian analyst bystander facilitator recruiter coder escort victim champion handler
 dispatcher perpetrator moderator instructor tutor educator worker staff officer
+professor attorney lawyer solicitor notary paralegal pastor priest rabbi imam clergy minister
+reverend reader verifier approver authorizer authoriser scheduler biller validator certifier
+endorser preparer transcriber releaser organizer organiser greeter companion accompanist
+responsable responsabile verantwortlicher
+medico medica medici medecin medecins docteur doctora dottore dottoressa arzt arztin aerztin
+arzte aerzte enfermera enfermero infirmiere infirmier krankenschwester pfleger pflegerin
+infermiere infermiera cirujano cirujana chirurgien chirurgienne chirurg lakare laege lekarz
+pielegniarka verpleegkundige huisarts madre padre mere pere mutter vater esposa esposo conjoint
+conjointe ehemann ehefrau marito moglie hijo hija fils fille sohn tochter figlio figlia hermano
+hermana frere soeur bruder schwester cuidador cuidadora aidant aidante betreuer betreuerin
+tutora acompanante accompagnateur accompagnatrice begleiter begleiterin
 """.split())
 # Words that name a person only as the head of the column name, its last word ("Dept
-# Head", "Source Contact", "Event Patient", "Cohort Member"). Before a category word they
-# say whose category it is ("Head Injury Type", "Contact Method", "Patient Diagnosis").
+# Head", "Source Contact", "Event Patient", "Cohort Member", "Visit Dr", "Group Prof").
+# Before a category word they say whose category it is ("Head Injury Type", "Contact
+# Method", "Patient Diagnosis"). Words with a common other meaning ("Doc" for document,
+# "Admin" for administration, "Charge", "Family") are left to the values (category_column).
 HEAD_ROLE_WORDS = frozenset("""
 patient pt subject participant member individual person people client resident contact head
 lead chief chair principal pi owner holder donor recipient tech user consumer partner
 relative child children student monitor sponsor sender receiver surrogate proxy
 representative rep delegate driver survivor
+dr drs prof profs emergency responsible party parties team teams paciente patiente paziente
+patientin sujet sujeto soggetto participante partecipante teilnehmer teilnehmerin persona
+personne kontakt contacto contatto
+""".split())
+# Words ending in -er or -or that name a thing rather than a person, so a column name ending
+# in one ("Tumor Marker", "Visit Number", "Risk Factor") is not read as a role (_agent_noun).
+NOT_AGENT_NOUNS = frozenset("""
+number order marker biomarker tumor tumour center centre cancer disorder factor receptor
+inhibitor blocker booster letter paper other under over upper lower inner outer later never
+ever either neither whether weather water fever liver bladder gallbladder ulcer filter cluster
+quarter trimester semester meter metre liter litre parameter diameter chamber power tower
+folder character matter chapter corner border shoulder finger master register color colour
+floor door error vector sector sensor motor major minor junior senior prior anterior posterior
+interior exterior superior inferior behavior behaviour humor humour tremor labor labour flavor
+flavour favor honor vapor rumor terror mirror horror calculator ventilator generator indicator
+denominator numerator accelerator regulator modulator stimulator activator pacemaker container
+carrier noncarrier barrier enhancer promoter transporter fiber fibre primer polymer timer spacer
+inhaler nebulizer nebuliser catheter laser counter encounter computer printer scanner trigger
+cover answer dinner winter summer september october november december hunger danger anger
+murmur manner banner roster foster shelter butter theater theatre oximeter glucometer
+spirometer thermometer barometer monomer dimer isomer buffer freezer heater cooler shower
+flower smoker nonsmoker drinker nondrinker responder nonresponder layer transfer converter
+adapter adaptor connector detector projector elevator radiator incubator oscillator inductor
+capacitor resistor transistor processor compressor extractor injector applicator dilator
+retractor separator simulator evaporator insulator refrigerator predictor descriptor precursor
+cursor corridor meteor manor armor armour odor odour rigor pallor stupor liquor harbor harbour
+arbor parlor tenor razor anchor decor vigor modifier identifier qualifier classifier multiplier
+amplifier humidifier purifier stratifier tracker reminder remainder header footer binder ledger
+poster sticker pointer trailer cylinder powder plaster blister diaper charger holter cluster
+higher older younger larger smaller greater fewer wider deeper longer shorter faster slower
+better earlier lesser gender agender cisgender transgender genderqueer queer payer payor former
+prefer titer titre zoster flutter khmer frontier ringers
+""".split())
+# Words that say a column holds places, so a category word beside them ("Visit Location",
+# "Service Area", "Treatment Center", "Event Setting") never makes the values a category.
+PLACE_WORDS = frozenset("""
+location locations loc locale locales place places area areas venue venues community
+communities zone zones campus campuses setting settings site sites center centers centre
+centres facility facilities clinic clinics hospital hospitals institution institutions office
+offices branch branches station stations building buildings region regions territory
+territories catchment destination origin lugar lieu luogo sitio sede ubicacion ubicazione
+localizacion localizacao localisation emplacement standort
 """.split())
 # "-ist" and "-ee" words that are not people.
 NOT_PERSON_IST = frozenset({"assist", "resist", "insist", "consist", "persist", "subsist",
@@ -541,18 +636,47 @@ def _role_word(token: str, words: frozenset) -> bool:
     return False
 
 
+def _agent_noun(token: str) -> bool:
+    """A word ending in -er or -or that names whoever does something (verifier, approver,
+    scheduler, releaser, pastor), as opposed to a thing (marker, number, tumor)."""
+    word = token[:-1] if token.endswith("s") and len(token) > 5 else token
+    return (len(word) >= 5 and word.endswith(("er", "or")) and word not in NOT_AGENT_NOUNS
+            and not word.endswith(("meter", "metre", "eter")))
+
+
+# Phrases that name a person who signed or checked something ("Lab Sign-off").
+SIGN_PHRASES = ("sign off", "signoff", "signed off", "sign out", "signout", "signed out",
+                "countersigned", "co signed", "cosigned")
+# "to" after one of these, or after any word ending in -ed, names a person ("Assigned To").
+TO_VERBS = frozenset({"sent", "given", "told", "shown", "brought", "taken", "handed", "passed"})
+
+
 def person_role_words(tokens: list[str], trailing: frozenset = frozenset()) -> set[str]:
     """The words of a column name that name a person or a role: one of PERSON_ROLE_WORDS
-    anywhere, one of HEAD_ROLE_WORDS as the last word (numbers and `trailing` words such
-    as "name" after it do not count), and "by" after another word ("Test Ordered By")."""
+    anywhere, one of HEAD_ROLE_WORDS or a word ending in -er or -or that names whoever does
+    something as the last word (numbers and `trailing` words such as "name" after it do not
+    count), "by" or "with" after another word ("Test Ordered By", "Visit With"), "to" after
+    a word such as "assigned" or "referred", and a sign-off ("Lab Sign-off")."""
     found = {t for t in tokens if _role_word(t, PERSON_ROLE_WORDS)}
-    found.update(t for t in tokens[1:] if t == "by")
+    found.update(t for t in tokens[1:] if t in ("by", "with"))
+    found.update("to" for a, b in zip(tokens, tokens[1:])
+                 if b == "to" and (a.endswith("ed") or a in TO_VERBS))
+    if _has(tokens, *SIGN_PHRASES):
+        found.add("signature")
     rest = [t for t in tokens if not t.isdigit()]
     while rest and rest[-1] in trailing:
         rest.pop()
-    if rest and _role_word(rest[-1], HEAD_ROLE_WORDS):
+    if rest and (_role_word(rest[-1], HEAD_ROLE_WORDS) or _agent_noun(rest[-1])):
         found.add(rest[-1])
     return found
+
+
+def place_words(tokens: list[str]) -> set[str]:
+    """The words of a column name that say its values are places. "Site" in a body site
+    ("Primary Site", "Biopsy Site") names a part of the body, not a place."""
+    if _has(tokens, *CATEGORY_HEADER_PHRASES):
+        tokens = [t for t in tokens if t not in ("site", "sites")]
+    return {t for t in tokens if t in PLACE_WORDS}
 
 
 # Words a person's own name column may carry ("Study Patient Name"), as opposed to the
@@ -562,7 +686,9 @@ SELF_WORDS = frozenset({"patient", "patients", "pt", "subject", "subjects", "par
                         "person", "people", "client", "clients", "resident", "residents",
                         "proband", "probands", "respondent", "respondents", "enrollee",
                         "enrolee", "decedent", "interviewee", "donor", "donors", "recipient",
-                        "recipients"})
+                        "recipients", "family", "famille", "familia", "familie", "paciente",
+                        "patiente", "paziente", "patientin", "sujet", "sujeto", "participante",
+                        "teilnehmer", "persona", "personne"})
 NAME_TRAILING = frozenset({"name", "names", "nm", "initials", "first", "last", "full", "given",
                            "surname", "surnames", "firstname", "lastname", "fullname"})
 
@@ -687,7 +813,7 @@ def name_rule(header: str) -> tuple[str, str, str] | None:
             "block group", "fips", "geocode", "geohash", "latitude", "longitude",
             "coordinates", "gps", "place of residence", "home location", "hometown",
             "home town", "locality", "suburb", "district", "subdistrict", "township",
-            "hamlet") \
+            "hamlet", *CITY_WORDS_OTHER_LANGUAGES) \
             or whole in ("lat", "lon", "lng", "long", "residence", "pob", "pob city", "pob town"):
         return ("geography smaller than a state", "redact", "address")
 
@@ -701,7 +827,7 @@ def name_rule(header: str) -> tuple[str, str, str] | None:
         return ("name", "pseudonym_name", "name")
     if _has(t, "name", "names", "surname", "firstname", "lastname", "fullname", "middlename",
             "givenname", "familyname", "maidenname", "patientname", "ptname", "initials",
-            "alias", "nickname"):
+            "alias", "nickname", *NAME_WORDS_OTHER_LANGUAGES):
         if ts & RELATIVE_WORDS:
             return ("name of a relative or contact", "redact", "name")
         if ts & CLINICIAN_WORDS:
@@ -719,6 +845,18 @@ def name_rule(header: str) -> tuple[str, str, str] | None:
     return None
 
 
+# "City", "town", "district" and "neighbourhood" in other languages: geography smaller than
+# a state, like their English words.
+CITY_WORDS_OTHER_LANGUAGES = (
+    "ciudad", "municipio", "municipalidad", "localidad", "pueblo", "barrio", "colonia", "comuna",
+    "ville", "commune", "quartier", "localite", "stadt", "gemeinde", "wohnort", "ortschaft",
+    "citta", "comune", "frazione", "cidade", "bairro", "concelho", "freguesia", "gemeente",
+    "woonplaats", "stad", "kommune", "kommun", "miasto", "gmina")
+# "Name" in other languages.
+NAME_WORDS_OTHER_LANGUAGES = (
+    "nombre", "nombres", "apellido", "apellidos", "nom", "prenom", "prenoms", "nome", "cognome",
+    "vorname", "nachname", "familienname", "naam", "voornaam", "achternaam", "navn", "fornavn",
+    "etternavn", "efternavn", "namn", "fornamn", "efternamn", "imie", "nazwisko", "sobrenome")
 # A whole column name that is a relative or a contact: the values are that person's
 # name (or identifier). Redacted, never kept.
 RELATIVE_HEADERS = {"spouse", "mother", "father", "guardian", "husband", "wife", "caregiver",
@@ -732,6 +870,71 @@ PERSON_HEADERS = {"patient", "pt", "person", "nok", "participant", "participants
 NM_PERSON_WORDS = {"pt", "patient", "first", "last", "full", "given", "family", "person",
                    "member", "subject", "participant", "middle", "maiden", "mother", "father",
                    "spouse", "contact", "client"}
+
+
+# A column name ending in one of these ("Insurance Type", "Account Status", "Medicaid
+# Eligible") says what kind or state its values are, not that they are the identifier.
+QUALIFIER_WORDS = frozenset({"type", "types", "status", "statuses", "class", "classes",
+                             "category", "categories", "kind", "kinds", "eligible",
+                             "eligibility", "flag", "flags", "indicator", "indicators",
+                             "coverage", "tier", "level", "yn", "verified", "verification"})
+# Identifier types whose name rule gives way to such a column: numbers, codes, addresses,
+# names. Dates and ages keep their rules, which already leave words alone.
+QUALIFIED_PHI = frozenset({"health_plan", "account", "license", "id", "phone", "email", "url",
+                           "ip", "vehicle", "device", "ssn", "address", "zip", "name", "photo",
+                           "biometric"})
+
+
+# A column named for the payer ("Insurance", "Medicare") holds a beneficiary number only
+# when its name also says number, ID, member or policy.
+PAYER_WORDS = frozenset({"insurance", "insurer", "insurers", "medicare", "medicaid", "payer",
+                         "payor", "healthplan"})
+NUMBER_WORDS = frozenset({"id", "ids", "number", "numbers", "no", "num", "nbr", "identifier",
+                          "code", "codes", "mbi", "hicn", "member", "subscriber", "beneficiary",
+                          "policy", "group", "card", "account", "acct"})
+
+
+def qualified_header(header: str) -> bool:
+    """A column name that ends in a qualifier ("Insurance Type") or starts with one and "of"
+    ("Type of Insurance")."""
+    rest = [t for t in column_tokens(header) if not t.isdigit()]
+    return bool(rest) and (rest[-1] in QUALIFIER_WORDS
+                           or (len(rest) >= 3 and rest[0] in QUALIFIER_WORDS and rest[1] == "of"))
+
+
+def category_values(values: list[str], scrubber: "Scrubber", strict: bool = False) -> bool:
+    """True when the values are a handful of words, not identifiers: few distinct values (or
+    each repeated), no digit, no identifier pattern, at most four words, and none shaped
+    like the name of a person or a place. With `strict`, every value must be made of
+    category words ("Urban", "Home", "Self-employed"), because a single unknown word under
+    a type column of an employer, a city or a login can be the employer, the town or the
+    login itself."""
+    vals = _shape_values(values)
+    if not vals:
+        return False
+    distinct = set(vals)
+    if len(distinct) > CATEGORY_MAX_DISTINCT and len(vals) < CATEGORY_MIN_REPEATS * len(distinct):
+        return False
+    return all(not re.search(r"\d", v) and len(v.split()) <= 4 and not scrubber.find(v)
+               and not name_or_place_like(v) and (not strict or _is_category_value(v))
+               for v in distinct)
+
+
+def column_name_rule(header: str, values: list[str], scrubber: "Scrubber") -> tuple[str, str, str] | None:
+    """name_rule, except that a type or status column of an identifier word ("Insurance
+    Type", "Subscriber Status", "City Type", "Employer Type") whose values are category
+    words is left to the value rules, which keep it unless its values look like names."""
+    rule = name_rule(header)
+    if not rule or rule[2] not in QUALIFIED_PHI:
+        return rule
+    t = column_tokens(header)
+    # "Insurance", "Primary Insurance", "Medicare": a payer, unless the name says number.
+    payer = rule[2] == "health_plan" and bool(set(t) & PAYER_WORDS or _has(t, "health plan")) \
+        and not set(t) & NUMBER_WORDS
+    if (payer or qualified_header(header)) and \
+            category_values(values, scrubber, strict=rule[2] in ("name", "address", "id")):
+        return None
+    return rule
 
 
 def _hints(words: str, finding: str, action: str, phi: str, numbers_are_ids: bool) -> dict:
@@ -839,7 +1042,129 @@ neuro labor delivery stepdown step-down telemetry floor wing virus
 catholic protestant christian muslim islam jewish judaism hindu hinduism buddhist buddhism
 sikh atheist agnostic mormon lds baptist methodist lutheran orthodox evangelical presbyterian
 episcopalian pentecostal adventist quaker unitarian spiritual nonreligious religious
+""".split()) | frozenset("""
+first second third fourth fifth sixth seventh eighth ninth tenth next last initial subsequent
+one two three four five six seven eight nine ten more less double triple races patient patients
+pt new up follow end study early late termination unscheduled scheduled week weeks month months
+day days year years hour hours cycle course wave round period session time pre post op peri
+intra interim washout extension open label blind standard usual dose doses dosage arm arms
+cohort group groups team teams alpha beta gamma delta phase stage grade class level risk long
+term short life common law gender fluid queer genderqueer agender questioning sign language
+haitian creole farsi persian urdu punjabi bengali gujarati tamil telugu thai lao khmer hmong
+somali amharic tigrinya swahili yoruba igbo hausa ukrainian armenian greek hebrew turkish
+dutch swedish norwegian danish finnish hungarian czech romanian serbian croatian bosnian
+albanian burmese nepali indonesian malay samoan tongan marshallese chamorro ilocano cebuano
+navajo asl medicare medicaid medi-cal commercial private public government federal state
+self-pay selfpay uninsured insured underinsured hmo ppo epo pos tricare champva va veterans
+workers compensation charity managed advantage supplemental dual eligible ineligible
+nonprofit military employed unemployed self-employed retired disabled homemaker student
+teacher engineer farmer laborer driver manager clerk lawyer accountant artist writer
+programmer scientist researcher chef cook cashier mechanic electrician plumber carpenter
+firefighter police soldier veteran salesperson sales retail construction service
+healthcare education agriculture manufacturing urban rural suburban metropolitan frontier
+remote midwest mountain coastal inland mobile landline work cell office mailing billing
+temporary permanent valid invalid expired suspended revoked locked failed success
+successful verified unverified enrolled terminated approved denied birth marriage
+failure disease diseases disorder disorders syndrome fracture fractures injury injuries
+infection infections deficiency insufficiency embolism stroke attack shock arrest fibrillation
+flutter hypertension hypotension diabetes mellitus insipidus obesity overweight underweight
+depression depressive anxiety dementia delirium seizure seizures epilepsy migraine headache
+pain fever cough nausea vomiting diarrhea diarrhoea constipation bleeding hemorrhage haemorrhage
+anemia anaemia sepsis septic pneumonia influenza flu covid sars asthma bronchitis emphysema
+fibrosis cirrhosis hepatitis ulcer ulcers reflux hernia obstruction perforation stenosis
+thrombosis aneurysm dissection ischemia ischaemia infarction infarct angina palpitations edema
+oedema effusion nodule nodules mass masses lesion lesions cyst cysts polyp polyps tumor tumors
+tumour tumours cancer cancers carcinoma sarcoma lymphoma leukemia leukaemia melanoma myeloma
+metastasis metastases metastatic benign malignant malignancy neoplasm neoplasia adenoma squamous
+ductal lobular invasive situ pulmonary coronary atrial ventricular arterial artery arteries
+venous vein veins vascular cerebral cerebrovascular cardiovascular respiratory gastrointestinal
+gi intestinal bowel urinary tract genital reproductive endocrine metabolic immune nervous
+system systemic lupus arthritis gout sclerosis palsy apnea apnoea sleep insomnia cold throat
+pink sickle cystic iron vitamin morbid peptic celiac coeliac lyme strep staph hay major minor
+bipolar schizophrenia autism adhd ptsd ocd substance abuse dependence overdose withdrawal
+poisoning burn burns wound wounds laceration contusion concussion sprain strain dislocation
+amputation transplant rejection dialysis esrd ckd aki chf cad mi cva tia dvt pe afib hiv aids
+hcv hbv tb tuberculosis essential idiopathic congenital hereditary familial genetic autoimmune
+allergic viral bacterial fungal toxic traumatic alcoholic diabetic hypertensive ischemic
+hemorrhagic obstructive restrictive interstitial inflammatory degenerative cognitive mental
+behavioral behavioural psychiatric impairment decline loss hearing vision visual blindness
+deafness disability delay developmental learning intellectual eating personality mood panic
+phobia misuse opioid alcohol tobacco nicotine cannabis cocaine recurrent relapsed refractory
+remission relapse progression progressive stable unstable controlled uncontrolled response
+responder nonresponder equivocal indeterminate inconclusive borderline elevated decreased
+increased reduced preserved ejection fraction systolic diastolic herpes zoster simplex
+bifida phenomenon dysfunction degeneration macular tunnel carpal tremor exacerbation rule out
+stemi nstemi hemoglobin haemoglobin hematocrit platelet platelets count counts wbc rbc cbc bmp
+cmp sodium potassium chloride bicarbonate calcium magnesium phosphate phosphorus glucose
+creatinine urea nitrogen bun albumin protein proteins bilirubin alkaline phosphatase alt ast
+ggt ldh troponin lactate ferritin cholesterol triglycerides triglyceride hdl ldl vldl a1c hba1c
+tsh insulin cortisol panel ratio culture cultures screen titer titre antibody antibodies
+antigen pcr igg igm iga ige crp esr inr ptt bnp procalcitonin urinalysis urine serum plasma
+stool sputum csf saliva swab biopsy aspirate fluid function lipid lipids basic comprehensive
+differential smear gram stain sensitivity susceptibility fasting random total free direct
+indirect x-ray xray radiograph ct mri pet ultrasound echo ecg ekg eeg emg scan imaging
+resection repair replacement bypass graft stent intubation ventilation transfusion infusion
+injection implant implantation removal drainage debridement excision incision reduction
+fixation fusion cesarean caesarean section vaginal induction epidural anesthesia anaesthesia
+sedation regional local block nerve physical occupational speech therapy therapies
+rehabilitation progress note notes discharge summary consent report reports form forms order
+orders referral admission h&p arm leg legs hand hands foot feet finger fingers toe toes forearm
+thigh calf buttock back face facial head scalp nail heel antecubital deltoid gluteal flank
+groin axilla axillary inguinal lobe lobes quadrant segment ventricle atrium aorta aortic valve
+mitral tricuspid pulmonic temporal frontal parietal occipital cortex cerebellum brainstem
+hippocampus thalamus amygdala striatum pituitary adrenal gland glands duodenum jejunum ileum
+cecum appendix sigmoid ascending descending transverse anus anal trachea bronchus bronchial
+larynx pharynx sinus sinuses mandible maxilla jaw teeth tooth oral dental gum gums lip lips
+cheek nipple areola testis testicle scrotum penis vulva vagina endometrium fallopian tube tubes
+placenta umbilical spleen splenic biliary bile duct ducts thymus peritoneum peritoneal pleura
+pleural pericardium pericardial mediastinum diaphragm rib ribs sternum clavicle scapula humerus
+radius ulna femur tibia fibula patella sacrum coccyx vertebra vertebrae disc retina retinal
+cornea lens optic orbit hair fundus macula nasal tonsil tonsils parathyroid salivary parotid
+lymphatic vessel vessels capillary superficial deep apex base root body tail dome wall line
+lines intravenous subcutaneous intramuscular topical inhaled inhalation sublingual
+transdermal enteral parenteral po sq sc im intrathecal ophthalmic buccal tablet tablets
+capsule capsules solution suspension cream ointment patch spray drops syrup powder gel lotion
+inhaler suppository mg ml mcg units extended release er xr sr ir aspirin warfarin morphine
+fentanyl acetaminophen paracetamol naproxen tramadol codeine methadone buprenorphine naloxone
+saline sulfate oxide hydrochloride citrate acetate carbonate gluconate succinate tartrate
+maleate besylate mesylate fumarate bromide ferrous oil lactated ringers bid tid qid prn qd qhs
+qam qpm stat proliferative nonproliferative mild-moderate team staff unit units care
+inner outer curative palliative adjuvant neoadjuvant maintenance salvage confirmed suspected
+probable possible presumed rash hives anaphylaxis itching swelling laparoscopic robotic
+endoscopic percutaneous closed person in-person audio procedure procedures test tests exam
+examination lab labs blue shield permanente unitedhealthcare anthem molina centene wellcare
+ambetter highmark carefirst premera regence wellmark passport license licence mrn ssn itin
+national visa card type types status statuses method methods mode modes category categories
+class classes level levels code codes value values flag flags score scores result results
+given held missed omitted administered documented instructions medication medications list
+social ion channel channels transcription translation factor factors receptor receptors ligand
+enzyme enzymes kinase kinases transporter hormone cytokine chemokine growth signaling
+signalling domain binding membrane nuclear mitochondrial ribosomal coding noncoding rna dna
+mrna mirna lncrna gene genes oncogene suppressor wild mutant variant variants deletion
+insertion duplication amplification missense nonsense frameshift splice synonymous
+pathogenic uncertain significance likely exon intron allele homozygous heterozygous
+hemizygous germline somatic copy gain luminal basal enriched claudin
 """.split())
+# Category words that are also common given names or surnames ("June", "White", "Ward",
+# "Wing", "Long"). They do not stop a value from reading as a person's name.
+NAME_LIKE_CATEGORY_WORDS = frozenset("""
+may june april august white black ward wing case low long major summer autumn winter fall
+north south east west northeast northwest southeast southwest central mass cole head
+""".split())
+# Multi-word state and country names, which Safe Harbor allows: not names or places of the
+# kind a category check looks for.
+STATE_COUNTRY_NAMES = frozenset(s.strip() for s in """
+new hampshire|new jersey|new mexico|new york|north carolina|north dakota|rhode island|
+south carolina|south dakota|west virginia|district of columbia|puerto rico|american samoa|
+northern mariana islands|virgin islands|us virgin islands|united states|united states of america|
+united kingdom|great britain|south africa|south korea|north korea|new zealand|saudi arabia|
+sri lanka|costa rica|el salvador|dominican republic|czech republic|ivory coast|sierra leone|
+burkina faso|papua new guinea|trinidad and tobago|bosnia and herzegovina|united arab emirates|
+hong kong|cape verde|central african republic|equatorial guinea|east timor|timor-leste|
+solomon islands|marshall islands|san marino|vatican city|south sudan|north macedonia|
+antigua and barbuda|saint lucia|saint kitts and nevis|guinea-bissau|mainland china|
+british columbia|new brunswick|nova scotia|prince edward island|northwest territories|
+""".replace("\n", "").split("|") if s.strip())
 # Word endings of medical vocabulary (specialties, diseases, procedures, drug stems), with
 # the shortest word each one counts in. No given name or surname in common use ends this
 # way at that length: "Ingram" is too short for -gram, Lithuanian surnames in -aitis are
@@ -861,6 +1186,14 @@ CLINICAL_ENDINGS = (
     ("fosfamide", 12), ("phosphamide", 14), ("trexate", 11), ("abine", 9), ("sertib", 10),
     ("zole", 8), ("xifen", 9), ("coccus", 9), ("cocci", 8), ("bacter", 10), ("monas", 10),
     ("bacillus", 10),
+    # Adjectives and nouns of anatomy, disease and chemistry: fibrillation, ventricular,
+    # ischemic, diabetic, psychotic, pancreatic, dialysis, psoriasis, metastasis, obstructive,
+    # progressive, fracture, lipase, calcium, steroid, sputum, cholesterol, chloride, sulfate.
+    ("ation", 8), ("ular", 7), ("emic", 7), ("etic", 7), ("otic", 7), ("atic", 7), ("ysis", 7),
+    ("iasis", 8), ("tasis", 8), ("ctive", 8), ("ssive", 8), ("ture", 7), ("ase", 6), ("ium", 7),
+    ("oid", 6), ("tum", 6), ("llum", 8), ("erol", 8), ("adol", 8), ("diol", 8), ("anol", 7),
+    ("oride", 7), ("ptide", 7), ("phate", 7), ("lfate", 7), ("trate", 7), ("etate", 7),
+    ("onate", 9),
 )
 NOT_CLINICAL = frozenset({"euphemia", "bohemia"})
 
@@ -885,12 +1218,14 @@ marital language laterality side blood specialty speciality department dept serv
 ward disposition source route modality method indication complication complications event
 events adverse toxicity cohort group visit diet education insurance payer biomarker biomarkers
 marker markers finding findings impression religion religious faith denomination
+occupation occupations profession professions job employment industry strain species phase
+cycle reason frequency
 """.split())
 # "site" says what category its values are only after a word that makes it a body site.
 CATEGORY_HEADER_PHRASES = ("primary site", "tumor site", "tumour site", "body site", "anatomic site",
                            "anatomical site", "biopsy site", "injection site", "infection site",
                            "surgical site", "metastatic site", "metastasis site", "lesion site",
-                           "cancer site", "disease site")
+                           "cancer site", "disease site", "cell line", "cell lines", "cell type")
 # A column whose values repeat like a category: at most this many distinct values, or
 # every distinct value seen at least this many times on average.
 CATEGORY_MAX_DISTINCT = 20
@@ -943,19 +1278,119 @@ def is_allowed_geography(header: str) -> bool:
     return bool(rule) and rule[2] == "allowed_geography"
 
 
+# Credentials and suffixes written after a name ("Okafor, Alice MD", "Bob Zeller Jr").
+NAME_SUFFIXES = frozenset("""
+md do rn np pa pac phd mph dds dmd pharmd dnp lpn cna crna msn bsn mba ms ma bs ba jr sr ii iii
+iv esq mbbs frcp facs facp od dpm lcsw psyd
+""".split())
+
+
+def _vocabulary_word(w: str) -> bool:
+    """A category, medical or anatomical word, or a plural or hyphenated form of one."""
+    def known(x: str) -> bool:
+        return x in CATEGORY_WORDS or _clinical_word(x)
+    if known(w) or (len(w) > 3 and w.endswith("s") and known(w[:-1])):
+        return True
+    parts = [p for p in re.split(r"['\u2019-]", w) if p]
+    return len(parts) > 1 and any(known(p) for p in parts)
+
+
+def name_or_place_like(value: str) -> bool:
+    """True for two or more capitalised words none of which is a category, medical or
+    anatomical word: the shape of a person's name ("Alice Okafor", "Okafor, Alice B.",
+    "OKAFOR ALICE", "Alice Okafor MD") or a place's ("Walnut Grove"). A category value
+    almost always holds one such word ("Heart Failure", "Treatment A", "Left Upper Lobe"),
+    and state and country names are allowed."""
+    s = value.strip()
+    if not s or re.search(r"\d", s) or PLACEHOLDER.search(s) or s.lower() in STATE_COUNTRY_NAMES:
+        return False
+    words = [w for w in re.split(r"[\s,;/]+", s) if w]
+    if not 2 <= len(words) <= 6:
+        return False
+    core = []
+    for w in words:
+        letters = re.sub(r"['\u2019.-]", "", w)
+        if not letters.isalpha():
+            return False
+        low = w.lower().strip(".")
+        if len(letters) == 1:
+            if not letters.isupper():
+                return False
+            continue  # an initial
+        if low in NAME_PARTICLES or low.replace(".", "") in NAME_SUFFIXES:
+            continue
+        if not (letters[0].isupper() and (letters.isupper() or any(c.islower() for c in letters[1:]))):
+            return False  # a word in lower case
+        if low not in NAME_LIKE_CATEGORY_WORDS and _vocabulary_word(low):
+            return False
+        core.append(letters)
+    return len(core) >= 2 and max(len(c) for c in core) >= 3
+
+
+# Nouns that, as the last word of a column name after a category word, still name an
+# attribute of that category ("Diagnosis Code", "Treatment Intent", "Allergy Reaction").
+ATTRIBUTE_NOUNS = frozenset("""
+code codes description descriptions desc detail details value values term terms label labels
+list history hx intent reaction reactions approach mode modes certainty behavior behaviour
+morphology form forms technique mechanism etiology cause causes purpose priority acuity
+summary symbol symbols abbreviation abbreviations unit units flag flags interpretation
+category categories option options choice choices answer answers response responses
+""".split())
+
+
+def _category_head(tokens: list[str]) -> bool:
+    """True when the last word of a column name (before "name", "first" and numbers) is
+    a category or attribute noun, as in "Visit Type", "Lab Test", "Diagnosis Code" and
+    "Primary Site", rather than a person or a thing ("Visit Host", "Treatment Dr")."""
+    if _has(tokens, *CATEGORY_HEADER_PHRASES):
+        return True
+    rest = [t for t in tokens if not t.isdigit()]
+    while rest and rest[-1] in NAME_TRAILING:
+        rest.pop()
+    if not rest:
+        return False
+    head = rest[-1]
+    known = CATEGORY_HEADER_WORDS | QUALIFIER_WORDS | ATTRIBUTE_NOUNS
+    return head in known or (len(head) > 3 and head.endswith("s") and head[:-1] in known)
+
+
+def single_name_like(value: str) -> bool:
+    """One capitalised word that is not a category, medical or anatomical word: a surname
+    or a town ("Okafor", "Quillbrook"), or a word the vocabulary does not know."""
+    s = value.strip()
+    if not s or " " in s or "," in s or s.lower() in STATE_COUNTRY_NAMES:
+        return False
+    letters = re.sub(r"['\u2019.-]", "", s)
+    if not letters.isalpha() or len(letters) < 3:
+        return False
+    title = letters[0].isupper() and any(c.islower() for c in letters[1:])
+    caps = letters.isupper() and len(letters) >= 5
+    return (title or caps) and not _vocabulary_word(s.lower().strip("."))
+
+
 def category_column(header: str, vals: list[str]) -> bool:
     """True when the column name says what category its values are ("Diagnosis", "Visit
-    Type", "Primary Site") and names no person or role, and the values repeat like a
-    category. A role anywhere in the name ("Treatment Physician", "Physician (Lab)") or a
-    person as its last word ("Event Patient") makes it a column of people, whose names
-    repeat across visits as much as any category does."""
+    Type", "Primary Site"), names no person, role or place, and the values look like a
+    category: they repeat like one, and few of them have the shape of a person's or a
+    place's name. A role anywhere in the name ("Treatment Physician", "Physician (Lab)",
+    "Test Verifier") or a person as its last word ("Event Patient", "Visit Dr") makes it a
+    column of people, whose names repeat across visits as much as any category does; a
+    place word ("Visit Location", "Service Area") a column of places. Whatever the name,
+    values that read as names of people or places (name_or_place_like) are not a category
+    ("Diagnosis" holding "Alice Okafor"), and when the last word of the name is not a
+    category noun ("Visit Host"), neither are single capitalised words the vocabulary does
+    not know ("Okafor"). Two such values, or a third of the distinct values, are enough."""
     t = column_tokens(header)
     if not (set(t) & CATEGORY_HEADER_WORDS or _has(t, *CATEGORY_HEADER_PHRASES)):
         return False
-    if person_role_words(t):
+    if person_role_words(t, NAME_TRAILING) or place_words(t):
         return False
-    distinct = len(set(vals))
-    return distinct <= CATEGORY_MAX_DISTINCT or len(vals) >= CATEGORY_MIN_REPEATS * distinct
+    distinct = set(vals)
+    if not (len(distinct) <= CATEGORY_MAX_DISTINCT or len(vals) >= CATEGORY_MIN_REPEATS * len(distinct)):
+        return False
+    single = not _category_head(t)
+    like = sum(1 for v in distinct if name_or_place_like(v) or (single and single_name_like(v)))
+    return like < 2 and like * 3 < len(distinct)
 
 
 def name_shape_rule(header: str, values: list[str]) -> tuple[str, str, str, int] | None:
@@ -1061,7 +1496,8 @@ def decide_columns(data: list[dict], headers: list[str], locale: dict, scrubber:
         # value made only of category words ("American Indian or Alaska Native") is not text.
         prose = [v for v in nonempty if not _is_category_value(v)]
         d["free_text"] = bool(prose) and upstream.looks_like_free_text(prose)
-        rule = name_rule(col) or locale_name_rule(col, locale)
+        rule = column_name_rule(col, nonempty, scrubber) or locale_name_rule(col, locale)
+        qualified = not rule and bool(name_rule(col))
         if rule:
             finding, action, phi = rule
             d.update(kind="allowed" if phi == "allowed_geography" else "identifier",
@@ -1107,6 +1543,9 @@ def decide_columns(data: list[dict], headers: list[str], locale: dict, scrubber:
                          action="redact", phi_type="unknown")
             elif names := name_shape_rule(col, nonempty):
                 d.update(kind="uncertain", finding=f"values: {names[0]}", action=names[1], phi_type=names[2])
+            elif qualified:
+                d.update(kind="none", action="keep", phi_type=None,
+                         finding="category values under an identifier word (a type, status or payer column)")
             else:
                 d.update(kind="none", finding="no identifier found", action="keep", phi_type=None)
         # Text the scanner keeps can still hold a name it has no way to see (lower case,
@@ -1304,7 +1743,7 @@ def residual_findings(rows: list[dict], headers: list[str], decisions: list[dict
     for i, col in enumerate(headers, start=1):
         d = by_col.get(col)
         if d is None:
-            rule = name_rule(col)
+            rule = column_name_rule(col, [str(row.get(col, "") or "") for row in rows], scrubber)
             actions[i] = rule[1] if rule else "keep"
         else:
             actions[i] = d["action"]
@@ -1402,9 +1841,10 @@ def print_plan(decisions: list[dict], withheld: set[int], changed: dict | None =
         print("  Kept (identifier patterns inside them are replaced): " + ", ".join(kept))
     text = kept_text_columns(decisions)
     if text:
-        print("  Kept text the scanner cannot fully check for names (a name in lower case, a short")
-        print("  all-capital name, any name under a category column such as diagnosis, or a place")
-        print("  under a state or country column): " + ", ".join(display_name(d, withheld) for d in text))
+        print("  Kept text the scanner cannot fully check for names (a name in lower case, initials or")
+        print("  a short all-capital name, a single word under a category column such as diagnosis, a")
+        print("  surname or a one-word town, or a place under a state or country column): "
+              + ", ".join(display_name(d, withheld) for d in text))
         print("  Ask the person to confirm these hold no names, places or other identifiers.")
 
 
@@ -1521,9 +1961,10 @@ def cmd_run(args) -> int:
              "kept_on_request": d["kept_on_request"]}
             for d in kept_text_columns(decisions)
         ],
-        "kept_text_note": ("Kept text columns can hold names the scanner cannot see (lower case, a short "
-                           "all-capital name, a name under a category column, a place under a state "
-                           "or country column); the person confirms each one holds no identifiers."),
+        "kept_text_note": ("Kept text columns can hold names the scanner cannot see (lower case, initials, "
+                           "a short all-capital name, a single word under a category column such as a "
+                           "surname or a one-word town, a place under a state or country column); the "
+                           "person confirms each one holds no identifiers."),
         "mapping_written": False,
         "human_review": ("Automated de-identification is not a Safe Harbor determination. A person "
                          "must spot-check the output, confirm that no remaining information could "

@@ -105,18 +105,19 @@ person that table and explain the three groups:
   with identifier patterns, numbers shaped like ZIP codes, latitude and longitude, or birth
   years of people over 89, text values shaped like names or places (capitalised words that
   are not common category words such as Male, White or Never; a category word in the
-  column name does not stop this when the name also names a person or role, as in
-  `Treatment Physician` or `Event Patient`), and columns whose name usually holds a name or
-  a place but has other uses (`Subject`, `First`, `Last`, `Contact`, `Family`, `Region`,
-  `Home`, `Company`, `School`). Ask the person whether any of
+  column name does not stop this when the name also names a person, a role, a title or a
+  place, as in `Treatment Physician`, `Visit Dr`, `Test Verifier` or `Visit Location`, or
+  when the values are names of two or more words), and columns whose name usually holds a
+  name or a place but has other uses (`Subject`, `First`, `Last`, `Contact`, `Family`,
+  `Region`, `Home`, `Company`, `School`). Ask the person whether any of
   them is safe to keep, for example a site column of hospital names or a pair of score
   columns read as coordinates. Free text can never be kept.
 - **Kept columns** stay, with any identifier pattern inside a cell replaced. The plan lists
   the kept text columns again on their own. Ask the person to confirm, column by column,
   that none of them holds names, places or other identifiers the scanner cannot see: a
-  name in lower case, a short all-capital name, a name in a column named for a category
-  such as diagnosis, or a place in a state or country column, which Safe Harbor lets the
-  script keep.
+  name in lower case, initials or a short all-capital name, a single word (a surname alone
+  or a one-word town) in a column named for a category such as diagnosis, or a place in a
+  state or country column, which Safe Harbor lets the script keep.
 
 Then add `--keep COLUMN` for each column the person confirmed, and `--redact COLUMN` for any
 column they want removed. A column can also be named `#N` (its position).
@@ -186,9 +187,9 @@ determination covers it.
 replaces and what a person still has to check. In short, it does not:
 
 - find names written in kept text without a title or label ("seen by Halvorsen"), names
-  in lower case, as initials or as a short all-capital word, or names in a column named
-  for a category (diagnosis, drug, race) whose values repeat like a category, which it
-  does not read as names unless the column name also names a person or role;
+  in lower case, as initials or as a short all-capital word, or a surname alone or a
+  one-word town in a column named for a category (diagnosis, cohort, visit) that names no
+  person, role or place; names of two or more words are found under any column name;
 - recognise a bare five-digit ZIP code inside text, a column of ZIP codes that mostly
   lost their leading zero under a name it does not know, or a local seven-digit phone
   number without a label;
