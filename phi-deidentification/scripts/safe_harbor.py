@@ -144,12 +144,51 @@ URL_TLDS = (r"(?:com|org|net|edu|gov|mil|info|biz|io|me|ly|co|us|uk|ca|au|gl|gd|
 NAME_LABELS = (r"(?:patient|pt|name|full\s+name|contact|spouse|wife|husband|partner|mother"
                r"|father|parent|son|daughter|sibling|brother|sister|guardian|caregiver"
                r"|emergency\s+contact|next\s+of\s+kin|nok|employer)")
+# Month names in French, German, Spanish, Italian, Portuguese and Dutch. They are read as
+# a date only with a four-digit year after them, so "Marco" or "mars" alone stay.
+FOREIGN_MONTH = (r"(?:janvier|janv|f[ée]vrier|f[ée]vr|mars|avril|avr|mai|juin|juillet|juil|ao[uû]t"
+                 r"|septembre|octobre|novembre|d[ée]cembre|d[ée]c|januar|j[äa]nner|jaenner|j[äa]n"
+                 r"|februar|m[äa]rz|maerz|m[äa]r|juni|juli|oktober|okt|dezember|dez|enero|febrero"
+                 r"|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre"
+                 r"|diciembre|dic|gennaio|febbraio|aprile|maggio|giugno|luglio|settembre|ottobre"
+                 r"|dicembre|janeiro|fevereiro|mar[çc]o|maio|junho|julho|setembro|outubro|dezembro"
+                 r"|januari|februari|maart|mei|augustus)")
+# Words after which a day and a month with no year are a date ("seen 14/3", "on 03-14").
+DATE_CONTEXT = (r"(?:seen|on|dated|since|until|till|admitted|discharged|visited|visit|appt"
+                r"|appointment|returned|presented|scheduled|reviewed)")
+# A count after the numbers makes them a range, not a date ("seen 10-12 times").
+NOT_A_DATE_AFTER = (r"(?!\s*(?:times|x\b|days?\b|weeks?\b|wks?\b|months?\b|mos?\b|years?\b|yrs?\b"
+                    r"|hours?\b|hrs?\b|mins?\b|minutes|mg\b|mcg\b|ml\b|units?\b|%|percent|patients"
+                    r"|visits|occasions|episodes|doses|tabs?\b|per\b))")
+SOCIAL_NETWORKS = (r"(?:facebook|fb|instagram|ig|twitter|tiktok|snapchat|linkedin|youtube|reddit"
+                   r"|telegram|whatsapp|wechat|skype|discord|mastodon|bluesky|tumblr|pinterest"
+                   r"|github|myspace)")
+# A letter of a script without capital letters, as a regex class: Hebrew, Arabic, the Indic
+# scripts, Thai, Lao, Georgian, Hangul, kana and CJK ideographs (see _caseless_letter).
+CASELESS_CLASS = ("[\u0590-\u05ff\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\u0900-\u0dff\u0e00-\u0eff"
+                  "\u10d0-\u10ff\u1100-\u11ff\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af"
+                  "\uf900-\ufaff\ufb1d-\ufdff\ufe70-\ufeff]")
+# Words written after "Instagram:" that are not a handle.
+NOT_A_HANDLE = (r"(?:yes|no|none|n/?a|nil|unknown|declined|refused|private|deleted|inactive|active"
+                r"|not|null|only|user|account|profile|preferred|available|unavailable|ok|okay|group"
+                r"|groups|message|messages|messaging|call|calls|video|chat|used|uses|requested|pending"
+                r"|blocked|verified|unverified|linked|unlinked|consented|opted)\b")
 
 
 def _year_of(m: re.Match) -> str:
     text = m.group(0)
     y = re.search(r"(?<!\d)(1[89]\d{2}|20\d{2})", text)
     return y.group(1) if y else "[DATE]"
+
+
+def _year_and_month(m: re.Match):
+    """The year of "2021-03". A month that is the next year's last two digits ("2010-11",
+    "2011/12") is a season or a school year as often as a month, and is left alone; a
+    column of months is still found as a whole, because its other months are read."""
+    month = m.group("m")
+    if len(month) == 2 and int(month) == (int(m.group("y")) + 1) % 100:
+        return None
+    return m.group("y")
 
 
 def _keep_label(placeholder: str):
@@ -215,6 +254,14 @@ def _labelled_name(m: re.Match):
     return _keep_label("[NAME]")(m)
 
 
+def _caseless_labelled_name(m: re.Match):
+    """A name in a script without capital letters after a title or a label, unless it is a
+    common category word ("Patient: 男")."""
+    if m.group("v").strip() in CASELESS_CATEGORY_VALUES:
+        return None
+    return _keep_label("[NAME]")(m)
+
+
 def _age90(m: re.Match) -> str:
     return "90+ years"
 
@@ -264,11 +311,20 @@ PATTERNS: list[tuple[str, re.Pattern, object]] = [
     ("email", re.compile(r"(?i)(?<![\w.%+@-])[a-z][a-z0-9._%+-]*@[a-z][a-z0-9-]*(?![\w@-])(?!\.[a-z0-9])"), "[EMAIL]"),
     # Social media handles: "@jane_doe", and a handle after the name of a network.
     ("social", re.compile(r"(?<![\w@.+/-])@[A-Za-z_][A-Za-z0-9_.]{0,29}[A-Za-z0-9_](?![\w@])"), "[HANDLE]"),
-    ("social", re.compile(r"(?i)\b(?P<label>facebook|fb|instagram|ig|twitter|tiktok|snapchat|linkedin|youtube"
-                          r"|reddit|telegram|whatsapp|wechat|skype|discord|mastodon|bluesky|tumblr|pinterest"
-                          r"|github|myspace)\b\s*(?:handle|account|profile|user(?:name)?)?\s*[:=]?\s*"
-                          r"(?P<v>[/@][A-Za-z0-9_.-]{2,}|(?=[A-Za-z0-9_.-]*[A-Za-z])(?=[A-Za-z0-9_.-]*[._\d])"
+    ("social", re.compile(r"(?i)\b(?P<label>" + SOCIAL_NETWORKS + r")\b\s*(?:handle|account|profile|user(?:name)?)?\s*[:=]?\s*"
+                          r"(?P<v>[/@][A-Za-z0-9_.-]{1,}|(?=[A-Za-z0-9_.-]*[A-Za-z])(?=[A-Za-z0-9_.-]*[._\d])"
                           r"[A-Za-z0-9_][A-Za-z0-9_.-]{2,})"), _keep_label("[HANDLE]")),
+    # A handle of letters only after "Instagram:" or "skype:", a name in capitals after
+    # "Facebook:", and a handle with a digit, dot or underscore after "on Instagram as".
+    ("social", re.compile(r"(?i)\b(?P<label>" + SOCIAL_NETWORKS + r"\b\s*(?:handle|account|profile|user(?:name)?|id)?"
+                          r"\s*[:=]\s*)(?!" + NOT_A_HANDLE + r")(?P<v>(?-i:[A-Z][a-zA-Z'-]+(?:\s+[A-Z][a-zA-Z'-]+){0,2})"
+                          r"|[A-Za-z][A-Za-z0-9_.-]{1,29})(?![\w@])"), _keep_label("[HANDLE]")),
+    ("social", re.compile(r"(?i)\b(?P<label>" + SOCIAL_NETWORKS + r"\b\s*(?:handle|account|profile|user(?:name)?)?"
+                          r"\s+as\s+)(?P<v>(?=[A-Za-z0-9_.-]*[A-Za-z])(?=[A-Za-z0-9_.-]*[._\d])"
+                          r"[A-Za-z0-9_][A-Za-z0-9_.-]{2,})(?![\w@])"), _keep_label("[HANDLE]")),
+    # A Reddit user ("u/jdoe"), but not a unit ("10 u/day", "u/kg").
+    ("social", re.compile(r"(?<![\w/])(?<!\d\s)u/(?!(?:kg|day|days|d|hr|hrs|h|hour|hours|ml|l|dl|min|mins|wk"
+                          r"|week|dose|g|mg|mcg|unit|units)\b)[A-Za-z0-9_-]{3,20}(?![\w/])"), "[HANDLE]"),
     ("device", re.compile(r"(?i)(?<![0-9a-f:-])[0-9a-f]{2}([:-])[0-9a-f]{2}(?:\1[0-9a-f]{2}){4}(?![0-9a-f:-])"), "[DEVICE_ID]"),
     ("device", re.compile(r"(?i)(?<![0-9a-f.])[0-9a-f]{4}\.[0-9a-f]{4}\.[0-9a-f]{4}(?![0-9a-f.])"), "[DEVICE_ID]"),
     ("ip", re.compile(r"(?i)(?<![0-9a-f:])(?:[0-9a-f]{1,4}:){7}[0-9a-f]{1,4}(?![0-9a-f:])"), _ipv6),
@@ -281,6 +337,8 @@ PATTERNS: list[tuple[str, re.Pattern, object]] = [
     ("id", re.compile(r"(?i)\b(?P<label>" + ID_LABELS + r")\s*(?:[:#=]\s*)?(?P<v>(?=[A-Z0-9/.-]*\d)[A-Z0-9][A-Z0-9/.-]{2,}[A-Z0-9])"), _keep_label("[ID]")),
     # A number written after "#" ("Hospital #A-998").
     ("id", re.compile(r"(?i)(?<![\w&#])#\s?(?P<v>(?=[A-Z0-9-]*\d)[A-Z0-9][A-Z0-9-]{2,}[A-Z0-9])(?![\w-])"), _keep_label("[ID]")),
+    # A user name and a four-digit tag ("jdoe#1234"), after the labelled numbers ("MRN#1234").
+    ("social", re.compile(r"(?<![\w#@.])[A-Za-z][A-Za-z0-9_.]{1,31}#\d{4}(?![\w#])"), "[HANDLE]"),
     ("ssn", re.compile(r"(?i)\b(?:ssn|social\s+security(?:\s+(?:number|no\.?|#))?)\s*[:#]?\s*(?P<v>\d{3}[\s-]?\d{2}[\s-]?\d{4})(?!\d)"), _keep_label("[SSN]")),
     ("ssn", re.compile(r"(?<![\d-])\d{3}-\d{2}-\d{4}(?![\d-])"), "[SSN]"),
     # Spaced: a space before it is fine ("ss# 123 45 6789"), a digit and a space is not.
@@ -301,6 +359,18 @@ PATTERNS: list[tuple[str, re.Pattern, object]] = [
     ("date", re.compile(r"(?i)(?<![\w])" + MONTH + r"\.?[-\s/,]+" + YEAR4 + r"(?!\d)"), _year_of),
     ("date", re.compile(r"(?<![\d/.-])" + MON_NUM + r"[/-]" + YEAR4 + r"(?![\d/-])"), _year_of),
     ("date", re.compile(r"(?<![\d.])" + YEAR4 + r"(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])(?:T?\d{4,6})?(?![\d.])"), _year_of),
+    # Month names of other languages, with a four-digit year ("14 mars 2021", "14. März 2021",
+    # "15 de marzo de 2020", "März 2021").
+    ("date", re.compile(r"(?i)(?<![\w])" + DAY + r"\.?\s*(?:de\s+)?" + FOREIGN_MONTH + r"\.?,?\s*(?:de\s+)?"
+                        + YEAR4 + r"(?!\d)"), _year_of),
+    ("date", re.compile(r"(?i)(?<![\w])" + FOREIGN_MONTH + r"\.?,?\s+(?:de\s+)?" + YEAR4 + r"(?!\d)"), _year_of),
+    # A year and a month with no day ("2021-03", "2021/03", "2021-3", "2021 Mar", "2021-Mar"),
+    # as a monthly export writes them. A year range ("2019-2021", "FY2019-20") is not one,
+    # and "2021 may" in a sentence is a verb.
+    ("date", re.compile(r"(?<![\w./-])(?P<y>" + YEAR4 + r")[-/](?P<m>" + MON_NUM + r")(?!\d)(?![-/.]\d)"),
+     _year_and_month),
+    ("date", re.compile(r"(?<![\w./-])" + YEAR4 + r"(?:(?:[-/.]\s*|\s+)(?:(?i:" + MONTH_NOT_MAY + r")|May)"
+                        r"|[-/.]\s*(?i:may))\b\.?"), _year_of),
     # Dates without a four-digit year cannot be reduced to one.
     ("date", re.compile(r"(?<![\d/.-])" + DAY + r"([-/.])" + DAY + r"\1\d{2}(?![\d/.-])"), "[DATE]"),
     ("date", re.compile(r"(?i)(?<![\w])" + DAY + r"[-/]" + MONTH + r"[-/]\d{2}(?!\d)"), "[DATE]"),
@@ -308,6 +378,12 @@ PATTERNS: list[tuple[str, re.Pattern, object]] = [
     ("date", re.compile(r"(?i)(?<![\w])" + MONTH_NOT_MAY + r"\.?\s+" + DAY + r"(?:st|nd|rd|th)?\b"), "[DATE]"),
     # Month/day without a year; "1/2" (a fraction) is left alone.
     ("date", re.compile(r"(?<![\d/.-])(?:(?:0[1-9]|1[0-2])/(?:0[1-9]|[12]\d|3[01])|(?:0?[1-9]|1[0-2])/(?:1[3-9]|2\d|3[01]))(?![\d/.-])"), "[DATE]"),
+    # Day and month in the other orders, after a word that says a date follows: "seen
+    # 14/3" (a day over 12 first), "on 03-14" or "on 14-03", "seen 14.3." (German).
+    ("date", re.compile(r"(?i)\b(?P<label>" + DATE_CONTEXT + r")\s+(?P<v>(?:(?:1[3-9]|2\d|3[01])/(?:0?[1-9]|1[0-2])"
+                        r"|(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])|(?:1[3-9]|2\d|3[01])-(?:0[1-9]|1[0-2]))(?![\d/.-])"
+                        r"|(?:0?[1-9]|[12]\d|3[01])\.(?:0?[1-9]|1[0-2])\.(?!\d))" + NOT_A_DATE_AFTER),
+     _keep_label("[DATE]")),
     # Telephone and fax numbers.
     ("phone", re.compile(r"(?i)\b(?:tel(?:ephone)?|phone|ph|fax|facsimile|cell|mobile|pager)\.?(?:\s*(?:no\.?|number|#))?\s*[:#]?\s*(?P<v>\+?[\d(][\d\s().-]{5,}\d)"), _keep_label("[PHONE]")),
     ("phone", re.compile(r"(?<![\w+])(?:\+1[\s.-]?|1[\s.-])?\(?[2-9]\d{2}\)?[\s.-]?\d{3}[\s.-]?\d{4}(?![\w])"), "[PHONE]"),
@@ -325,6 +401,10 @@ PATTERNS: list[tuple[str, re.Pattern, object]] = [
     # The name may not be another label ("Patient Name: X" replaces X, not "Name").
     ("name", re.compile(r"(?i:\b" + NAME_LABELS + r")\s*[:=]?\s*(?!(?i:" + NAME_LABELS + r")\b)"
                         r"(?P<v>[A-Z][a-zA-Z'-]+(?:[\s,]+[A-Z][a-zA-Z'-]+){0,3})"), _labelled_name),
+    # The same in a script without capital letters ("Dr. 박지훈", "Patient: 林子涵").
+    ("name", re.compile(r"(?:\b(?:Mr|Mrs|Ms|Mx|Miss|Dr|Prof)\.?\s*|(?i:\b" + NAME_LABELS + r")\s*[:=]?\s*)"
+                        r"(?P<v>" + CASELESS_CLASS + r"+(?:[\s\u30fb\u00b7]" + CASELESS_CLASS + r"+){0,2})"),
+     _caseless_labelled_name),
     # Ages over 89.
     ("age", re.compile(r"(?i)\b(?:" + AGE_NUM + "|" + AGE_WORD + r")\s*-?\s*(?:years?(?:[\s-]*old)?|yrs?|y/o|y\.?o\.?|yo)(?![\w])"), _age90),
     # "(?![\d.+])" keeps "aged 90+" from matching again.
@@ -1144,6 +1224,18 @@ mrna mirna lncrna gene genes oncogene suppressor wild mutant variant variants de
 insertion duplication amplification missense nonsense frameshift splice synonymous
 pathogenic uncertain significance likely exon intron allele homozygous heterozygous
 hemizygous germline somatic copy gain luminal basal enriched claudin
+""".split()) | frozenset("""
+escherichia klebsiella clostridioides candida aspergillus salmonella shigella listeria neisseria
+haemophilus legionella proteus serratia morganella providencia bacteroides moraxella bordetella
+treponema borrelia chlamydia chlamydophila mycoplasma ureaplasma pneumocystis toxoplasma giardia
+vibrio yersinia brucella francisella bartonella rickettsia coxiella nocardia actinomyces gardnerella
+prevotella veillonella kingella eikenella aggregatibacter coli aureus difficile pylori pneumoniae
+aeruginosa epidermidis faecalis faecium influenzae albicans glabrata auris cloacae mirabilis
+marcescens baumannii maltophilia fragilis perfringens gonorrhoeae trachomatis pallidum burgdorferi
+jejuni enterica typhi typhimurium cholerae monocytogenes agalactiae pyogenes mutans viridans
+lugdunensis saprophyticus oxytoca freundii aerogenes vulgaris catarrhalis meningitidis pertussis
+parainfluenzae neoformans fumigatus jirovecii falciparum vivax gondii lamblia histolytica vaginalis
+hominis genitalium pneumophila avium kansasii abscessus leprae
 """.split())
 # Category words that are also common given names or surnames ("June", "White", "Ward",
 # "Wing", "Long"). They do not stop a value from reading as a person's name.
@@ -1241,12 +1333,94 @@ def _is_category_value(v: str) -> bool:
         w in CATEGORY_WORDS or _clinical_word(w) for w in words)
 
 
+# Scripts written without capital letters (Chinese, Japanese, Korean, Arabic, Hebrew, the
+# Indic scripts, Thai, Georgian, ...) give a name no shape that tells it from a category
+# word, so a short value in one is read as a possible name or place, unless it is one of
+# these common category words (sex, yes and no, positive and negative, unknown, ...).
+CASELESS_CATEGORY_VALUES = frozenset("""
+男 女 男性 女性 是 否 有 无 無 未知 不详 不詳 不明 阳性 阴性 陽性 陰性 正常 异常 異常 左 右 双侧 雙側 両側
+高 中 低 轻 輕 重 轻度 輕度 中度 重度 已婚 未婚 离异 離異 丧偶 喪偶 门诊 門診 住院 急诊 急診 外来 入院 存活
+死亡 生存 甲 乙 丙 丁 はい いいえ あり なし
+남 여 남성 여성 남자 여자 예 아니오 아니요 네 있음 없음 양성 음성 정상 비정상 미상 모름 외래 입원 생존 사망
+ذكر أنثى انثى نعم لا مجهول ايجابي إيجابي سلبي طبيعي
+זכר נקבה כן לא חיובי שלילי תקין
+पुरुष महिला स्त्री हाँ हां नहीं अज्ञात सकारात्मक नकारात्मक सामान्य
+ชาย หญิง ใช่ ไม่ใช่ ไม่ ไม่ทราบ บวก ลบ ปกติ ผิดปกติ
+مرد زن بله خیر عورت ہاں نہیں
+""".split()) | frozenset({"غير معروف", "לא ידוע"})
+# Characters that join the letters of one word in these scripts: zero-width joiners,
+# the katakana middle dot, the Arabic tatweel, apostrophes and hyphens.
+CASELESS_JOINERS = frozenset("\u200c\u200d\u30fb\u00b7\u2027\u0640'\u2019-")
+CASELESS_SPLIT = re.compile("[\\s,;/\u060c\u3001\uff0c]+")
+
+
+def _caseless_letter(c: str) -> bool:
+    """A letter of a script that has no capital letters."""
+    if c.isascii():
+        return False
+    if "\u10d0" <= c <= "\u10ff":
+        return True  # Georgian, whose capitals are not used in names
+    return (c.isalpha() and c.upper() == c == c.lower()
+            and not unicodedata.name(c, "").startswith("LATIN"))
+
+
+def _caseless_word(w: str) -> bool:
+    letters = 0
+    for c in w:
+        if _caseless_letter(c):
+            letters += 1
+        elif not (c in CASELESS_JOINERS or unicodedata.category(c).startswith("M")):
+            return False
+    return letters > 0
+
+
+def _ideograph(c: str) -> bool:
+    """One of these characters can be a whole surname or given name."""
+    return unicodedata.name(c, "").startswith(("CJK UNIFIED", "CJK COMPATIBILITY IDEOGRAPH",
+                                               "HANGUL SYLLABLE", "HIRAGANA", "KATAKANA"))
+
+
+def has_caseless_text(v: str) -> bool:
+    return any(_caseless_letter(c) for c in v)
+
+
+def caseless_name_shaped(value: str) -> bool:
+    """True for one to four words with no digit, one of which is written in a script that
+    has no capital letters and is not a common category word ("林子涵", "محمد الحسن",
+    "Dr 박지훈", "seen by 박지훈"). In these scripts a name cannot be told from any other
+    word by its shape, so a column of them is redacted unless the person keeps it."""
+    s = value.strip()
+    if not s or re.search(r"\d", s) or PLACEHOLDER.search(s) or s in CASELESS_CATEGORY_VALUES:
+        return False
+    words = [w for w in CASELESS_SPLIT.split(s) if w]
+    if not 1 <= len(words) <= 4:
+        return False
+    for w in words:
+        if w in CASELESS_CATEGORY_VALUES or not _caseless_word(w):
+            continue
+        letters = [c for c in w if _caseless_letter(c)]
+        if len(letters) >= 2 or _ideograph(letters[0]):
+            return True
+    return False
+
+
+def caseless_prose(value: str) -> bool:
+    """Text in a script without capital letters that reads as a sentence: these scripts
+    (Chinese, Japanese, Thai) put no space between words, so it is found by its length,
+    15 letters in one run or 40 in all, where a name or a category word is shorter."""
+    counts = [sum(1 for c in w if _caseless_letter(c)) for w in value.split()]
+    return bool(counts) and (max(counts) >= 15 or sum(counts) >= 40)
+
+
 def name_shaped(value: str) -> bool:
     """True for one to four capitalised words ("Alice", "Bob Zeller", "Zeller, Alice",
-    "O'Brien", "ZELLER ALICE", "San Francisco") that are not all category words."""
+    "O'Brien", "ZELLER ALICE", "San Francisco") that are not all category words, and for
+    short values written in a script without capital letters (caseless_name_shaped)."""
     s = value.strip()
     if not s or PLACEHOLDER.search(s) or s.lower() in MISSING_VALUES or _is_category_value(s):
         return False
+    if caseless_name_shaped(s):
+        return True
     words = [w for w in re.split(r"[\s,]+", s) if w]
     if not 1 <= len(words) <= 4:
         return False
@@ -1298,7 +1472,7 @@ def _vocabulary_word(w: str) -> bool:
 def name_or_place_like(value: str) -> bool:
     """True for two or more capitalised words none of which is a category, medical or
     anatomical word: the shape of a person's name ("Alice Okafor", "Okafor, Alice B.",
-    "OKAFOR ALICE", "Alice Okafor MD") or a place's ("Walnut Grove"). A category value
+    "OKAFOR ALICE", "Alice Okafor MD", "A. Okafor") or a place's ("Walnut Grove"). A category value
     almost always holds one such word ("Heart Failure", "Treatment A", "Left Upper Lobe"),
     and state and country names are allowed."""
     s = value.strip()
@@ -1308,6 +1482,7 @@ def name_or_place_like(value: str) -> bool:
     if not 2 <= len(words) <= 6:
         return False
     core = []
+    dotted_initial = False
     for w in words:
         letters = re.sub(r"['\u2019.-]", "", w)
         if not letters.isalpha():
@@ -1316,6 +1491,7 @@ def name_or_place_like(value: str) -> bool:
         if len(letters) == 1:
             if not letters.isupper():
                 return False
+            dotted_initial = dotted_initial or w.endswith(".")
             continue  # an initial
         if low in NAME_PARTICLES or low.replace(".", "") in NAME_SUFFIXES:
             continue
@@ -1324,7 +1500,9 @@ def name_or_place_like(value: str) -> bool:
         if low not in NAME_LIKE_CATEGORY_WORDS and _vocabulary_word(low):
             return False
         core.append(letters)
-    return len(core) >= 2 and max(len(c) for c in core) >= 3
+    # One name and an initial written with its full stop ("A. Okafor", "Alice O.", "Okafor,
+    # A.") is a name too; a category letter has no full stop ("Treatment A", "Plan B").
+    return (len(core) >= 2 or (len(core) == 1 and dotted_initial)) and max(len(c) for c in core) >= 3
 
 
 # Nouns that, as the last word of a column name after a category word, still name an
@@ -1389,7 +1567,8 @@ def category_column(header: str, vals: list[str]) -> bool:
     if not (len(distinct) <= CATEGORY_MAX_DISTINCT or len(vals) >= CATEGORY_MIN_REPEATS * len(distinct)):
         return False
     single = not _category_head(t)
-    like = sum(1 for v in distinct if name_or_place_like(v) or (single and single_name_like(v)))
+    like = sum(1 for v in distinct if name_or_place_like(v) or (single and single_name_like(v))
+               or caseless_name_shaped(v))
     return like < 2 and like * 3 < len(distinct)
 
 
@@ -1405,9 +1584,26 @@ def name_shape_rule(header: str, values: list[str]) -> tuple[str, str, str, int]
     shaped = {v for v in set(vals) if name_shaped(v)}
     if not shaped:
         return None
+    caseless = sum(1 for v in shaped if caseless_name_shaped(v))
+    if caseless == len(shaped):
+        what = ("are words in a script without capital letters, where names cannot be told from "
+                "other words")
+    elif caseless:
+        what = ("are capitalised words that are not common category words, or words in a script "
+                "without capital letters")
+    else:
+        what = "are capitalised words that are not common category words"
     return (f"text values shaped like names or places ({len(shaped)} of {len(set(vals))} distinct "
-            "values are capitalised words that are not common category words)", "redact", "name",
-            sum(1 for v in vals if v in shaped))
+            f"values {what})", "redact", "name", sum(1 for v in vals if v in shaped))
+
+
+# 202103 and 2021.03; 2021.1 is October written as a number that lost its last zero.
+YEAR_MONTH_NUMBER = re.compile(r"(1[89]\d{2}|20\d{2})(?:0[1-9]|1[0-2]|\.(?:0[1-9]|1[0-2]|1))")
+
+
+def _year_month_number(v: str, reference_year: int) -> bool:
+    m = YEAR_MONTH_NUMBER.fullmatch(v)
+    return bool(m) and 1880 <= int(m.group(1)) <= reference_year + 10
 
 
 def value_shape_rule(header: str, values: list[str], reference_year: int) -> tuple[str, str, str, int] | None:
@@ -1425,6 +1621,11 @@ def value_shape_rule(header: str, values: list[str], reference_year: int) -> tup
             return (f"four-digit years, {old} of {len(vals)} at least 90 years before {reference_year} "
                     "(as birth years they reveal an age over 89)", "birth_year", "date", old)
         return None
+    # A year and a month written as a number (202103, 2021.03), whatever the column is
+    # called: the month is a Safe Harbor date element, so only the year stays.
+    if all(_year_month_number(v, reference_year) for v in vals):
+        return (f"a year and a month written as a number in {len(vals)} cells (dates)", "year", "date",
+                len(vals))
     toks = set(column_tokens(header))
     if toks & {"years", "yrs", "yr", "yo"}:
         nums = [float(v) for v in vals]
@@ -1495,7 +1696,8 @@ def decide_columns(data: list[dict], headers: list[str], locale: dict, scrubber:
         # Free text is never kept: a name inside a sentence has no pattern to find. A long
         # value made only of category words ("American Indian or Alaska Native") is not text.
         prose = [v for v in nonempty if not _is_category_value(v)]
-        d["free_text"] = bool(prose) and upstream.looks_like_free_text(prose)
+        d["free_text"] = bool(prose) and (upstream.looks_like_free_text(prose)
+                                          or any(caseless_prose(v) for v in prose))
         rule = column_name_rule(col, nonempty, scrubber) or locale_name_rule(col, locale)
         qualified = not rule and bool(name_rule(col))
         if rule:
@@ -1551,6 +1753,8 @@ def decide_columns(data: list[dict], headers: list[str], locale: dict, scrubber:
         # Text the scanner keeps can still hold a name it has no way to see (lower case,
         # a category word, a single all-capital word); the plan lists these for the person.
         d["text"] = any(not is_number(v) for v in _shape_values(values))
+        # A name inside a longer value in a script without capital letters is not found.
+        d["caseless"] = any(has_caseless_text(v) for v in _shape_values(values))
         decisions.append(d)
 
     # Latitude and longitude under names the rules above do not know.
@@ -1607,7 +1811,8 @@ def _years_in(v: str) -> list[str]:
 
 def to_year(v: str, scrubber: Scrubber) -> str:
     s = v.strip()
-    m = re.fullmatch(YEAR4 + r"(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])(?:T?\d{4,6})?", s)
+    # 20210314, 20210314T0930 and a year and month written as one number, 202103.
+    m = re.fullmatch(YEAR4 + r"(?:0[1-9]|1[0-2])(?:(?:0[1-9]|[12]\d|3[01])(?:T?\d{4,6})?)?", s)
     if m:
         return s[:4]
     years = set(_years_in(s))
@@ -1845,6 +2050,11 @@ def print_plan(decisions: list[dict], withheld: set[int], changed: dict | None =
         print("  a short all-capital name, a single word under a category column such as diagnosis, a")
         print("  surname or a one-word town, or a place under a state or country column): "
               + ", ".join(display_name(d, withheld) for d in text))
+        caseless = [d for d in text if d.get("caseless")]
+        if caseless:
+            print("  Of these, text in a script without capital letters (Chinese, Japanese, Korean, Arabic,")
+            print("  Hebrew, Hindi, Thai, ...), where a name inside a longer value is not found: "
+                  + ", ".join(display_name(d, withheld) for d in caseless))
         print("  Ask the person to confirm these hold no names, places or other identifiers.")
 
 
@@ -1958,13 +2168,14 @@ def cmd_run(args) -> int:
         },
         "kept_text_columns": [
             {"index": d["index"], "column": None if d["index"] in withheld else d["column"],
-             "kept_on_request": d["kept_on_request"]}
+             "kept_on_request": d["kept_on_request"], "script_without_case": bool(d.get("caseless"))}
             for d in kept_text_columns(decisions)
         ],
         "kept_text_note": ("Kept text columns can hold names the scanner cannot see (lower case, initials, "
                            "a short all-capital name, a single word under a category column such as a "
-                           "surname or a one-word town, a place under a state or country column); the "
-                           "person confirms each one holds no identifiers."),
+                           "surname or a one-word town, a place under a state or country column, a name "
+                           "inside a longer value in a script without capital letters); the person "
+                           "confirms each one holds no identifiers."),
         "mapping_written": False,
         "human_review": ("Automated de-identification is not a Safe Harbor determination. A person "
                          "must spot-check the output, confirm that no remaining information could "

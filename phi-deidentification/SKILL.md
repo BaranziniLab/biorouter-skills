@@ -100,24 +100,29 @@ person that table and explain the three groups:
 - **Identifiers by name** (`patient_name`, `fname`, `participant`, `proband`, `mother`,
   `spouse`, `dob`, `born`, `byear`, `age_group`, `zip_code`, `hometown`, `suburb`, `mrn`,
   ...) are replaced and cannot be kept.
-- **Columns the scanner cannot vouch for** are redacted or pseudonymized, or for old years
-  grouped as `[90_OR_OLDER]`: free text, unique numbers, mostly distinct text, some cells
-  with identifier patterns, numbers shaped like ZIP codes, latitude and longitude, or birth
-  years of people over 89, text values shaped like names or places (capitalised words that
-  are not common category words such as Male, White or Never; a category word in the
-  column name does not stop this when the name also names a person, a role, a title or a
-  place, as in `Treatment Physician`, `Visit Dr`, `Test Verifier` or `Visit Location`, or
-  when the values are names of two or more words), and columns whose name usually holds a
-  name or a place but has other uses (`Subject`, `First`, `Last`, `Contact`, `Family`,
-  `Region`, `Home`, `Company`, `School`). Ask the person whether any of
-  them is safe to keep, for example a site column of hospital names or a pair of score
-  columns read as coordinates. Free text can never be kept.
+- **Columns the scanner cannot vouch for** are redacted or pseudonymized, reduced to the
+  year, or for old years grouped as `[90_OR_OLDER]`: free text, unique numbers, mostly
+  distinct text, some cells with identifier patterns, numbers shaped like ZIP codes,
+  latitude and longitude, birth years of people over 89, or a year and a month (`202103`,
+  `2021.03`), text values shaped like names or places (capitalised words that are not
+  common category words such as Male, White or Never; a category word in the column name
+  does not stop this when the name also names a person, a role, a title or a place, as in
+  `Treatment Physician`, `Visit Dr`, `Test Verifier` or `Visit Location`, or when the values
+  are names of two or more words or an initial and a surname), text in a script without
+  capital letters (Chinese, Japanese, Korean, Arabic, Hebrew, Hindi, Thai), where a name
+  cannot be told from a category word, unless every value is a common word such as 男 or
+  여, and columns whose name usually holds a name or a place but has other uses
+  (`Subject`, `First`, `Last`, `Contact`, `Family`, `Region`, `Home`, `Company`, `School`).
+  Ask the person whether any of them is safe to keep, for example a site column of hospital
+  names, a pair of score columns read as coordinates, or a diagnosis column written in
+  Chinese. Free text can never be kept.
 - **Kept columns** stay, with any identifier pattern inside a cell replaced. The plan lists
   the kept text columns again on their own. Ask the person to confirm, column by column,
   that none of them holds names, places or other identifiers the scanner cannot see: a
   name in lower case, initials or a short all-capital name, a single word (a surname alone
-  or a one-word town) in a column named for a category such as diagnosis, or a place in a
-  state or country column, which Safe Harbor lets the script keep.
+  or a one-word town) in a column named for a category such as diagnosis, a place in a
+  state or country column, which Safe Harbor lets the script keep, or, in a column kept on
+  request, a name inside a longer value in a script without capital letters.
 
 Then add `--keep COLUMN` for each column the person confirmed, and `--redact COLUMN` for any
 column they want removed. A column can also be named `#N` (its position).
@@ -189,10 +194,17 @@ replaces and what a person still has to check. In short, it does not:
 - find names written in kept text without a title or label ("seen by Halvorsen"), names
   in lower case, as initials or as a short all-capital word, or a surname alone or a
   one-word town in a column named for a category (diagnosis, cohort, visit) that names no
-  person, role or place; names of two or more words are found under any column name;
+  person, role or place; names of two or more words, or an initial and a surname, are
+  found under any column name;
+- tell a name from a category word in a script without capital letters: such text is
+  redacted unless the person keeps the column, and inside a longer value of a kept column
+  a name in it is found only after a title or a label ("Dr. 박지훈");
 - recognise a bare five-digit ZIP code inside text, a column of ZIP codes that mostly
   lost their leading zero under a name it does not know, or a local seven-digit phone
   number without a label;
+- recognise a day and a month with no year in kept text unless a word such as "seen",
+  "on" or "dated" comes before it ("14/3" alone stays), or a month name in another
+  language without a year;
 - recognise a latitude or longitude column without its partner next to it, or ages over
   89 in a column of plain numbers whose name says neither age nor years;
 - assess rare combinations of values, small cells or rare diagnoses (no k-anonymity check);

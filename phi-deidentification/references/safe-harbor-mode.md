@@ -52,9 +52,15 @@ instead, which shifts dates and leaves several of these to the researcher.
    the person, every value is a number, the rule does not apply.
 3. **By its values.** When more than half of a column's cells are nothing but one
    identifier (all dates, all IP addresses, all codes), the column is replaced the same way.
+   A year and a month with no day counts as a date under any column name (`2021-03`,
+   `2021/03`, `2021-3`, `2021 Mar`, `Mar 2021`, `03/2021`), so a monthly export written with
+   `%Y-%m` keeps the year only, whether the column is called `Visit Month`, `Period`,
+   `Enrolled` or `Col1`.
 4. **By the shape of its values**, for columns whose name says nothing:
    - four-digit years, any of them at least 90 years before the reference year: they may
      be birth years, so those years become `[90_OR_OLDER]` and the rest stay;
+   - a year and a month written as a number in every cell (`202103`, `2021.03`, with a
+     month from 01 to 12): dates, reduced to the year;
    - a column named for years (`years`, `yrs`) holding values over 89: possible ages,
      grouped as `90+`;
    - at least 80% five-digit numbers: possible ZIP codes, redacted (a white cell count
@@ -90,10 +96,12 @@ instead, which shifts dates and leaves several of these to the researcher.
      - and few of its values have the shape of a name of a person or a place: two or more
        capitalised words none of which is a category, medical or anatomical word ("Alice
        Okafor", "Okafor, Alice B.", "OKAFOR ALICE", "Alice Okafor MD", "Walnut Grove"),
-       and, when the last word of the column name is not a category noun (`Visit Host`, as
-       opposed to `Visit Type` or `Diagnosis Code`), a single capitalised word the
-       vocabulary does not know ("Okafor"). Two such values, or a third of the distinct
-       values, make it a column of names, whatever its name says.
+       one such word and an initial with its full stop ("A. Okafor", "Alice O.", while
+       "Treatment A" and "E. coli" are category values), a value in a script without
+       capital letters (below), and, when the last word of the column name is not a
+       category noun (`Visit Host`, as opposed to `Visit Type` or `Diagnosis Code`), a single
+       capitalised word the vocabulary does not know ("Okafor"). Two such values, or a third
+       of the distinct values, make it a column of names, whatever its name says.
 
      So `Treatment Physician`, `Visit Dr`, `Test Verifier`, `Lab Sign-off`, `Visit
      Location`, `Service Area` and `Diagnosis` holding names of people are checked like any
@@ -101,6 +109,15 @@ instead, which shifts dates and leaves several of these to the researcher.
      Marker`, `Doc Type` and a `Diagnosis` of Heart Failure and Atrial Fibrillation are
      category columns. Under a place or role word, values that are all category words
      ("Inpatient", "Left Upper Lobe", "Cardiology Team") are still kept.
+   - text in a script without capital letters (Chinese, Japanese, Korean, Arabic, Hebrew,
+     the Indic scripts, Thai, Georgian): one to four words with no digit, one of which is in
+     such a script ("林子涵", "محمد الحسن", "Dr 박지훈"). A name in these scripts has no shape
+     that tells it from a category word, so the column is redacted under any column name,
+     `Visit Type` and `Diagnosis` included, unless every value is one of a few common
+     category words (男, 女, 是, 否, 阳性, 未知, 남, 여, 예, ذكر, أنثى, נקבה, पुरुष, ชาย, ...).
+     A diagnosis or drug column written in such a script is therefore redacted until the
+     person keeps it. A long run of such text (15 letters with no space, or 40 in all) is a
+     sentence, because these scripts put no space between words, and is free text.
    These are columns the scanner cannot vouch for, so the person can keep one with `--keep`.
 5. **Columns the scanner cannot vouch for** are redacted unless the person keeps them with
    `--keep`: some cells hold identifier patterns, the column holds free text, the values are
@@ -113,8 +130,10 @@ instead, which shifts dates and leaves several of these to the researcher.
    The plan, the run and the report (`kept_text_columns`) list the kept columns that hold
    text, because a name in lower case, initials, a short all-capital name, a single word
    under a category column name (a surname alone, a one-word town) or a place under a state
-   or country column is not found; the person confirms each one. `--keep` on a column the run keeps anyway records it as kept on
-   request.
+   or country column is not found; the person confirms each one. Kept columns with text in
+   a script without capital letters are named again (`script_without_case` in the report),
+   because a name inside a longer value there is found only after a title or a label.
+   `--keep` on a column the run keeps anyway records it as kept on request.
 7. **Residual check.** The output is scanned again before it is written, for patterns and
    for the shapes of step 4 in kept columns. Columns the person named with `--keep`, and
    state and country columns, are scanned for patterns only: the person has confirmed their
@@ -126,9 +145,9 @@ instead, which shifts dates and leaves several of these to the researcher.
 
 | # | Identifier | What the script does | What a person still checks |
 |---|---|---|---|
-| A | Names | Patient name columns, and columns named for the person (`participant`, `proband`, `first`, `fname`, `nm`), become pseudonyms (`P0001`, the same person keeps the same one); names of relatives, contacts, employers, schools, clinicians and other roles become `[REDACTED]`. Columns of capitalised words that are not category words are redacted whatever their name, unless they are category columns (step 4); a column named for a role, a title or a person (`Treatment Physician`, `Visit Dr`, `Test Verifier`, `Event Patient`) never is one, and names of two or more words make any category column a column of names. Titled or labelled names in kept text (`Dr. X`, `Patient: X`, `Patient Name: X`) become `[NAME]` | Names in kept text with no title or label, in lower case, as a short all-capital word or initials, or as a single word (a surname alone) under a category column name with no person or role in it (the kept text columns the run lists) |
+| A | Names | Patient name columns, and columns named for the person (`participant`, `proband`, `first`, `fname`, `nm`), become pseudonyms (`P0001`, the same person keeps the same one); names of relatives, contacts, employers, schools, clinicians and other roles become `[REDACTED]`. Columns of capitalised words that are not category words are redacted whatever their name, unless they are category columns (step 4); a column named for a role, a title or a person (`Treatment Physician`, `Visit Dr`, `Test Verifier`, `Event Patient`) never is one, and names of two or more words, or an initial and a surname (`A. Okafor`), make any category column a column of names. Text in a script without capital letters (Chinese, Japanese, Korean, Arabic, Hebrew, Hindi, Thai) is redacted unless every value is a common category word such as 男 or 여. Titled or labelled names in kept text (`Dr. X`, `Patient: X`, `Patient Name: X`, also `Dr. 박지훈` and `Patient: 林子涵`) become `[NAME]` | Names in kept text with no title or label, in lower case, as a short all-capital word or initials, or as a single word (a surname alone) under a category column name with no person or role in it (the kept text columns the run lists); in a column kept on request, a name with no title or label inside a longer value in a script without capital letters |
 | B | Geography smaller than a state | State and country columns are kept, as Safe Harbor allows, and listed for the person to confirm. Street, city, county, hometown, suburb, locality, district, precinct, census, coordinate and place-of-birth columns (also `ciudad`, `municipio`, `ville`, `stadt`, ...) become `[REDACTED]`, and `region`, `home` and `place` columns unless the person keeps them. Town names under a category word and a place word (`Visit Location`, `Service Area`, `Treatment Center`, `Event Setting`) are redacted by their shape, as are place names of two or more words under any category column. ZIP columns keep the first three digits, or `000` for the 17 prefixes of 20,000 people or fewer (HHS list, 2000 Census). Unnamed columns of mostly five-digit numbers, and adjacent latitude and longitude columns, are redacted by shape. Street addresses, PO boxes, ZIP+4, "City, ST", labelled coordinates, degrees with N/S/E/W and precise "lat, lon" pairs in kept text are replaced | A bare five-digit ZIP inside text; a ZIP column under an unknown name whose values mostly lost their leading zero; a lone coordinate column; a one-word town under a category column name with no place word (`Cohort`, `Visit`); that a state or country column holds only states or countries; the ZIP list against current Census data |
-| C | Dates and ages over 89 | Date columns keep the year only; a date with no four-digit year, or text that is not a missing-value word such as "unknown", becomes `[DATE]`. A birth date or birth year of someone aged 90 or over becomes `[90_OR_OLDER]`, also in unnamed columns of old years. Age columns over 89 become `90+` (ages in days, weeks, months or hours are converted first, and ages in words such as "ninety-two" count); an age group above 89 becomes `90+`, and one that straddles 90 ("85-94") becomes `[REDACTED]`. Dates in kept text become the year; a year after "born", "DOB" or "year of birth" of someone 90 or over becomes `[90_OR_OLDER]`; "92 years old", "92 y/o" and "ninety-three yo" become "90+ years"; "a 92F", "pt is 91" and "in her 90s" become 90+, and "nonagenarian" `[90_OR_OLDER]` | Other dates that reveal an age over 89 (a death date next to an age); ages over 89 in an unnamed column of plain numbers |
+| C | Dates and ages over 89 | Date columns keep the year only, and so does a column of a year and a month with no day under any name (`2021-03`, `2021/03`, `2021-3`, `2021 Mar`, `202103`, `2021.03`); a date with no four-digit year, or text that is not a missing-value word such as "unknown", becomes `[DATE]`. A birth date or birth year of someone aged 90 or over becomes `[90_OR_OLDER]`, also in unnamed columns of old years. Age columns over 89 become `90+` (ages in days, weeks, months or hours are converted first, and ages in words such as "ninety-two" count); an age group above 89 becomes `90+`, and one that straddles 90 ("85-94") becomes `[REDACTED]`. Dates in kept text become the year, including a year and a month (`seen on 2021-03`) and a date with a month name in French, German, Spanish, Italian, Portuguese or Dutch and a four-digit year (`14 mars 2021`, `14. März 2021`); a day and a month with no year after a word such as seen, on or dated (`seen 14/3`, `on 03-14`, `seen 14.3.`) become `[DATE]`; a year after "born", "DOB" or "year of birth" of someone 90 or over becomes `[90_OR_OLDER]`; "92 years old", "92 y/o" and "ninety-three yo" become "90+ years"; "a 92F", "pt is 91" and "in her 90s" become 90+, and "nonagenarian" `[90_OR_OLDER]` | Other dates that reveal an age over 89 (a death date next to an age); ages over 89 in an unnamed column of plain numbers; in kept text, a day and a month with no year and no such word before it (`14/3`), a month name in another language with no year, and a year and a month that read as a season or school year (`2011-12` is left alone, because `2010-11` is usually a flu season; a column of months is still reduced as a whole) |
 | D | Telephone numbers | Phone columns become `[REDACTED]`; numbers in kept text, including a cell that is only an international number (`+14155550134`), become `[PHONE]` | Local seven-digit numbers with no label |
 | E | Fax numbers | As telephone numbers | |
 | F | Email addresses | Redacted | |
@@ -139,7 +158,7 @@ instead, which shifts dates and leaves several of these to the researcher.
 | K | Certificate and licence numbers | Licence, certificate, DEA, NPI and passport columns redacted; labelled numbers in text replaced | |
 | L | Vehicle identifiers and plates | VIN and plate columns redacted; 17-character VINs and labelled plates in text replaced | Unlabelled plate numbers in text |
 | M | Device identifiers and serial numbers | Device ID, serial, UDI and IMEI columns redacted; MAC addresses, GS1 UDIs and labelled serials in text (`serial 8841`, `S/N 8841`, `SN 8841-2290`) replaced | |
-| N | Web URLs | Redacted. In kept text: addresses with a scheme or `www.`, a host and a path with neither (`fb.me/jane.doe`), bare domains ending in .com, .org, .net, .edu, .gov, .io, .info or .biz, social media handles (`@jane_doe`, `Facebook /jane.doe`) and logins written `user@host` | Bare domains on other endings; a handle written with no `@`, no network name and no dot, digit or underscore |
+| N | Web URLs | Redacted. In kept text: addresses with a scheme or `www.`, a host and a path with neither (`fb.me/jane.doe`), bare domains ending in .com, .org, .net, .edu, .gov, .io, .info or .biz, social media handles (`@jane_doe`, `Facebook /jane.doe`, `Instagram: jdoe`, `skype:jdoe`, `on Instagram as jdoe99`, `u/jdoe`, `jdoe#1234`) and logins written `user@host` | Bare domains on other endings; a handle written with no `@`, no network name and no dot, digit or underscore, or with letters only after a network name and no colon |
 | O | IP addresses | Redacted, by column name or by values (IPv4 and IPv6) | |
 | P | Biometric identifiers | Fingerprint, voiceprint, retina, iris and face-template columns redacted; long hex or base64 blobs in text replaced | Biometrics stored in another form |
 | Q | Full-face photographs | Photo and image columns redacted; image file names and `data:image` values in text replaced | Images themselves (DICOM and photo files are out of scope) |

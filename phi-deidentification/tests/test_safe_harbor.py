@@ -423,7 +423,9 @@ class NamesAndShapesTheListMisses(unittest.TestCase):
                 "         'MR# 99123', '+14155550134', '37.7749, -122.4194', 'Boston, MA 02134',\n"
                 "         'seen by Dr. Halvorsen on 2024-03-05', 'call (415) 555-0134',\n"
                 "         '92 y/o female', 'a 92F with CHF', 'pt is 91', 'in her 90s', 'nonagenarian',\n"
-                "         \"j.o'brien+clinic@uni-x.ac.uk\", 'ss# 123 45 6789']\n"
+                "         \"j.o'brien+clinic@uni-x.ac.uk\", 'ss# 123 45 6789', 'Seen on 2021-03',\n"
+                "         '2021 Mar', '14 mars 2021', 'Seen 14/3', 'Instagram: jdoe', 'jdoe#1234',\n"
+                "         'u/jdoe', 'Patient: 林子涵', 'Dr. 박지훈']\n"
                 "again = [c for c in cases if sc.find(sc.scrub(c)[0])]\n"
                 "print('again:', again)\n"
                 "raise SystemExit(1 if again else 0)\n")
@@ -970,6 +972,237 @@ class ValuesDecideCategoryColumns(unittest.TestCase):
             "profile [URL]", "dm [HANDLE]", "Facebook [HANDLE]", "login [EMAIL]", "Device SN [ID]",
             "see [URL]", "Instagram: [HANDLE]", "Patient Name: [NAME]",
             "dose @ 2mg q.d.", "a.m. dose", "vs. baseline", "e.g. 5 mg", "Patient Refused"])
+
+
+class YearMonthsAndScriptsWithoutCase(unittest.TestCase):
+    """Year and month values under any column name, names and places in scripts that have
+    no capital letters, and smaller gaps in kept text (fifth review of 2026-11-25, 1.0.1).
+    Every name, handle, place and date here is invented."""
+
+    MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    # The column names of the review, then neutral ones and category ones: the month must
+    # go whatever the column is called.
+    MONTH_HEADERS = [
+        "Visit Month", "Admit", "Encounter", "Period", "Admission", "Cohort Month", "Month",
+        "Month of Visit", "Reporting Period", "Sample Month", "Enrollment", "Enrolled", "Visit",
+        "Event", "Baseline", "Index Month", "Dx Month", "Ym", "Zxq", "Col1", "Diagnosis",
+        "Visit Type", "Treatment Arm",
+    ]
+    FORMS = {
+        "dash": lambda y, m: f"{y}-{m:02d}",
+        "slash": lambda y, m: f"{y}/{m:02d}",
+        "dot": lambda y, m: f"{y}.{m:02d}",
+        "compact": lambda y, m: f"{y}{m:02d}",
+        "short": lambda y, m: f"{y}-{m}",
+        "word": lambda y, m: f"{y} {YearMonthsAndScriptsWithoutCase.MONTHS[m - 1]}",
+    }
+    # Invented people and places, twelve of each, written in scripts without letter case.
+    SCRIPTS = {
+        "zh": ["林子涵", "周嘉怡", "吴宇轩", "郑欣妍", "孙浩然", "马雨桐", "胡梓萱", "郭俊熙",
+               "何思琪", "高子墨", "罗一诺", "梁沐阳"],
+        "ja": ["森田健太", "高橋美咲", "小林悠斗", "渡辺陽菜", "中村大翔", "山本結衣", "加藤蓮",
+               "吉田葵", "佐々木湊", "松本凛", "井上颯太", "木村紬"],
+        "ko": ["박지훈", "최서연", "정민준", "강하은", "조도윤", "윤지우", "장서준", "임하린",
+               "한예준", "오수아", "서건우", "신지아"],
+        "ar": ["محمد الحسن", "فاطمة الزهراني", "أحمد العتيبي", "مريم القحطاني", "يوسف الشمري",
+               "نور الدوسري", "عمر المطيري", "ليلى الحربي", "خالد السبيعي", "سارة الغامدي",
+               "علي الزهري", "هدى العنزي"],
+        "he": ["נועה פרידמן", "איתי שפירא", "תמר גולן", "עומר בן דוד", "מיכל רוזן", "אורי קפלן",
+               "יעל אדלר", "גיל ברק", "רוני שחר", "דנה אורן", "עידו לבנון", "הדס כרמי"],
+        "hi": ["राहुल शर्मा", "प्रिया वर्मा", "अमित गुप्ता", "नेहा सिंह", "विकास यादव", "पूजा मिश्रा",
+               "सुनील पटेल", "अंजलि जोशी", "रोहित चौहान", "कविता त्रिपाठी", "अर्जुन मेहता", "सीमा पांडे"],
+        "th": ["สมชาย ใจดี", "สมหญิง รักไทย", "ประเสริฐ ศรีสุข", "วิภา บุญมา", "ธนากร แสงทอง",
+               "กาญจนา มีสุข", "ณัฐพล ทองดี", "ปิยะดา สุขใจ", "อนุชา พรหมมา", "รัตนา วงศ์ไทย",
+               "สุรชัย แก้วมณี", "จันทร์เพ็ญ ศรีวงศ์"],
+        "places": ["青川镇", "柳溪村", "石桥镇", "白沙湾", "桃源乡", "云岭村", "东湖镇", "梅林村",
+                   "北山镇", "清河村", "松岗镇", "花溪乡"],
+    }
+    SCRIPT_HEADERS = ["Zxq", "Col7", "Notes By", "Visit Type", "Referral Source", "Provider",
+                      "Visit Provider", "Referring Physician", "Notes", "Info", "Location",
+                      "Diagnosis", "Status", "Class"]
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="safe_harbor_test_"))
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def run_file(self, path: Path, *extra: str) -> tuple[subprocess.CompletedProcess, list[dict], Path]:
+        out_dir = self.tmp / "out"
+        if out_dir.exists():
+            shutil.rmtree(out_dir)
+        p = run("run", str(path), "-o", str(out_dir), "--reference-year", REFERENCE_YEAR, *extra)
+        out = out_dir / f"{path.stem}_deidentified{path.suffix}"
+        return p, (read_rows(out) if out.exists() else []), out_dir / "deidentification_report.json"
+
+    def test_year_month_values_keep_only_the_year(self):
+        # 36 months repeating over 180 rows, as a monthly export written with %Y-%m.
+        months = [(2019 + k // 12, k % 12 + 1) for k in range(36)]
+        for form, write in self.FORMS.items():
+            header = self.MONTH_HEADERS + ["sex"]
+            rows = [[write(*months[(i + k) % 36]) for k in range(len(self.MONTH_HEADERS))]
+                    + ["F" if i % 2 else "M"] for i in range(180)]
+            raw = write_csv(self.tmp / f"months_{form}.csv", header, rows)
+            p, out, _ = self.run_file(raw)
+            self.assertEqual(p.returncode, 0, (form, p.stdout + p.stderr))
+            for k, col in enumerate(self.MONTH_HEADERS):
+                expected = [str(months[(i + k) % 36][0]) for i in range(180)]
+                self.assertEqual([r[col] for r in out], expected, (form, col))
+            self.assertEqual([r["sex"] for r in out], [row[-1] for row in rows])
+            # The check finds the months in a file that has no report.
+            bad = run("verify", str(raw), "--reference-year", REFERENCE_YEAR)
+            self.assertEqual(bad.returncode, 3, (form, bad.stdout + bad.stderr))
+
+    def test_seasons_stay_and_a_monthly_column_of_those_years_does_not(self):
+        # "2010-11" is a flu season or a school year as often as it is November 2010; a column
+        # of seasons stays, and a column of months is still found as a whole.
+        seasons = [f"{y}-{(y + 1) % 100:02d}" for y in range(2006, 2020)]
+        monthly = [f"{2000 + k // 12}-{k % 12 + 1:02d}" for k in range(144)]
+        rows = [[seasons[i % len(seasons)], f"{seasons[i % 5][:4]}/{seasons[i % 5][5:]}", monthly[i % 144], "F"]
+                for i in range(288)]
+        raw = write_csv(self.tmp / "seasons.csv", ["Season", "School Year", "Visit Month", "sex"], rows)
+        p, out, _ = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual([r["Season"] for r in out], [row[0] for row in rows])
+        self.assertEqual([r["School Year"] for r in out], [row[1] for row in rows])
+        self.assertEqual([r["Visit Month"] for r in out], [row[2][:4] for row in rows])
+
+    def test_year_month_in_kept_text_becomes_the_year(self):
+        values = ["Seen on 2021-03", "seen 2021/03 again", "visit 2021-3", "2021 Mar follow-up",
+                  "admitted 2021 March", "scheduled 2021-Mar",
+                  # Not dates, and left alone.
+                  "2019-2021 cohort", "2019-20 season", "BP 120/80", "vision 20/10", "pain 7/10",
+                  "In 2021 may improve", "E11.9", "take 1/2 tab"]
+        raw = write_csv(self.tmp / "kept_months.csv", ["ref", "sex"], [[v, "F"] for v in values])
+        p, out, _ = self.run_file(raw, "--keep", "ref")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual([r["ref"] for r in out], [
+            "Seen on 2021", "seen 2021 again", "visit 2021", "2021 follow-up", "admitted 2021",
+            "scheduled 2021",
+            "2019-2021 cohort", "2019-20 season", "BP 120/80", "vision 20/10", "pain 7/10",
+            "In 2021 may improve", "E11.9", "take 1/2 tab"])
+
+    def assert_hidden(self, p, report: Path, words: list[str]) -> None:
+        text = "".join(f.read_text(encoding="utf-8") for f in (self.tmp / "out").glob("*_deidentified.csv"))
+        shown = p.stdout + p.stderr + report.read_text(encoding="utf-8")
+        for w in words:
+            self.assertNotIn(w, text, "raw name or place in the output")
+            self.assertNotIn(w, shown, "raw name or place printed or reported")
+
+    def test_names_in_scripts_without_letter_case_are_redacted(self):
+        for script, names in self.SCRIPTS.items():
+            header = self.SCRIPT_HEADERS + ["sex"]
+            rows = [[names[(i * (k + 1) + k) % 12] for k in range(len(self.SCRIPT_HEADERS))]
+                    + ["F" if i % 2 else "M"] for i in range(200)]
+            raw = write_csv(self.tmp / f"script_{script}.csv", header, rows)
+            locales = {"zh": ("us", "cn"), "ja": ("us", "jp"), "ko": ("us", "kr")}.get(script, ("us",))
+            for locale in locales:
+                p, out, report = self.run_file(raw, "--locale", locale)
+                self.assertEqual(p.returncode, 0, (script, locale, p.stdout + p.stderr))
+                self.assert_hidden(p, report, names)
+                for col in self.SCRIPT_HEADERS:
+                    self.assertTrue(all(re.fullmatch(r"\[REDACTED\]|P\d{4}", r[col]) for r in out),
+                                    (script, locale, col))
+                self.assertEqual([r["sex"] for r in out], [row[-1] for row in rows])
+            bad = run("verify", str(raw), "--reference-year", REFERENCE_YEAR)
+            self.assertEqual(bad.returncode, 3, (script, bad.stdout + bad.stderr))
+            for w in names:
+                self.assertNotIn(w, bad.stdout + bad.stderr)
+
+    def test_a_name_in_such_a_script_beside_latin_words_is_found(self):
+        rows = [[f"Dr {self.SCRIPTS['zh'][i % 12]}", f"seen by {self.SCRIPTS['ko'][i % 12]}", "F"]
+                for i in range(120)]
+        p, out, report = self.run_file(write_csv(self.tmp / "mixed.csv", ["Doctor", "Note", "sex"], rows))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assert_hidden(p, report, self.SCRIPTS["zh"] + self.SCRIPTS["ko"])
+        for col in ("Doctor", "Note"):
+            self.assertEqual({r[col] for r in out}, {"[REDACTED]"}, col)
+
+    def test_common_category_words_in_such_scripts_are_kept_and_others_can_be(self):
+        cols = {"性别": ["男", "女"], "성별": ["남", "여", "남성", "여성"], "الجنس": ["ذكر", "أنثى"],
+                "Smoker": ["是", "否"], "Result": ["阳性", "阴性", "未知"], "Sex": ["F", "M"]}
+        header = list(cols)
+        rows = [[cols[h][(i + k) % len(cols[h])] for k, h in enumerate(header)] for i in range(80)]
+        raw = write_csv(self.tmp / "vocab.csv", header, rows)
+        p, out, report = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        for i, col in enumerate(header):
+            self.assertEqual([r[col] for r in out], [row[i] for row in rows], col)
+        # A diagnosis column in Chinese is redacted by default (its words cannot be told from
+        # names), listed for the person, and kept with --keep; the residual check honours it.
+        dx = write_csv(self.tmp / "dx.csv", ["Diagnosis", "sex"],
+                       [[["高血压", "糖尿病", "哮喘"][i % 3], "F"] for i in range(60)])
+        p, out, _ = self.run_file(dx)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual({r["Diagnosis"] for r in out}, {"[REDACTED]"})
+        self.assertIn("without capital letters", p.stdout)
+        p, out, report = self.run_file(dx, "--keep", "Diagnosis")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual({r["Diagnosis"] for r in out}, {"高血压", "糖尿病", "哮喘"})
+        ok = run("verify", str(self.tmp / "out" / "dx_deidentified.csv"), "--reference-year", REFERENCE_YEAR)
+        self.assertEqual(ok.returncode, 0, ok.stdout + ok.stderr)
+        listed = json.loads(report.read_text(encoding="utf-8"))["kept_text_columns"]
+        self.assertTrue(listed and listed[0]["script_without_case"])
+
+    def test_long_text_in_such_a_script_is_free_text(self):
+        # Sentences in these scripts have no spaces between words, so they are found by
+        # their length, and like any free text they cannot be kept.
+        notes = ["患者今日复诊诉胸闷气短加重已三天夜间不能平卧", "術後経過は良好で本日退院予定となりましたが外来で再診",
+                 "สมชายมาตรวจตามนัดอาการดีขึ้นมากแล้ววันนี้"]
+        raw = write_csv(self.tmp / "notes.csv", ["Note", "sex"], [[notes[i % 3], "F"] for i in range(30)])
+        p, out, _ = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual({r["Note"] for r in out}, {"[REDACTED]"})
+        self.assertIn("free text", p.stdout)
+        refused = run("plan", str(raw), "--keep", "Note")
+        self.assertEqual(refused.returncode, 2)
+        self.assertIn("free text", refused.stderr)
+
+    def test_an_initial_and_a_surname_under_a_category_name_are_redacted(self):
+        last = ["Quillmere", "Tannerby", "Ostrava", "Pelloway", "Grimsdale", "Vantowe", "Harrowick",
+                "Lindqvar", "Merrowin", "Sabbatine", "Corrigale", "Wendemuth"]
+        first = ["Alma", "Bastien", "Cordula", "Dorian", "Elske", "Florin", "Greta", "Henrik",
+                 "Ilona", "Jasper", "Katrin", "Leander"]
+        header = ["Group", "Treatment Plan", "Insurance Type", "Cohort", "Arm", "Diagnosis", "sex"]
+        forms = [lambda f, s: f"{f[0]}. {s}", lambda f, s: f"{f} {s[0]}.", lambda f, s: f"{s}, {f[0]}."]
+        rows = [[forms[(i + k) % 3](first[(i + k) % 12], last[(i + k) % 12]) for k in range(6)] + ["F"]
+                for i in range(150)]
+        p, out, report = self.run_file(write_csv(self.tmp / "initials.csv", header, rows))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assert_hidden(p, report, last + first)
+        for col in header[:-1]:
+            self.assertTrue(all(re.fullmatch(r"\[REDACTED\]|P\d{4}", r[col]) for r in out), col)
+        # A genus written as an initial is not a person, in either case, and a category
+        # letter has no full stop.
+        cols = {"Organism": ["E. coli", "E. Coli", "S. Aureus", "K. Pneumoniae", "C. difficile",
+                             "P. Aeruginosa", "Escherichia Coli", "Candida Albicans"],
+                "Treatment Plan": ["Plan A", "Plan B", "Plan C"],
+                "Cohort": ["Cohort A", "Cohort B"]}
+        header = list(cols)
+        rows = [[cols[h][(i + k) % len(cols[h])] for k, h in enumerate(header)] for i in range(80)]
+        p, out, _ = self.run_file(write_csv(self.tmp / "species.csv", header, rows))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        for i, col in enumerate(header):
+            self.assertEqual([r[col] for r in out], [row[i] for row in rows], col)
+
+    def test_kept_text_loses_day_months_foreign_dates_and_more_handles(self):
+        values = ["Seen 14/3", "seen on 03-14", "Seen 14.3.", "14 mars 2021", "14. März 2021",
+                  "marzo de 2020", "Instagram: jdoe", "on Instagram as jdoe99", "Facebook /x",
+                  "u/jdoe", "jdoe#1234", "skype:jdoe", "Patient: 林子涵", "Dr. 박지훈 to call",
+                  # Not identifiers, and left alone.
+                  "vision 20/10", "pain 7/10", "BP 140/90", "GCS 14/15", "Instagram: none",
+                  "u/s abdomen", "10 u/day", "seen 10-12 times", "on 2-3 occasions", "Hb 14.3",
+                  "MRN#88412"]
+        raw = write_csv(self.tmp / "gaps.csv", ["ref", "sex"], [[v, "F"] for v in values])
+        p, out, _ = self.run_file(raw, "--keep", "ref")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual([r["ref"] for r in out], [
+            "Seen [DATE]", "seen on [DATE]", "Seen [DATE]", "2021", "2021", "2020",
+            "Instagram: [HANDLE]", "on Instagram as [HANDLE]", "Facebook [HANDLE]", "[HANDLE]",
+            "[HANDLE]", "skype:[HANDLE]", "Patient: [NAME]", "Dr. [NAME] to call",
+            "vision 20/10", "pain 7/10", "BP 140/90", "GCS 14/15", "Instagram: none",
+            "u/s abdomen", "10 u/day", "seen 10-12 times", "on 2-3 occasions", "Hb 14.3",
+            "MRN#[ID]"])
 
 
 class NoNetwork(unittest.TestCase):
