@@ -1,8 +1,8 @@
 ---
 name: phi-deidentification
-description: "De-identifies clinical tables (CSV, TSV, Excel) under the HIPAA Safe Harbor rule with a local script that has no network access, so the raw data never enters the chat. Use before any analysis, sharing or upload of patient-level data that may hold names, dates, addresses, record numbers, contact details or other PHI. The agent runs the script on the files and reads only its report and the de-identified output."
+description: "De-identifies clinical tables (CSV, TSV, Excel) under the HIPAA Safe Harbor rule with a local script that makes no network calls, so the raw data never enters the chat. Use before any analysis, sharing or upload of patient-level data that may hold names, dates, addresses, record numbers, contact details or other PHI. The agent runs the script on the files and reads only its report and the de-identified output."
 license: Apache-2.0 AND MIT
-compatibility: "Python 3.9 or later, standard library only; openpyxl for .xlsx files. Runs locally with network access disabled."
+compatibility: "Python 3.9 or later, standard library only; openpyxl for .xlsx files. Runs locally and makes no network calls."
 user-invocable: true
 metadata:
   version: "1.0.0"
@@ -19,7 +19,10 @@ metadata:
 This skill removes protected health information from a clinical table before anyone
 analyses or shares it. The work is done by `scripts/safe_harbor.py`, a local Python script
 that you run with the shell on the person's files. It prints column names, counts and
-decisions only, never a cell value, and it cannot open a network connection.
+decisions only, never a cell value. It makes no network calls, and it blocks Python's usual
+socket functions so a library cannot connect by accident. That is a guard, not a sandbox:
+where the data must provably stay offline, run it under an operating-system sandbox with
+networking denied (the last section shows one).
 
 ## Rules that protect the raw data
 
@@ -38,9 +41,10 @@ Read these before doing anything with a file that may hold PHI.
    original identifiers.
 4. Read only three things: what the script prints, its report
    (`deidentification_report.json`), and the de-identified output file. Show the person
-   only the de-identified output, never the input. When the chat runs on a model outside
-   the institution, ask the person to spot-check the de-identified file in their own
-   viewer first, and read it only after they confirm.
+   only the de-identified output, never the input. Before you read the output, ask the
+   person to spot-check it in their own viewer, and read it only after they confirm. Skip
+   that step only when you know the chat runs on a model hosted inside the institution (in
+   Biorouter, a Private model); if you cannot tell, ask.
 5. If the script exits with 2 or 3, do not open the input to find out why. Pass on the
    script's message, which names columns and counts only, and rerun with the options it
    suggests.
@@ -93,11 +97,14 @@ python3 scripts/safe_harbor.py plan /path/to/export.csv
 It writes nothing and prints one line per column: the action and the reason. Show the
 person that table and explain the three groups:
 
-- **Identifiers by name** (`patient_name`, `dob`, `zip_code`, `mrn`, ...) are replaced and
-  cannot be kept.
+- **Identifiers by name** (`patient_name`, `dob`, `born`, `byear`, `age_group`, `zip_code`,
+  `mrn`, ...) are replaced and cannot be kept.
 - **Columns the scanner cannot vouch for** (free text, unique numbers, mostly distinct
-  text, some cells with identifier patterns) are redacted. Ask the person whether any of
-  them is safe to keep, for example a diagnosis column. Free text can never be kept.
+  text, some cells with identifier patterns, and numbers shaped like ZIP codes, latitude
+  and longitude, or birth years of people over 89) are redacted, or for old years grouped
+  as `[90_OR_OLDER]`. Ask the person whether any of them is safe to keep, for example a
+  diagnosis column or a pair of score columns read as coordinates. Free text can never
+  be kept.
 - **Kept columns** stay, with any identifier pattern inside a cell replaced. Ask the person
   to confirm none of them holds names or other identifiers the patterns cannot see.
 
@@ -117,7 +124,7 @@ folder, then scans the output again. Exit codes:
 
 | Exit | Meaning | What to do |
 |---|---|---|
-| 0 | Done; the residual check found no identifier pattern | Report the summary and the human spot-check requirement |
+| 0 | Done; the residual check found no identifier pattern or shape (a pattern check, not proof) | Report the summary and the human spot-check requirement |
 | 2 | Refused (unknown column, a request to keep an identifier or free text, a first row that looks like data, an unreadable file) | Pass on the message; fix the options, or ask the person to fix the file |
 | 3 | The residual check found identifiers; nothing was written | Rerun with `--redact` for the columns it names |
 
@@ -139,17 +146,18 @@ Tell the person, in their language:
 - where the mapping is, if one was written, and that it stays restricted and is never
   shared or opened in a chat.
 
-Only then, and after the person's spot-check when the chat runs on a model outside the
-institution, read the de-identified file for the analysis.
+Only then, and after the person's spot-check (unless the chat is known to run on a model
+hosted inside the institution), read the de-identified file for the analysis.
 
 ### 5. Methods text
 
 When the person needs a paragraph for a manuscript or an IRB, fill this in from the report:
 
-> Direct identifiers were removed before analysis with a rule-based tool run locally
-> without network access (safe_harbor.py, Biorouter phi-deidentification skill 1.0.0,
-> adapted from medsci-skills deidentify). The tool classified each column by name and by
-> value patterns for the 18 HIPAA Safe Harbor identifier types. Names and record numbers
+> Direct identifiers were removed before analysis with a rule-based tool run locally,
+> with no network calls (safe_harbor.py, Biorouter phi-deidentification skill 1.0.0,
+> adapted from medsci-skills deidentify). The tool classified each column by name, by
+> value patterns and by the shape of its numbers for the 18 HIPAA Safe Harbor identifier
+> types. Names and record numbers
 > were replaced by pseudonyms; dates were reduced to the year; ages over 89 were grouped
 > as 90 or older; ZIP codes were truncated to three digits (000 for prefixes of 20,000 or
 > fewer people); other direct identifiers and free text were removed. [N] cells in [M]
@@ -166,8 +174,11 @@ determination covers it.
 replaces and what a person still has to check. In short, it does not:
 
 - find names written in kept text without a title or label ("seen by Halvorsen");
-- recognise a ZIP code in a column not named for ZIP codes, or a local seven-digit phone
+- recognise a bare five-digit ZIP code inside text, a column of ZIP codes that mostly
+  lost their leading zero under a name it does not know, or a local seven-digit phone
   number without a label;
+- recognise a latitude or longitude column without its partner next to it, or ages over
+  89 in a column of plain numbers whose name says neither age nor years;
 - assess rare combinations of values, small cells or rare diagnoses (no k-anonymity check);
 - read sheets after the first, images, DICOM headers or attached files;
 - detect identifiers in column names or file names.
@@ -192,7 +203,7 @@ it**: the person runs it in their own terminal, outside the chat, as described i
 | `tests/run_tests.sh` | Runs the upstream tests and the Safe Harbor tests |
 | `tests/fixtures/synthetic_18_identifiers.csv` | Invented people carrying all 18 identifier types |
 
-Run the tests with networking denied to see that nothing needs the network, for example
+Run the tests, or the script itself on real data, with networking denied, for example
 on macOS:
 
 ```bash

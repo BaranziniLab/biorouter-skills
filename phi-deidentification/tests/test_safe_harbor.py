@@ -326,6 +326,122 @@ class KeepAndRedactRequests(unittest.TestCase):
         self.assertEqual(sorted(s for s in raw_identifier_strings(raw) if s.lower() in shown), [])
 
 
+def write_csv(path: Path, header: list[str], rows: list[list[str]]) -> Path:
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(header)
+        w.writerows(rows)
+    return path
+
+
+class NamesAndShapesTheListMisses(unittest.TestCase):
+    """Columns whose names are not in the name list, or carry no name at all, found
+    by a name variant or by the shape of their values (review of 2026-11-25)."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="safe_harbor_test_"))
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def run_file(self, path: Path, *extra: str) -> tuple[subprocess.CompletedProcess, list[dict]]:
+        out_dir = self.tmp / "out"
+        p = run("run", str(path), "-o", str(out_dir), "--reference-year", REFERENCE_YEAR, *extra)
+        out = out_dir / f"{path.stem}_deidentified.csv"
+        return p, (read_rows(out) if out.exists() else [])
+
+    def test_birth_year_and_age_name_variants(self):
+        header = ["born", "byear", "birth_yr", "yr_birth", "year_born", "ageyrs", "age_group",
+                  "patient_age_years", "age_days", "age_yrs", "sex"]
+        rows = [["1930", "1930", "1930", "1930", "1930", "96", "96", "96", "35000", "ninety-two", "F"],
+                ["1955", "1955", "1955", "1955", "1955", "71", "70-79", "71", "26000", "71", "M"],
+                ["1980", "1980", "1980", "1980", "1980", "46", "85-94", "46", "17000", "46", "F"],
+                ["1962", "1962", "1962", "1962", "1962", "64", "90-94", "64", "23400", "64", "M"]]
+        p, out = self.run_file(write_csv(self.tmp / "variants.csv", header, rows))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        for col in header[:5]:
+            self.assertEqual([r[col] for r in out], ["[90_OR_OLDER]", "1955", "1980", "1962"], col)
+        for col in ("ageyrs", "patient_age_years", "age_yrs"):
+            self.assertEqual([r[col] for r in out], ["90+", "71", "46", "64"], col)
+        # A group that straddles 90 would split the ages over 89; a group above 89 is 90+.
+        self.assertEqual([r["age_group"] for r in out], ["90+", "70-79", "[REDACTED]", "90+"])
+        self.assertEqual([r["age_days"] for r in out], ["90+", "26000", "17000", "23400"])
+        self.assertEqual([r["sex"] for r in out], ["F", "M", "F", "M"])
+
+    def test_unnamed_number_columns_shaped_like_identifiers(self):
+        header = ["a", "b", "c", "d", "e"]
+        rows = [["94110", "37.7749", "-122.4194", "1930", "6.1"],
+                ["94117", "37.7694", "-122.4862", "1955", "7.2"],
+                ["94110", "37.7849", "-122.4094", "1980", "5.9"],
+                ["60614", "41.9214", "-87.6513", "1962", "6.8"]]
+        raw = write_csv(self.tmp / "unnamed.csv", header, rows)
+        p, out = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertIn("possible ZIP codes", p.stdout)
+        self.assertIn("latitude and longitude", p.stdout)
+        for col in ("a", "b", "c"):
+            self.assertEqual({r[col] for r in out}, {"[REDACTED]"}, col)
+        self.assertEqual([r["d"] for r in out], ["[90_OR_OLDER]", "1955", "1980", "1962"])
+        self.assertEqual([r["e"] for r in out], ["6.1", "7.2", "5.9", "6.8"])
+        # The check does the same on a file it has no report for.
+        bad = run("verify", str(raw), "--reference-year", REFERENCE_YEAR)
+        self.assertEqual(bad.returncode, 3, bad.stdout + bad.stderr)
+        for value in ("94110", "37.7749", "122.4194", "1930"):
+            self.assertNotIn(value, bad.stdout + bad.stderr)
+
+    def test_ordinary_number_columns_are_kept(self):
+        header = ["weight_kg", "bmi", "glucose", "wbc", "year_of_diagnosis", "birth_weight_g",
+                  "gestational_age_weeks", "propensity", "iptw", "zscore_a", "zscore_b", "birth_order"]
+        rows = [["70.5", "24.13", "105", "10500", "2015", "3400", "38", "0.1234", "1.2345", "-1.234", "0.567", "1"],
+                ["82.3", "27.88", "98", "7200", "2018", "2900", "36", "0.5671", "1.8765", "0.456", "-1.123", "2"],
+                ["65.1", "22.40", "140", "11200", "2020", "3650", "40", "0.3345", "2.4567", "1.789", "0.234", "1"],
+                ["90.2", "30.05", "88", "6400", "2016", "3100", "39", "0.8812", "1.1111", "-0.345", "2.011", "3"]]
+        p, out = self.run_file(write_csv(self.tmp / "ordinary.csv", header, rows))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        for i, col in enumerate(header):
+            self.assertEqual([r[col] for r in out], [row[i] for row in rows], col)
+
+    def test_kept_text_loses_these_identifier_forms(self):
+        values = ["+14155550134", "MR# 99123", "Hospital #A-998", "ID 4482113", "born in 1931",
+                  "DOB 1930", "born 1975", "ninety-three yo", "93 years old", "aged 94",
+                  "lat 37.7749", "37.7749, -122.4194", "ENSG00000141510 and rs12345"]
+        raw = write_csv(self.tmp / "kept.csv", ["ref", "sex"], [[v, "F"] for v in values])
+        p, out = self.run_file(raw, "--keep", "ref")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual([r["ref"] for r in out], [
+            "[PHONE]", "MR# [ID]", "Hospital #[ID]", "ID [ID]", "born in [90_OR_OLDER]",
+            "DOB [90_OR_OLDER]", "born 1975", "90+ years", "90+ years", "aged 90+",
+            "lat [GEO]", "[GEO]", "ENSG00000141510 and rs12345"])
+
+    def test_scrubbing_twice_changes_nothing(self):
+        # The residual check scans the output with the same patterns; a replacement that
+        # matched again ("aged 94" -> "aged 90+" -> "aged 90++") failed every such run.
+        code = (f"import sys\nsys.path.insert(0, {str(SCRIPT.parent)!r})\n"
+                "import safe_harbor as s, deidentify as u\n"
+                "sc = s.Scrubber(u.load_locale('us'), 2026)\n"
+                "cases = ['aged 94', 'age: 96', '93 years old', 'aged ninety-two', 'DOB 03/04/1930',\n"
+                "         'MR# 99123', '+14155550134', '37.7749, -122.4194', 'Boston, MA 02134',\n"
+                "         'seen by Dr. Halvorsen on 2024-03-05', 'call (415) 555-0134']\n"
+                "again = [c for c in cases if sc.find(sc.scrub(c)[0])]\n"
+                "print('again:', again)\n"
+                "raise SystemExit(1 if again else 0)\n")
+        p = subprocess.run([sys.executable, "-I", "-B", "-c", code], capture_output=True, text=True,
+                           env=dict(os.environ, PYTHONDONTWRITEBYTECODE="1"), timeout=60)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+
+    def test_text_in_a_date_column_is_replaced_unless_it_says_missing(self):
+        raw = write_csv(self.tmp / "dates.csv", ["birth_date", "sex"],
+                        [["Fresno", "F"], ["unknown", "M"], ["1984-02-03", "F"], ["", "M"]])
+        p, out = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual([r["birth_date"] for r in out], ["[DATE]", "unknown", "1984", ""])
+
+    def test_the_passed_message_says_it_is_a_pattern_check(self):
+        p, _ = self.run_file(FIXTURE)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertIn("pattern check, not proof", p.stdout)
+
+
 class NoNetwork(unittest.TestCase):
     def test_socket_connections_are_disabled_in_process(self):
         code = ("import runpy, socket, sys\n"

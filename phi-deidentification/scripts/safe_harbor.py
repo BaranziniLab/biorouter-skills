@@ -30,10 +30,15 @@ identifier patterns; and the output is scanned again before it is kept.
 
 Exit codes: 0 done and the output passed the residual check; 2 refused (bad
 arguments, a file it cannot read, a header row that looks like data); 3 the
-residual check found identifiers, and the output was deleted.
+residual check found identifiers, and the output was deleted. The residual
+check looks for identifier patterns and shapes; passing it is not proof that
+the output is de-identified.
 
-The script uses the Python standard library only (openpyxl for .xlsx) and no
-network: socket connections are disabled in-process before anything else runs.
+The script uses the Python standard library only (openpyxl for .xlsx) and
+makes no network calls. Before anything else runs it also replaces Python's
+usual socket entry points with a function that refuses, so a library cannot
+connect by accident. That is a guard, not a sandbox: for a guarantee, run the
+script under an operating-system sandbox with networking denied.
 """
 
 from __future__ import annotations
@@ -43,6 +48,7 @@ import sys
 
 
 # ---------------------------------------------------------------- no network
+# A guard against accidental connections, not a sandbox (see the docstring).
 def _network_disabled(*_args, **_kwargs):
     raise OSError("network access is disabled in safe_harbor.py")
 
@@ -86,6 +92,13 @@ RESTRICTED_ZIP3 = frozenset({
 })
 
 PLACEHOLDER = re.compile(r"\[[A-Z0-9_]+\]")
+# Cell values that say a value is missing. They carry no identifier, so a date
+# or age column may keep them; any other text left in such a column is replaced.
+MISSING_VALUES = frozenset({
+    "unknown", "unk", "not known", "not recorded", "not documented", "not available",
+    "not applicable", "n/a", "na", "n.a.", "nan", "none", "null", "nil", "missing",
+    "declined", "refused", "nr", "nd", "?", "-", "--", ".",
+})
 PSEUDONYM = re.compile(r"(?:P|ID)\d{4,}")
 NUMBER = re.compile(r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?")
 
@@ -109,7 +122,7 @@ STREET_SUFFIX = (r"(?:street|st|avenue|ave|boulevard|blvd|road|rd|drive|dr|lane|
                  r"|place|pl|terrace|ter|circle|cir|parkway|pkwy|highway|hwy|square|sq|trail|trl"
                  r"|alley|aly|crescent|cres|close|row|walk|loop|plaza|plz)")
 ID_LABELS = (
-    r"(?:mrn|medical\s+record(?:\s+(?:number|no\.?|#))?|record\s+(?:number|no\.?|#)"
+    r"(?:mrn|mr\s*(?:#|no\.?|number)|medical\s+record(?:\s+(?:number|no\.?|#))?|record\s+(?:number|no\.?|#)"
     r"|chart\s+(?:number|no\.?|#)|patient\s+(?:id|number|no\.?)|account(?:\s+(?:number|no\.?|#))?"
     r"|acct\.?(?:\s+(?:number|no\.?|#))?|member\s+(?:id|number|no\.?|#)"
     r"|policy(?:\s+(?:id|number|no\.?|#))?|subscriber(?:\s+(?:id|number|no\.?))?"
@@ -122,7 +135,7 @@ ID_LABELS = (
     r"|serial(?:\s+(?:number|no\.?|#))?|s/n|device\s+(?:id|serial|number)|udi|imei|vin"
     r"|plate(?:\s+(?:number|no\.?|#))?|passport(?:\s+(?:number|no\.?|#))?"
     r"|case\s+(?:id|number|no\.?)|accession(?:\s+(?:number|no\.?|#))?"
-    r"|specimen\s+(?:id|number|no\.?))"
+    r"|specimen\s+(?:id|number|no\.?)|identifier|id)"
 )
 NAME_LABELS = (r"(?:patient|pt|name|full\s+name|contact|spouse|wife|husband|partner|mother"
                r"|father|parent|son|daughter|sibling|brother|sister|guardian|caregiver"
@@ -175,6 +188,13 @@ def _code(m: re.Match):
     return "[ID]"
 
 
+def _long_number(m: re.Match):
+    # The digits of a dbSNP or Ensembl identifier (rs..., ENSG...) name a variant or a gene.
+    if re.search(r"(?:^|[^A-Za-z0-9])(?:[Rr][Ss]|ENS[A-Z]*)$", m.string[max(0, m.start() - 12):m.start()]):
+        return None
+    return "[ID]"
+
+
 def _city_state(m: re.Match) -> str:
     return "[CITY], " + m.group("st")
 
@@ -191,6 +211,31 @@ def _age_label(m: re.Match) -> str:
     return m.group("label") + " 90+"
 
 
+# Ages of 90 and over written out in words ("ninety-two", "one hundred and one").
+AGE_WORD = (r"(?:ninety(?:[\s-]+(?:one|two|three|four|five|six|seven|eight|nine))?"
+            r"|(?:one|a)[\s-]+hundred(?:[\s-]+(?:and[\s-]+)?(?:one|two|three|four|five|six"
+            r"|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen))?)")
+AGE_WORD_RX = re.compile(r"(?i)\b(?:ninety|(?:one|a)[\s-]+hundred)\b")
+AGE_NUM = r"(?:9\d|1[0-4]\d)"
+
+
+def _coordinate_pair(m: re.Match):
+    a, b = (float(x) for x in re.findall(r"[+-]?\d+(?:\.\d+)?", m.group(0))[:2])
+    return "[GEO]" if abs(a) <= 90 and abs(b) <= 180 and max(abs(a), abs(b)) >= 10 else None
+
+
+def birth_year_pattern(reference_year: int) -> tuple[str, re.Pattern, object]:
+    """A year written after "born", "DOB" or "year of birth": kept unless the person
+    would be 90 or older in the reference year."""
+    def repl(m: re.Match):
+        if reference_year - int(m.group("v")) >= 90:
+            return _keep_label("[90_OR_OLDER]")(m)
+        return None
+    rx = re.compile(r"(?i)\b(?:born(?:\s+in)?|b\.|birth\s*year|year\s+of\s+birth|yob|d\.?o\.?b\.?"
+                    r"|date\s+of\s+birth|birth\s*date)\s*[:=]?\s*(?P<v>" + YEAR4 + r")(?!\d)")
+    return ("birth_year", rx, repl)
+
+
 # Order matters: earlier patterns take their span before later ones look.
 PATTERNS: list[tuple[str, re.Pattern, object]] = [
     ("photo", re.compile(r"(?i)data:image/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=\s]+"), "[PHOTO]"),
@@ -201,7 +246,13 @@ PATTERNS: list[tuple[str, re.Pattern, object]] = [
     ("ip", re.compile(r"(?i)(?<![0-9a-f:])(?:[0-9a-f]{1,4}:){7}[0-9a-f]{1,4}(?![0-9a-f:])"), _ipv6),
     ("ip", re.compile(r"(?i)(?<![0-9a-f:])(?:[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){0,6})?::(?:[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){0,6})?(?:\.\d{1,3}){0,3}(?![0-9a-f:])"), _ipv6),
     ("ip", re.compile(r"(?<![\d.])(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?![\d.])"), "[IP]"),
+    # Coordinates: labelled, in degrees with a compass letter, or a precise "lat, lon" pair.
+    ("geo", re.compile(r"(?i)\b(?P<label>lat(?:itude)?|lon(?:gitude)?|lng|gps|geocode|coord(?:inate)?s?)\s*[:=]?\s*(?P<v>[+-]?\d{1,3}\.\d+(?:\s*[,/;]\s*[+-]?\d{1,3}\.\d+)?)"), _keep_label("[GEO]")),
+    ("geo", re.compile(r"(?<![\w.])[+-]?\d{1,3}(?:\.\d+)?\s*\u00b0\s*(?:\d{1,2}(?:\.\d+)?\s*['\u2032]\s*(?:\d{1,2}(?:\.\d+)?\s*[\"\u2033]\s*)?)?[NSEWnsew](?![A-Za-z])"), "[GEO]"),
+    ("geo", re.compile(r"(?<![\d.])[+-]?\d{1,2}\.\d{3,}\s*,\s*[+-]?\d{1,3}\.\d{3,}(?![\d.])"), _coordinate_pair),
     ("id", re.compile(r"(?i)\b(?P<label>" + ID_LABELS + r")\s*(?:[:#=]\s*)?(?P<v>(?=[A-Z0-9/.-]*\d)[A-Z0-9][A-Z0-9/.-]{2,}[A-Z0-9])"), _keep_label("[ID]")),
+    # A number written after "#" ("Hospital #A-998").
+    ("id", re.compile(r"(?i)(?<![\w&#])#\s?(?P<v>(?=[A-Z0-9-]*\d)[A-Z0-9][A-Z0-9-]{2,}[A-Z0-9])(?![\w-])"), _keep_label("[ID]")),
     ("ssn", re.compile(r"(?i)\b(?:ssn|social\s+security(?:\s+(?:number|no\.?|#))?)\s*[:#]?\s*(?P<v>\d{3}[\s-]?\d{2}[\s-]?\d{4})(?!\d)"), _keep_label("[SSN]")),
     ("ssn", re.compile(r"(?<![\d-])\d{3}-\d{2}-\d{4}(?![\d-])"), "[SSN]"),
     ("ssn", re.compile(r"(?<![\d ])\d{3} \d{2} \d{4}(?![\d ])"), "[SSN]"),
@@ -244,14 +295,15 @@ PATTERNS: list[tuple[str, re.Pattern, object]] = [
     ("name", re.compile(r"\b(?:Mr|Mrs|Ms|Mx|Miss|Dr|Prof)\.?\s+[A-Z][a-zA-Z'-]+(?:\s+[A-Z][a-zA-Z'-]+){0,2}"), "[NAME]"),
     ("name", re.compile(r"(?i:\b" + NAME_LABELS + r")\s*[:=]?\s*(?P<v>[A-Z][a-zA-Z'-]+(?:[\s,]+[A-Z][a-zA-Z'-]+){0,3})"), _keep_label("[NAME]")),
     # Ages over 89.
-    ("age", re.compile(r"(?i)\b(?:9\d|1[0-4]\d)\s*-?\s*(?:years?(?:[\s-]*old)?|yrs?|y\.?o\.?|yo)(?![\w])"), _age90),
-    ("age", re.compile(r"(?i)\b(?P<label>age[ds]?)\s*[:=]?\s*(?:9\d|1[0-4]\d)(?![\d.])"), _age_label),
+    ("age", re.compile(r"(?i)\b(?:" + AGE_NUM + "|" + AGE_WORD + r")\s*-?\s*(?:years?(?:[\s-]*old)?|yrs?|y\.?o\.?|yo)(?![\w])"), _age90),
+    # "(?![\d.+])" keeps "aged 90+" from matching again.
+    ("age", re.compile(r"(?i)\b(?P<label>age[ds]?)\s*[:=]?\s*(?:" + AGE_NUM + r"(?![\d.+])|" + AGE_WORD + r"\b)"), _age_label),
     # Photographs and biometric templates.
     ("photo", re.compile(r"(?i)(?<![\w.-])[\w./\\~:-]*[\w-]\.(?:jpe?g|png|gif|bmp|tiff?|heic|heif|webp|dcm|dicom)(?![\w])"), "[IMAGE_FILE]"),
     ("biometric", re.compile(r"(?i)(?<![0-9a-f])[0-9a-f]{32,}(?![0-9a-f])"), "[BIOMETRIC_OR_CODE]"),
     ("biometric", re.compile(r"(?<![A-Za-z0-9+/=])(?=[A-Za-z0-9+/]*\d)(?=[A-Za-z0-9+/]*[A-Za-z])[A-Za-z0-9+/]{40,}={0,2}(?![A-Za-z0-9+/=])"), "[BIOMETRIC_OR_CODE]"),
     # Any other unique identifying number or code.
-    ("code", re.compile(r"(?<![\d.])\d{9,}(?![\d.])"), "[ID]"),
+    ("code", re.compile(r"(?<![\d.])\d{9,}(?![\d.])"), _long_number),
     ("code", re.compile(r"(?<![\w-])[A-Za-z0-9]+(?:-[A-Za-z0-9]+)+(?![\w-])|(?<![\w-])(?=[A-Za-z]*\d)(?=\d*[A-Za-z])[A-Za-z0-9]{6,}(?![\w-])"), _code),
 ]
 
@@ -274,8 +326,11 @@ def locale_patterns(locale: dict) -> list[tuple[str, re.Pattern, object]]:
 class Scrubber:
     """Finds and replaces identifier patterns inside one cell."""
 
-    def __init__(self, locale: dict):
-        self.patterns = PATTERNS + locale_patterns(locale)
+    def __init__(self, locale: dict, reference_year: int | None = None):
+        year = reference_year if reference_year is not None else date.today().year
+        # The year after "born" or "DOB" is judged once full dates have become years.
+        at = next(i for i, (kind, _, _) in enumerate(PATTERNS) if kind == "phone")
+        self.patterns = PATTERNS[:at] + [birth_year_pattern(year)] + PATTERNS[at:] + locale_patterns(locale)
 
     def scrub(self, text: str) -> tuple[str, list[str]]:
         """The text with every identifier pattern replaced, and the types replaced."""
@@ -307,12 +362,16 @@ class Scrubber:
 
     @staticmethod
     def _scrub_number(text: str, found: list[str]) -> tuple[str, list[str]]:
-        """A plain number is a measurement, except a compact date or a long ID."""
+        """A plain number is a measurement, except a compact date, a telephone number
+        in international form (+14155550134) or a long ID."""
         s = text.strip()
         if re.fullmatch(YEAR4 + r"(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])", s):
             found.append("date")
             return s[:4], found
-        if re.fullmatch(r"\d{9,}", s):
+        if re.fullmatch(r"\+\d{8,15}", s):
+            found.append("phone")
+            return "[PHONE]", found
+        if re.fullmatch(r"[+-]?\d{9,}", s):
             found.append("code")
             return "[ID]", found
         return text, found
@@ -383,6 +442,31 @@ RELATIVE_WORDS = {"spouse", "mother", "father", "parent", "guardian", "kin", "no
                   "partner", "contact"}
 CLINICIAN_WORDS = {"provider", "physician", "doctor", "attending", "nurse", "clinician",
                    "referring", "author", "signer", "surgeon", "pcp", "staff", "resident"}
+# Birth-year columns written as one word.
+BIRTH_YEAR_TOKENS = {"byear", "byr", "yob", "birthyear", "birthyr", "yrbirth", "yearbirth",
+                     "yearborn", "bornyear", "yrborn", "bornyr", "yearofbirth"}
+YEAR_TOKENS = {"year", "yr", "yrs", "yyyy", "y"}
+# "birth" or "born" with one of these is a place, which is geography smaller than a state.
+BIRTH_PLACE_WORDS = {"place", "city", "town", "village", "county", "location", "municipality",
+                     "address", "zip", "zipcode", "postcode", "birthplace"}
+# "birth" with one of these describes the birth, not its date.
+BIRTH_NOT_A_DATE = {"weight", "wt", "length", "len", "height", "order", "rank", "plurality",
+                    "outcome", "outcomes", "type", "defect", "defects", "control", "rate",
+                    "rates", "count", "counts", "cohort", "mode", "method", "gestation",
+                    "gestational", "ga", "injury", "trauma", "asphyxia", "attendant",
+                    "certificate", "cert", "hospital", "facility", "sex", "gender", "parity",
+                    "spacing", "interval", "complication", "complications", "history", "hx",
+                    "status", "season", "circumference", "head", "apgar", "presentation",
+                    "route", "delivery", "multiple", "twin", "singleton", "registry", "anomaly",
+                    "anomalies", "country", "state", "province", "nationality", "cohort"}
+# One-word age columns: ageyrs, agegroup, ageatdx, ...
+AGE_TOKEN = re.compile(r"age(?:s|d|yrs?|years?|yo|y|mos?|months?|wks?|weeks?|days?|hrs?|hours?"
+                       r"|grp|groups?|cats?|category|categories|bands?|bins?|ranges?|class"
+                       r"|brackets?|buckets?|at[a-z]*|dx|adm|onset|death|enrol+|baseline|bl)?")
+
+
+def _is_age_token(token: str) -> bool:
+    return bool(AGE_TOKEN.fullmatch(token))
 
 
 def name_rule(header: str) -> tuple[str, str, str] | None:
@@ -401,7 +485,8 @@ def name_rule(header: str) -> tuple[str, str, str] | None:
     # Allowed geography: a state or a country is not an identifier.
     if whole in ("state", "state code", "province", "country", "country code", "state province",
                  "us state", "home state", "residence state", "state of residence",
-                 "country of residence", "country of birth", "birth country"):
+                 "country of residence", "country of birth", "birth country", "birthcountry",
+                 "state of birth", "birth state", "birthstate"):
         return ("state or country (allowed)", "keep", "allowed_geography")
 
     # 17: full-face photographs and comparable images; 16: biometric identifiers.
@@ -470,19 +555,26 @@ def name_rule(header: str) -> tuple[str, str, str] | None:
     if ts & {"id", "identifier", "uid", "guid", "uuid", "pid"} and not (ts & NOT_A_PERSON_ID):
         return ("identifier", "pseudonym_id", "id")
 
-    # 3: dates and ages.
-    if _has(t, "birth year", "year of birth", "yob", "yearofbirth", "birthyear"):
+    # 3: ages and dates. An age column in any unit, and age groups, which must not
+    # split ages over 89 ("90-94" is refused, "90+" is the one allowed group).
+    if any(_is_age_token(x) for x in t):
+        return ("age", "age", "age")
+    birth_word = bool(ts & {"birth", "born"})
+    if ts & {"birthplace", "placeofbirth", "birthcity"} or (birth_word and ts & BIRTH_PLACE_WORDS):
+        return ("place of birth", "redact", "address")
+    if ts & BIRTH_YEAR_TOKENS or _has(t, "birth year", "year of birth", "yob", "yearofbirth",
+                                      "birthyear", "year born", "born year", "yr of birth") \
+            or (birth_word and ts & YEAR_TOKENS and not (ts & BIRTH_NOT_A_DATE)):
         return ("year of birth", "birth_year", "date")
     if _has(t, "dob", "birthdate", "birthday", "date of birth", "dateofbirth", "birth date",
             "birth dt"):
         return ("date of birth", "birth_date", "date")
+    if birth_word and not (ts & BIRTH_NOT_A_DATE):
+        return ("date or year of birth", "birth_date", "date")
     if _has(t, *DATE_WORDS) and not (ts & INTERVAL_WORDS):
         return ("date", "year", "date")
     if "time" in ts and ts & DATE_TIME_CONTEXT and not (ts & INTERVAL_WORDS):
         return ("date and time", "year", "date")
-    if (t[0] == "age" or t[-1] == "age") and not (ts & {"group", "band", "category", "range",
-                                                         "bin", "bracket", "class"}):
-        return ("age", "age", "age")
 
     # 2: geography smaller than a state.
     if _has(t, "zip", "zipcode", "zip code", "postal code", "postalcode", "postcode", "zip5",
@@ -532,13 +624,88 @@ def is_number(v: str) -> bool:
     return bool(NUMBER.fullmatch(v.strip()))
 
 
+def _shape_values(values: list[str]) -> list[str]:
+    """The values a shape rule looks at: no blanks, placeholders or missing-value words."""
+    return [v.strip() for v in values
+            if v.strip() and not PLACEHOLDER.fullmatch(v.strip()) and v.strip().lower() not in MISSING_VALUES]
+
+
+def value_shape_rule(header: str, values: list[str], reference_year: int) -> tuple[str, str, str, int] | None:
+    """(finding, action, phi type, cells) for an all-number column whose values have
+    the shape of an identifier its name does not announce: years old enough to be the
+    birth year of someone over 89, ages over 89 in a column named for years, or
+    five-digit numbers that may be ZIP codes. Coordinates are found in pairs, by
+    coordinate_pairs()."""
+    vals = _shape_values(values)
+    if not vals or not all(is_number(v) for v in vals):
+        return None
+    if all(re.fullmatch(r"\d{4}(?:\.0+)?", v) and 1880 <= int(float(v)) <= reference_year for v in vals):
+        old = sum(1 for v in vals if reference_year - int(float(v)) >= 90)
+        if old:
+            return (f"four-digit years, {old} of {len(vals)} at least 90 years before {reference_year} "
+                    "(as birth years they reveal an age over 89)", "birth_year", "date", old)
+        return None
+    toks = set(column_tokens(header))
+    if toks & {"years", "yrs", "yr", "yo"}:
+        nums = [float(v) for v in vals]
+        over = sum(1 for n in nums if n >= 90)
+        if over and all(0 <= n <= 125 for n in nums):
+            return (f"{over} values over 89 in a column named for years (possible ages)", "age", "age", over)
+    # Mostly five digits: a lab count such as a white cell count mixes four and five.
+    if all(re.fullmatch(r"\d{4,5}(?:\.0+)?", v) for v in vals):
+        five = sum(1 for v in vals if len(v.split(".")[0]) == 5)
+        if five >= 0.8 * len(vals):
+            return (f"five-digit numbers in {five} of {len(vals)} cells (possible ZIP codes)",
+                    "redact", "zip", five)
+    return None
+
+
+def _coordinate_shape(values: list[str]) -> dict | None:
+    vals = _shape_values(values)
+    if not vals or not all(re.fullmatch(r"[+-]?\d+(?:\.\d+)?", v) for v in vals):
+        return None
+    nums = [float(v) for v in vals]
+    if any(abs(x) > 180 for x in nums):
+        return None
+    places = [len(v.split(".", 1)[1]) if "." in v else 0 for v in vals]
+    n = len(vals)
+    if sum(1 for p in places if p >= 2) / n < 0.8:
+        return None
+    return {"lat": all(abs(x) <= 90 for x in nums),
+            "beyond_90": any(abs(x) > 90 for x in nums),
+            "one_sign": all(x < 0 for x in nums) or all(x > 0 for x in nums),
+            "precise": sum(1 for p in places if p >= 3) / n >= 0.8,
+            "max": max(abs(x) for x in nums), "cells": n}
+
+
+def coordinate_pairs(columns: list[tuple[int, list[str]]]) -> dict[int, int]:
+    """Column positions (and cell counts) of adjacent columns shaped like latitude and
+    longitude: decimal numbers within +-90 next to decimal numbers within +-180, both
+    with three or more decimal places, or with two when the second column reaches past
+    +-90 with one sign (west or east of the 90th meridian). One of the two must reach
+    10 or more, which every populated place outside the Gulf of Guinea does and which
+    scores such as z-scores, propensities and weights rarely do."""
+    shapes = {i: _coordinate_shape(vals) for i, vals in columns}
+    found: dict[int, int] = {}
+    for (i, _), (j, _) in zip(columns, columns[1:]):
+        a, b = shapes.get(i), shapes.get(j)
+        if not a or not b or j != i + 1 or max(a["max"], b["max"]) < 10:
+            continue
+        for lat, lon in ((a, b), (b, a)):
+            if lat["lat"] and (lat["precise"] and lon["precise"]
+                               or lon["beyond_90"] and lon["one_sign"]):
+                found[i], found[j] = a["cells"], b["cells"]
+                break
+    return found
+
+
 def header_looks_like_value(header: str, scrubber: Scrubber) -> bool:
     h = str(header).strip()
     return bool(h) and (is_number(h) or len(h) > 80 or bool(scrubber.find(h)))
 
 
 def decide_columns(data: list[dict], headers: list[str], locale: dict, scrubber: Scrubber,
-                   keep: set[str], redact: set[str]) -> list[dict]:
+                   keep: set[str], redact: set[str], reference_year: int) -> list[dict]:
     """One decision per column. No cell value goes into a decision."""
     decisions = []
     for i, col in enumerate(headers, start=1):
@@ -577,9 +744,13 @@ def decide_columns(data: list[dict], headers: list[str], locale: dict, scrubber:
             elif upstream.looks_like_free_text(nonempty):
                 d.update(kind="uncertain", finding="free text (names inside text cannot be found)",
                          action="redact", phi_type="free_text")
+            elif (shape := value_shape_rule(col, nonempty, reference_year)) and shape[2] != "zip":
+                d.update(kind="uncertain", finding=f"values: {shape[0]}", action=shape[1], phi_type=shape[2])
             elif upstream.is_high_cardinality_numeric(nonempty):
                 d.update(kind="uncertain", finding="unique numbers (possible record or account number)",
                          action="pseudonym_id", phi_type="id")
+            elif shape:  # five-digit numbers that repeat: possible ZIP codes
+                d.update(kind="uncertain", finding=f"values: {shape[0]}", action=shape[1], phi_type=shape[2])
             elif not all(is_number(v) for v in nonempty) and len(set(nonempty)) >= 2 \
                     and len(set(nonempty)) / len(nonempty) > 0.5:
                 d.update(kind="uncertain",
@@ -588,6 +759,16 @@ def decide_columns(data: list[dict], headers: list[str], locale: dict, scrubber:
             else:
                 d.update(kind="none", finding="no identifier found", action="keep", phi_type=None)
         decisions.append(d)
+
+    # Latitude and longitude under names the rules above do not know.
+    unvouched = [(d["index"], [str(row.get(d["column"], "") or "") for row in data])
+                 for d in decisions if d["kind"] == "none" and d["action"] == "keep"]
+    pairs = coordinate_pairs(unvouched)
+    for d in decisions:
+        if d["index"] in pairs:
+            d.update(kind="uncertain", action="redact", phi_type="geo",
+                     finding="values: decimal numbers shaped like latitude and longitude "
+                             "(with the column next to it)")
 
     by_name = {str(d["column"]): d for d in decisions}
     by_index = {f"#{d['index']}": d for d in decisions}
@@ -638,9 +819,9 @@ def to_year(v: str, scrubber: Scrubber) -> str:
     years = set(_years_in(s))
     if len(years) == 1:
         return years.pop()
-    if re.search(r"\d", s):
-        return "[DATE]"
-    return scrubber.scrub(v)[0]
+    if re.search(r"\d", s) or s.lower() not in MISSING_VALUES:
+        return "[DATE]"  # no single year to keep, or text that is not a missing-value word
+    return v
 
 
 def birth(v: str, scrubber: Scrubber, reference_year: int) -> str:
@@ -661,24 +842,54 @@ def zip3(v: str) -> str:
     return "000" if prefix in RESTRICTED_ZIP3 else prefix
 
 
+UNIT_FACTORS = (
+    # Single letters other than y are not read as units: "96 M" is more often a sex
+    # than months, and an unread unit counts as years, which can only over-group.
+    (re.compile(r"y|yr|yrs|years?|yo|yoa|ys"), 1.0),
+    (re.compile(r"mo|mos|mon|mths?|months?"), 12.0),
+    (re.compile(r"wk|wks|weeks?"), 52.18),
+    (re.compile(r"dy|dys|days?"), 365.25),
+    (re.compile(r"hr|hrs|hours?"), 8766.0),
+)
+AGE_RANGE = re.compile(r"\d\s*(?:-|\u2013|to)\s*\d")
+
+
+def _unit_factor(word: str) -> float | None:
+    for rx, factor in UNIT_FACTORS:
+        if rx.fullmatch(word.lower()):
+            return factor
+    return None
+
+
+def age_years(v: str, header: str) -> list[float]:
+    """Every number in an age cell, in years. A unit written after a number wins;
+    otherwise the unit in the column name (age_days, age_months), else years."""
+    base = 1.0
+    for tok in column_tokens(header):
+        m = re.fullmatch(r"age(.+)", tok)
+        factor = _unit_factor(m.group(1) if m else tok)
+        if factor is not None and (m or tok != "y"):
+            base = factor
+    out = []
+    for m in re.finditer(r"(\d+(?:\.\d+)?)\s*([A-Za-z]+)?", v):
+        factor = _unit_factor(m.group(2)) if m.group(2) else None
+        out.append(float(m.group(1)) / (factor if factor is not None else base))
+    return out
+
+
+def age_over_89(v: str, header: str) -> bool:
+    return bool(AGE_WORD_RX.search(v)) or any(y >= 90 for y in age_years(v, header))
+
+
 def age_cap(v: str, header: str, scrubber: Scrubber) -> str:
-    toks = set(column_tokens(header))
-    factor = 1.0
-    if toks & {"days", "day"}:
-        factor = 365.25
-    elif toks & {"weeks", "week", "wk", "wks"}:
-        factor = 52.18
-    elif toks & {"months", "month", "mo", "mos"}:
-        factor = 12.0
-    low = v.lower()
-    if re.search(r"\bdays?\b|\bd\b", low):
-        factor = 365.25
-    elif re.search(r"\bweeks?\b|\bwks?\b", low):
-        factor = 52.18
-    elif re.search(r"\bmonths?\b|\bmos?\b", low):
-        factor = 12.0
-    nums = [float(n) for n in re.findall(r"\d+(?:\.\d+)?", v)]
-    if any(n / factor >= 90 for n in nums):
+    """90+ for an age over 89 (in any unit, or in words). A range that straddles 90
+    ("85-94") is replaced, because it would split the ages over 89."""
+    if AGE_WORD_RX.search(v):
+        return "90+"
+    years = age_years(v, header)
+    if any(y >= 90 for y in years):
+        if any(y < 90 for y in years) and AGE_RANGE.search(v):
+            return "[REDACTED]"
         return "90+"
     return scrubber.scrub(v)[0]
 
@@ -734,14 +945,31 @@ def residual_findings(rows: list[dict], headers: list[str], decisions: list[dict
     """Columns whose output still holds an identifier, with counts. No values."""
     findings = []
     by_col = {d["column"]: d for d in decisions} if decisions else {}
+    actions, kept_on_request = {}, set()
     for i, col in enumerate(headers, start=1):
         d = by_col.get(col)
         if d is None:
             rule = name_rule(col)
-            action = rule[1] if rule else "keep"
+            actions[i] = rule[1] if rule else "keep"
         else:
-            action = d["action"]
+            actions[i] = d["action"]
+            if d.get("kept_on_request"):
+                kept_on_request.add(i)
+    # Kept columns (unless the person kept them on request) are also checked by the
+    # shape of their values, as the run classified them.
+    shape_checked = [(i, [str(row.get(col, "") or "") for row in rows])
+                     for i, col in enumerate(headers, start=1)
+                     if actions[i] == "keep" and i not in kept_on_request]
+    shapes = {i: value_shape_rule(headers[i - 1], vals, reference_year) for i, vals in shape_checked}
+    pairs = coordinate_pairs(shape_checked)
+    for i, col in enumerate(headers, start=1):
+        action = actions[i]
         counts: dict[str, int] = {}
+        if shapes.get(i):
+            finding, _, _, cells = shapes[i]
+            counts[finding] = cells
+        if i in pairs:
+            counts["decimal numbers shaped like latitude and longitude"] = pairs[i]
         for row in rows:
             v = str(row.get(col, "") or "").strip()
             if not v or PLACEHOLDER.fullmatch(v):
@@ -761,15 +989,14 @@ def residual_findings(rows: list[dict], headers: list[str], decisions: list[dict
                         problem = "birth year of a person aged 90 or over"
                 elif re.search(r"\d", v):
                     problem = "date not reduced to a year"
-                else:
-                    scan = True  # "unknown", "not recorded"
+                elif v.lower() not in MISSING_VALUES:
+                    problem = "text left in a date column"
             elif action == "zip3":
                 if not re.fullmatch(r"\d{3}", v) or v in RESTRICTED_ZIP3:
                     problem = "ZIP code not reduced to an allowed three-digit prefix"
             elif action == "age":
                 if v != "90+":
-                    nums = [float(n) for n in re.findall(r"\d+(?:\.\d+)?", v)]
-                    if any(n >= 90 for n in nums) and not re.search(r"(?i)day|week|month", v + col):
+                    if age_over_89(v, col):
                         problem = "age over 89"
                     scan = True
             elif decisions is None and PSEUDONYM.fullmatch(v):
@@ -812,7 +1039,7 @@ def print_plan(decisions: list[dict], withheld: set[int], changed: dict | None =
         print(f"  {d['index']:>3}  {name:<{width}}  {label:<16}  {count}  {d['finding']}{note}")
     uncertain = [display_name(d, withheld) for d in decisions if d["kind"] == "uncertain" and d["action"] != "keep"]
     if uncertain:
-        print("\n  Redacted because the scanner cannot vouch for them: " + ", ".join(uncertain))
+        print("\n  Redacted or changed because the scanner cannot vouch for them: " + ", ".join(uncertain))
         print("  Keep one only after the person confirms it holds no identifiers (--keep COLUMN).")
     kept = [display_name(d, withheld) for d in decisions if d["action"] == "keep"]
     if kept:
@@ -844,9 +1071,10 @@ def resolve_locale(args) -> dict:
 
 def cmd_plan(args) -> int:
     locale = resolve_locale(args)
-    scrubber = Scrubber(locale)
+    scrubber = Scrubber(locale, args.reference_year)
     data, meta, headers, withheld = load_input(Path(args.input_file), scrubber)
-    decisions = decide_columns(data, headers, locale, scrubber, set(args.keep), set(args.redact))
+    decisions = decide_columns(data, headers, locale, scrubber, set(args.keep), set(args.redact),
+                               args.reference_year)
     print("Safe Harbor plan (no cell values are printed)")
     print(f"  input: {Path(args.input_file).name}  rows: {len(data)}  columns: {len(headers)}  "
           f"locale: {locale.get('code', 'custom')}")
@@ -860,11 +1088,12 @@ def cmd_plan(args) -> int:
 
 def cmd_run(args) -> int:
     locale = resolve_locale(args)
-    scrubber = Scrubber(locale)
+    scrubber = Scrubber(locale, args.reference_year)
     input_path = Path(args.input_file).resolve()
     out_dir = Path(args.output_dir).resolve()
     data, meta, headers, withheld = load_input(input_path, scrubber)
-    decisions = decide_columns(data, headers, locale, scrubber, set(args.keep), set(args.redact))
+    decisions = decide_columns(data, headers, locale, scrubber, set(args.keep), set(args.redact),
+                               args.reference_year)
 
     mapping_path = Path(args.mapping_out).resolve() if args.mapping_out else None
     if mapping_path is not None:
@@ -954,7 +1183,8 @@ def cmd_run(args) -> int:
         report["mapping_written"] = True
 
     report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    print("\nResidual check passed: no identifier pattern found in the output.")
+    print("\nResidual check passed: the output was scanned again and no identifier pattern or "
+          "shape was found. This is a pattern check, not proof that the data is de-identified.")
     print(f"Output: {out_path}")
     print(f"Report: {report_path}")
     if mapping_path is not None:
@@ -977,7 +1207,8 @@ def report_decisions(path: Path, headers: list[str], report_arg: str | None):
             if report_arg:
                 raise UsageError("the report does not describe this file")
             return None, None
-        decisions = [{"column": headers[d["index"] - 1], "action": d["action"]}
+        decisions = [{"column": headers[d["index"] - 1], "action": d["action"],
+                      "kept_on_request": bool(d.get("kept_on_request"))}
                      for d in report["decisions"]]
     except (ValueError, KeyError, IndexError, TypeError):
         raise UsageError(f"cannot read the report {rp.name}")
@@ -986,7 +1217,7 @@ def report_decisions(path: Path, headers: list[str], report_arg: str | None):
 
 def cmd_verify(args) -> int:
     locale = resolve_locale(args)
-    scrubber = Scrubber(locale)
+    scrubber = Scrubber(locale, args.reference_year)
     path = Path(args.input_file)
     if not path.is_file():
         raise UsageError(f"file not found: {path}")
@@ -999,8 +1230,9 @@ def cmd_verify(args) -> int:
     print(f"  file: {path.name}  rows: {len(data)}  columns: {len(headers)}")
     print(f"  column actions: {'from ' + used if used else 'guessed from column names (no matching report found)'}")
     if not findings:
-        print("  clean: no identifier pattern found")
-        print("  This is a pattern check. A person still has to spot-check the file.")
+        print("  clean: no identifier pattern or shape found")
+        print("  This is a pattern check, not proof of de-identification. A person still has to "
+              "spot-check the file.")
         return 0
     for f in findings:
         name = f"#{f['index']} (name withheld)" if f["index"] in withheld else f["column"]
@@ -1013,7 +1245,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="safe_harbor.py",
         description="HIPAA Safe Harbor de-identification of a CSV, TSV or Excel table, "
-                    "with no cell value printed and no network access.")
+                    "with no cell value printed and no network calls.")
     sub = p.add_subparsers(dest="command", required=True)
 
     def common(sp):

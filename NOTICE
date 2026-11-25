@@ -116,4 +116,4 @@ scientific-prose-review includes material from labarba/sciwrite (skills/sciwrite
 Copyright (c) 2026 Lorena A. Barba, licensed under CC-BY-4.0.
 
 phi-deidentification includes material from Aperivue/medsci-skills (skills/deidentify, commit 7e9d133dd0216c29b0e030729e3719c3db5e0973),
-Copyright (c) 2026 Aperivue (https://aperivue.com), licensed under MIT. Changes: deidentify.py, its locale packs, references and tests copied (the test now points at scripts/); SKILL.md rewritten for an agent that never sees raw data; safe_harbor.py added, a non-interactive HIPAA Safe Harbor mode with a residual check and no network access.
+Copyright (c) 2026 Aperivue (https://aperivue.com), licensed under MIT. Changes: deidentify.py, its locale packs, references and tests copied (the test now points at scripts/); SKILL.md rewritten for an agent that never sees raw data; safe_harbor.py added, a non-interactive HIPAA Safe Harbor mode with a residual check and no network calls.

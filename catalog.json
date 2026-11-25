@@ -13392,7 +13392,7 @@
       ]
     },
     {
-      "summary": "De-identifies clinical CSV, TSV and Excel tables under HIPAA Safe Harbor with a local script that has no network access; the agent never reads the raw data.",
+      "summary": "De-identifies clinical CSV, TSV and Excel tables under HIPAA Safe Harbor with a local script that makes no network calls; the agent never reads the raw data.",
       "keywords": [
         "phi",
         "deidentification",
@@ -13442,7 +13442,7 @@
           }
         ],
         "maintained_here": false,
-        "changes": "deidentify.py, its locale packs, references and tests copied (the test now points at scripts/); SKILL.md rewritten for an agent that never sees raw data; safe_harbor.py added, a non-interactive HIPAA Safe Harbor mode with a residual check and no network access."
+        "changes": "deidentify.py, its locale packs, references and tests copied (the test now points at scripts/); SKILL.md rewritten for an agent that never sees raw data; safe_harbor.py added, a non-interactive HIPAA Safe Harbor mode with a residual check and no network calls."
       },
       "licence": "Apache-2.0 AND MIT",
       "history": [
@@ -13455,7 +13455,7 @@
       "card": {
         "title": "PHI De-identification",
         "category": "Core",
-        "description": "De-identify a clinical table before analysis or sharing: a local script with no network access removes the 18 HIPAA Safe Harbor identifiers (names, dates, geography, contact details, record and account numbers, device and vehicle IDs, URLs, IP addresses, biometrics and photos), and the agent sees only its report and the de-identified output.",
+        "description": "De-identify a clinical table before analysis or sharing: a local script that makes no network calls removes the 18 HIPAA Safe Harbor identifiers (names, dates, geography, contact details, record and account numbers, device and vehicle IDs, URLs, IP addresses, biometrics and photos), and the agent sees only its report and the de-identified output.",
         "tags": [
           "Clinical",
           "Privacy",
@@ -13479,7 +13479,7 @@
         "download": "https://github.com/BaranziniLab/biorouter-skills/releases/download/skill-phi-deidentification/phi-deidentification.zip"
       },
       "notices": [
-        "phi-deidentification includes material from Aperivue/medsci-skills (skills/deidentify, commit 7e9d133dd0216c29b0e030729e3719c3db5e0973),\nCopyright (c) 2026 Aperivue (https://aperivue.com), licensed under MIT. Changes: deidentify.py, its locale packs, references and tests copied (the test now points at scripts/); SKILL.md rewritten for an agent that never sees raw data; safe_harbor.py added, a non-interactive HIPAA Safe Harbor mode with a residual check and no network access."
+        "phi-deidentification includes material from Aperivue/medsci-skills (skills/deidentify, commit 7e9d133dd0216c29b0e030729e3719c3db5e0973),\nCopyright (c) 2026 Aperivue (https://aperivue.com), licensed under MIT. Changes: deidentify.py, its locale packs, references and tests copied (the test now points at scripts/); SKILL.md rewritten for an agent that never sees raw data; safe_harbor.py added, a non-interactive HIPAA Safe Harbor mode with a residual check and no network calls."
       ]
     }
   ]
