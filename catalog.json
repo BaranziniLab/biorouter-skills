@@ -13418,7 +13418,7 @@
       "release": {
         "tag": "skill-phi-deidentification",
         "asset": "phi-deidentification.zip",
-        "sha256": null
+        "sha256": "51dbf2f0a44107151ab70a8449f1e5fb08602a701a68ca04a1ba41804c5d13eb"
       },
       "id": "phi-deidentification",
       "display_name": "PHI De-identification",
