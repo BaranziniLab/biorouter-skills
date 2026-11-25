@@ -546,15 +546,28 @@ class NamesUnderUnlistedHeaders(unittest.TestCase):
         p, out, report = self.run_file(raw)
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         self.assertIn("shaped like names or places", p.stdout)
-        for col in ("x1", "x2", "x3", "x4"):
+        # Fail closed (round 1 of 2026-11-25): a race column and ICD-10 codes are verified and
+        # kept; a diagnosis written in words and a note are text the script cannot verify, so
+        # they are redacted until the person keeps them (this test kept them before).
+        for col in ("x1", "x2", "x3", "x4", "diagnosis", "note"):
             self.assertEqual({r[col] for r in out}, {"[REDACTED]"}, col)
-        for i, col in enumerate(header[4:], start=4):
+        for col in ("race", "code"):
+            i = header.index(col)
             self.assertEqual([r[col] for r in out], [row[i] for row in rows], col)
-        # Kept text is listed for the person to confirm, in the output and the report.
-        self.assertIn("Kept text the scanner cannot fully check", p.stdout)
-        self.assertIn("must confirm hold no names", p.stdout)
-        listed = [d["column"] for d in json.loads(report.read_text(encoding="utf-8"))["kept_text_columns"]]
-        self.assertEqual(listed, ["diagnosis", "race", "note", "code"])
+        self.assertIn("Need the person's decision", p.stdout)
+        data = json.loads(report.read_text(encoding="utf-8"))
+        self.assertEqual([d["column"] for d in data["kept_text_columns"]], ["race", "code"])
+        self.assertEqual([d["column"] for d in data["columns_needing_decision"]],
+                         ["x1", "x2", "x3", "x4", "diagnosis", "note"])
+        # Kept on the person's word, the two are scrubbed and named with the warning.
+        p, out, report = self.run_file(raw, "--keep", "diagnosis", "--keep", "note")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        for col in ("diagnosis", "note"):
+            i = header.index(col)
+            self.assertEqual([r[col] for r in out], [row[i] for row in rows], col)
+        self.assertIn("scrubbed for identifier patterns only", p.stdout)
+        listed = json.loads(report.read_text(encoding="utf-8"))["kept_unverified_text_columns"]
+        self.assertEqual([d["column"] for d in listed], ["diagnosis", "note"])
         shown = p.stdout + p.stderr + report.read_text(encoding="utf-8")
         for s in sorted(self.raw_strings()):
             self.assertNotIn(s, shown)
@@ -660,9 +673,18 @@ class CategoryWordsDoNotHideNames(unittest.TestCase):
         self.assertEqual({r["Specimen Collector Name"] for r in out}, {"[REDACTED]"})
         for col in ("Study Patient Name", "Trial Participant Name"):
             self.assertTrue(all(re.fullmatch(r"P\d{4}", r[col]) for r in out), col)
+        # A drug name column is not an identifier by name, but its words are not in the closed
+        # vocabulary: redacted by default (it was kept before round 1), kept on request.
+        self.assertEqual({r["Drug Name"] for r in out}, {"[REDACTED]"})
+        p, out, _ = self.run_file(raw, "--keep", "Drug Name")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         self.assertEqual([r["Drug Name"] for r in out], [row[4] for row in rows])
 
-    def test_category_columns_keep_their_values(self):
+    def test_category_columns_wait_for_the_persons_word(self):
+        # Before round 1 of the fail-closed design (2026-11-25) a default run kept all of these.
+        # Now only the race column, whose values are census categories, is kept by default; the
+        # rest are text the script cannot verify, redacted and listed for the person, and kept
+        # verbatim with --keep.
         cols = {
             "Visit Type": ["Office", "Telehealth", "Inpatient", "Emergency"],
             "Treatment Arm": ["Placebo", "Treatment A", "Treatment B"],
@@ -684,7 +706,16 @@ class CategoryWordsDoNotHideNames(unittest.TestCase):
         }
         header = list(cols)
         rows = [[cols[h][(i + k) % len(cols[h])] for k, h in enumerate(header)] for i in range(120)]
-        p, out, report = self.run_file(write_csv(self.tmp / "categories.csv", header, rows))
+        raw = write_csv(self.tmp / "categories.csv", header, rows)
+        p, out, report = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        for i, col in enumerate(header):
+            expected = [row[i] for row in rows] if col == "Race" else ["[REDACTED]"] * len(rows)
+            self.assertEqual([r[col] for r in out], expected, col)
+        pending = [d["column"] for d in json.loads(report.read_text(encoding="utf-8"))["columns_needing_decision"]]
+        self.assertEqual(pending, [h for h in header if h != "Race"])
+        keep = [a for h in header if h != "Race" for a in ("--keep", h)]
+        p, out, report = self.run_file(raw, *keep)
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         for i, col in enumerate(header):
             self.assertEqual([r[col] for r in out], [row[i] for row in rows], col)
@@ -717,9 +748,9 @@ class CategoryWordsDoNotHideNames(unittest.TestCase):
                 shutil.rmtree(alone)
 
     def test_keep_is_honoured_by_the_residual_check_for_shapes(self):
-        # A column the run keeps by itself, which the person then names with --keep, is
-        # recorded as kept on request, so the residual check does not second-guess the
-        # person's confirmation of its shape (patterns inside it are still scanned).
+        # A column the person names with --keep is recorded as kept on request, so the
+        # residual check does not second-guess the person's confirmation of its text (patterns
+        # inside it are still scanned).
         header = ["Diagnosis", "sex"]
         rows = [[["Heart Failure", "Asthma", "COPD"][i % 3], "F"] for i in range(30)]
         p, out, report = self.run_file(write_csv(self.tmp / "kept.csv", header, rows), "--keep", "Diagnosis")
@@ -865,7 +896,9 @@ class ValuesDecideCategoryColumns(unittest.TestCase):
         bad = run("verify", str(raw), "--reference-year", REFERENCE_YEAR)
         self.assertEqual(bad.returncode, 3, bad.stdout + bad.stderr)
 
-    def test_category_values_under_place_and_role_words_are_kept(self):
+    def test_category_values_under_place_and_role_words_wait_for_the_persons_word(self):
+        # Kept by default before round 1 (2026-11-25); now only the numbers and the response
+        # words are, and the rest are kept on request.
         cols = {
             "Tumor Location": ["Left Upper Lobe", "Right Lower Lobe", "Sigmoid Colon", "Breast"],
             "Care Setting": ["Inpatient", "Outpatient", "Home", "Skilled Nursing Facility"],
@@ -884,12 +917,21 @@ class ValuesDecideCategoryColumns(unittest.TestCase):
         }
         header = list(cols)
         rows = [[cols[h][(i + k) % len(cols[h])] for k, h in enumerate(header)] for i in range(120)]
-        p, out, _ = self.run_file(write_csv(self.tmp / "kept_categories.csv", header, rows))
+        raw = write_csv(self.tmp / "kept_categories.csv", header, rows)
+        p, out, _ = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        verified = {"Visit Number", "Treatment Responder"}
+        for i, col in enumerate(header):
+            expected = [row[i] for row in rows] if col in verified else ["[REDACTED]"] * len(rows)
+            self.assertEqual([r[col] for r in out], expected, col)
+        p, out, _ = self.run_file(raw, *[a for h in header if h not in verified for a in ("--keep", h)])
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         for i, col in enumerate(header):
             self.assertEqual([r[col] for r in out], [row[i] for row in rows], col)
 
-    def test_ordinary_clinical_category_columns_are_kept(self):
+    def test_ordinary_clinical_category_columns_wait_for_the_persons_word(self):
+        # Kept by default before round 1 (2026-11-25); now only Race is (Patient Refused is a
+        # missing-value phrase), and the rest are kept on request.
         cols = {
             "Diagnosis": ["Atrial Fibrillation", "Pulmonary Embolism", "Septic Shock", "Heart Failure",
                           "Type 2 Diabetes", "Major Depression", "Bipolar Disorder", "Iron Deficiency",
@@ -910,7 +952,13 @@ class ValuesDecideCategoryColumns(unittest.TestCase):
         }
         header = list(cols)
         rows = [[cols[h][(i + k) % len(cols[h])] for k, h in enumerate(header)] for i in range(150)]
-        p, out, _ = self.run_file(write_csv(self.tmp / "clinical.csv", header, rows))
+        raw = write_csv(self.tmp / "clinical.csv", header, rows)
+        p, out, _ = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        for i, col in enumerate(header):
+            expected = [row[i] for row in rows] if col == "Race" else ["[REDACTED]"] * len(rows)
+            self.assertEqual([r[col] for r in out], expected, col)
+        p, out, _ = self.run_file(raw, *[a for h in header if h != "Race" for a in ("--keep", h)])
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         for i, col in enumerate(header):
             self.assertEqual([r[col] for r in out], [row[i] for row in rows], col)
@@ -936,16 +984,29 @@ class ValuesDecideCategoryColumns(unittest.TestCase):
         header = list(cols)
         rows = [[cols[h][(i + k) % len(cols[h])] for k, h in enumerate(header)] for i in range(90)]
         raw = write_csv(self.tmp / "qualifiers.csv", header, rows)
+        # These are not identifiers by name, so a default run exits 0 and they can be kept
+        # (prior finding: --keep on them used to exit 2). Yes and No are verified; the other
+        # words are text the script cannot verify, redacted until the person keeps them (they
+        # were kept by default before round 1 of 2026-11-25).
         p, out, report = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        for i, col in enumerate(header):
+            expected = [row[i] for row in rows] if col == "Medicaid Eligible" else ["[REDACTED]"] * len(rows)
+            self.assertEqual([r[col] for r in out], expected, col)
+        p, out, report = self.run_file(raw, *[a for h in header if h != "Medicaid Eligible" for a in ("--keep", h)])
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         for i, col in enumerate(header):
             self.assertEqual([r[col] for r in out], [row[i] for row in rows], col)
         written = self.tmp / "out" / "qualifiers_deidentified.csv"
+        ok = run("verify", str(written), "--reference-year", REFERENCE_YEAR)
+        self.assertEqual(ok.returncode, 0, ok.stdout + ok.stderr)
+        # Without the run's report the check cannot know the person kept them: it fails closed.
         alone = self.tmp / "alone"
         alone.mkdir()
         shutil.copy(written, alone / written.name)
         guessed = run("verify", str(alone / written.name), "--reference-year", REFERENCE_YEAR)
-        self.assertEqual(guessed.returncode, 0, guessed.stdout + guessed.stderr)
+        self.assertEqual(guessed.returncode, 3, guessed.stdout + guessed.stderr)
+        self.assertIn("Insurance Type: text the script cannot verify", guessed.stdout)
         # Numbers, names, towns and logins under the same names are still identifiers by name.
         ids = write_csv(self.tmp / "qualifier_ids.csv",
                         ["Account Type", "Insurance Status", "Employer Type", "City Type",
@@ -1061,7 +1122,15 @@ class YearMonthsAndScriptsWithoutCase(unittest.TestCase):
         rows = [[seasons[i % len(seasons)], f"{seasons[i % 5][:4]}/{seasons[i % 5][5:]}", monthly[i % 144], "F"]
                 for i in range(288)]
         raw = write_csv(self.tmp / "seasons.csv", ["Season", "School Year", "Visit Month", "sex"], rows)
+        # A season is not a date the scrubber reduces, nor a value the script verifies, so it is
+        # redacted by default since round 1 (2026-11-25; it was kept before) and kept verbatim
+        # on request. The column of months keeps the year either way.
         p, out, _ = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual({r["Season"] for r in out}, {"[REDACTED]"})
+        self.assertEqual({r["School Year"] for r in out}, {"[REDACTED]"})
+        self.assertEqual([r["Visit Month"] for r in out], [row[2][:4] for row in rows])
+        p, out, _ = self.run_file(raw, "--keep", "Season", "--keep", "School Year")
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         self.assertEqual([r["Season"] for r in out], [row[0] for row in rows])
         self.assertEqual([r["School Year"] for r in out], [row[1] for row in rows])
@@ -1180,7 +1249,14 @@ class YearMonthsAndScriptsWithoutCase(unittest.TestCase):
                 "Cohort": ["Cohort A", "Cohort B"]}
         header = list(cols)
         rows = [[cols[h][(i + k) % len(cols[h])] for k, h in enumerate(header)] for i in range(80)]
-        p, out, _ = self.run_file(write_csv(self.tmp / "species.csv", header, rows))
+        raw = write_csv(self.tmp / "species.csv", header, rows)
+        # Kept by default before round 1 (2026-11-25); now redacted as text the script cannot
+        # verify, and kept verbatim on request.
+        p, out, _ = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        for col in header:
+            self.assertEqual({r[col] for r in out}, {"[REDACTED]"}, col)
+        p, out, _ = self.run_file(raw, *[a for h in header for a in ("--keep", h)])
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         for i, col in enumerate(header):
             self.assertEqual([r[col] for r in out], [row[i] for row in rows], col)
@@ -1203,6 +1279,462 @@ class YearMonthsAndScriptsWithoutCase(unittest.TestCase):
             "vision 20/10", "pain 7/10", "BP 140/90", "GCS 14/15", "Instagram: none",
             "u/s abdomen", "10 u/day", "seen 10-12 times", "on 2-3 occasions", "Hb 14.3",
             "MRN#[ID]"])
+
+
+# In-process probes of safe_harbor.py, run in a child interpreter (the module disables
+# sockets when it is imported). They take a JSON file of columns and print JSON.
+PROBE = r"""
+import json, sys
+sys.path.insert(0, sys.argv[1])
+import safe_harbor as s, deidentify as u
+mode, path, locale_code = sys.argv[2], sys.argv[3], sys.argv[4]
+locale = u.load_locale(locale_code)
+sc = s.Scrubber(locale, 2026)
+out = []
+for header, values in json.load(open(path, encoding="utf-8")):
+    if mode == "decide":
+        d = s.decide_columns([{header: v} for v in values], [header], locale, sc, set(), set(), 2026)[0]
+        out.append([header, d["action"], d["kind"]])
+    else:
+        ctx = s.ColumnContext(header)
+        out.append([header, [s.code_grammar(v, ctx) if mode == "grammar" else s.value_verified(v, ctx)
+                             for v in values]])
+print(json.dumps(out, ensure_ascii=False))
+"""
+
+
+def probe(tmp: Path, mode: str, columns: list, locale: str = "us") -> list:
+    path = tmp / f"probe_{mode}.json"
+    path.write_text(json.dumps(columns, ensure_ascii=False), encoding="utf-8")
+    p = subprocess.run([sys.executable, "-I", "-B", "-c", PROBE, str(SCRIPT.parent), mode, str(path), locale],
+                       capture_output=True, text=True, env=dict(os.environ, PYTHONDONTWRITEBYTECODE="1"),
+                       timeout=300)
+    if p.returncode != 0:
+        raise AssertionError(p.stderr[-2000:])
+    return json.loads(p.stdout)
+
+
+class FailClosedTextColumns(unittest.TestCase):
+    """Round 1 of the fail-closed design (2026-11-25): a default run keeps a column that is
+    not an identifier by name only when it verifies every value as a number, a code of a
+    closed grammar, a whole value of a closed vocabulary, a date or an allowed state or
+    country. These tests take the high and medium findings of the three earlier reviews and
+    show that a default run now redacts or handles each one, across many column names and
+    value shapes the reviews did not list. Every name, place and value here is invented."""
+
+    FIRST = ["Corla", "Teodric", "Anwyn", "Brisot", "Maelin", "Ostrid", "Velka", "Junaro", "Feyla",
+             "Hadric", "Isaura", "Plover"]
+    LAST = ["Nakashira", "Okelbury", "Varnhold", "Quistern", "Delmoray", "Fintallow", "Graybeck",
+            "Haskentine", "Lorrimund", "Pemberforth", "Yarrowind", "Zellmoor"]
+    TOWNS = ["Brindlecove", "Oakshaw", "Marrowmere", "Quellford", "Tansy Hollow", "Ferncastle",
+             "Duskbridge", "Wrenhaven", "Pellmarsh", "Cinderbrook", "Ashwick Falls", "Larkmoor"]
+    # Names with what the reviews put around them, and more of the same kind.
+    SHAPES = [
+        "{f} {l} (wife)", "{f} {l} - spouse", "{l}, {f} (son)", "{f} {l} 45", "{f} {l} (F)",
+        "{f} {l} (45)", "{f} {l} - cardiology", "{f} {l} (RN)", "{f} {l} [RN]", "{f} {l} - RN",
+        "{f} {l} / RN", "{f} {l} (Cardiology)", "{f} {l} - Oncology", "{f} {l} | Cardiology",
+        "{f} {l} (PCP)", "{f} {l} (Lakeside)", "{f} {l} (retired)", "{f} {l} (12)", "{f} {l} #12",
+        "{f} {l} 12", "{f} {l}; MD", "{f} {l}*", "{f}_{l}", '{f} "Kit" {l}', "{fl}.{ll}",
+        "{fl} {ll}", "{ll}, {fl}", "{f0}{l0}", "{f0}. {l}", "{l}, {f0}.", "{l}", "{f}", "{ll}",
+        "{l} family", "{lu}", "{f} {l}, MD", "{f} {l} and {f2} {l2}", "{f} {l}/{f2} {l2}",
+        "{f} {l} (guardian)", "{f} {l} - mother", "{f} {l} (age 45)", "{f} {l} M", "{f} von {l}",
+        "{f}-{f2} {l}", "{f} {l}-{l2}", "{f} {l} Jr.", "{f} {l} III", "{f0}.{l0}.", "{lu}, {fu}",
+    ]
+    PERSON_HEADERS = [
+        "Contact Person", "Referring Physician", "Guardian", "Treatment Dr", "Notes By", "Contact",
+        "Col1", "Group", "Visit Type", "Diagnosis", "Referral", "Provider", "Visit Provider",
+        "Reviewer", "Seen By", "Notes Author", "Source", "Comments", "Referral Source", "Status",
+        "Class", "Zxq", "Info", "Result", "Finding", "Impression", "Response", "Treatment",
+    ]
+    CATEGORY_WORDS = ["Visit", "Treatment", "Lab", "Test", "Event", "Group", "Unit", "Ward", "Service",
+                      "Cohort", "Stage", "Result", "Sample", "Specimen", "Diagnosis", "Procedure",
+                      "Source", "Dept", "Type", "Status"]
+    ROLE_WORDS = ["Dr", "Doc", "Prof", "Docteur", "Medecin", "Médecin", "Medico", "Arzt", "Ärztin",
+                  "Team", "With", "Assigned To", "Verifier", "Approver", "Authorizer", "Reader",
+                  "Scheduler", "Admin", "Charge", "Responsible", "Responsable", "Companion", "Family",
+                  "Emergency", "Nombre", "Sign-off", "Agent", "Biller", "Pastor", "Attorney",
+                  "Dr Name", "Host", "Owner", "Handler", "Liaison", "Referred To", "Seen By",
+                  "Signed Off", "Lead", "Rep"]
+    PLACE_WORDS = ["Location", "Venue", "Locale", "Area", "Site", "Place", "Center", "Centre",
+                   "Facility", "Clinic", "Campus", "Zone", "Setting", "Region", "Catchment",
+                   "Lugar", "Ubicación", "Hospital", "Office", "Branch", "Station", "Destination",
+                   "Origin", "Community", "Territory", "City", "Town"]
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="safe_harbor_test_"))
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def run_file(self, path: Path, *extra: str) -> tuple[subprocess.CompletedProcess, list[dict], dict]:
+        out_dir = self.tmp / "out"
+        if out_dir.exists():
+            shutil.rmtree(out_dir)
+        p = run("run", str(path), "-o", str(out_dir), "--reference-year", REFERENCE_YEAR, *extra)
+        out = out_dir / f"{path.stem}_deidentified{path.suffix}"
+        report = out_dir / "deidentification_report.json"
+        return (p, read_rows(out) if out.exists() else [],
+                json.loads(report.read_text(encoding="utf-8")) if report.exists() else {})
+
+    def shaped(self, shape: str, i: int) -> str:
+        f, l = self.FIRST[i % 12], self.LAST[(i * 5) % 12]
+        f2, l2 = self.FIRST[(i + 3) % 12], self.LAST[(i * 5 + 7) % 12]
+        return shape.format(f=f, l=l, f2=f2, l2=l2, fl=f.lower(), ll=l.lower(), fu=f.upper(),
+                            lu=l.upper(), f0=f[0], l0=l[0])
+
+    def assert_redacted(self, decided: list, what: str) -> None:
+        kept = [(h, a, k) for h, a, k in decided if a not in ("redact", "pseudonym_name", "pseudonym_id")]
+        self.assertEqual(kept, [], f"{what}: columns kept or transformed without redaction")
+
+    def assert_hidden(self, p, out: list[dict], report: dict, words: list[str]) -> None:
+        text = json.dumps(out, ensure_ascii=False).lower()
+        shown = (p.stdout + p.stderr + json.dumps(report, ensure_ascii=False)).lower()
+        for w in words:
+            self.assertNotIn(w.lower(), text, "raw value in the output")
+            self.assertNotIn(w.lower(), shown, "raw value printed or reported")
+
+    # High (third review) and medium (second review): names with a qualifier, and names in a
+    # person-role column with any suffix, kept verbatim with exit 0.
+    def test_names_with_any_qualifier_are_redacted_under_any_column_name(self):
+        columns = [(h, [self.shaped(shape, i) for i in range(36)])
+                   for shape in self.SHAPES for h in self.PERSON_HEADERS]
+        self.assert_redacted(probe(self.tmp, "decide", columns), "names with qualifiers")
+        # End to end: one column per shape under a role header, 200 rows, nothing leaks.
+        header = [f"{self.PERSON_HEADERS[k % len(self.PERSON_HEADERS)]} {k}" for k in range(len(self.SHAPES))]
+        rows = [[self.shaped(shape, i) for shape in self.SHAPES] + ["F" if i % 2 else "M"] for i in range(200)]
+        p, out, report = self.run_file(write_csv(self.tmp / "qualified.csv", header + ["sex"], rows))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assert_hidden(p, out, report, self.FIRST + self.LAST)
+        for col in header:
+            self.assertTrue(all(re.fullmatch(r"\[REDACTED\]|P\d{4}", r[col]) for r in out), col)
+        self.assertEqual([r["sex"] for r in out], [row[-1] for row in rows])
+
+    # High (first review) and medium (second review): names under a category word and a role
+    # or title word (Visit Dr, Test Verifier, Lab Sign-off, ...).
+    def test_names_under_a_category_word_and_any_role_word_are_redacted(self):
+        headers = [f"{c} {r}" for c in self.CATEGORY_WORDS for r in self.ROLE_WORDS]
+        headers += [f"{r} ({c})" for c in self.CATEGORY_WORDS[:5] for r in self.ROLE_WORDS[:10]]
+        forms = ["{f} {l}", "{l}, {f}", "{fu} {lu}", "{f} R. {l}", "{l}, {f} MD", "{l}", "{f0}. {l}"]
+        columns = [(h, [self.shaped(forms[k % len(forms)], i) for i in range(30)])
+                   for k, h in enumerate(headers)]
+        self.assert_redacted(probe(self.tmp, "decide", columns), "role headers")
+        header = headers[::25]
+        rows = [[self.shaped(forms[k % len(forms)], i) for k in range(len(header))] for i in range(200)]
+        p, out, report = self.run_file(write_csv(self.tmp / "roles.csv", header, rows))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assert_hidden(p, out, report, self.FIRST + self.LAST)
+
+    # High (first review) and medium (second review): towns under a category word and a place
+    # word (Visit Location, Service Area, Treatment Center), and under neutral names.
+    def test_places_under_a_category_and_place_word_are_redacted(self):
+        headers = [f"{c} {w}" for c in self.CATEGORY_WORDS for w in self.PLACE_WORDS]
+        headers += ["Ciudad", "Municipio", "Neighborhood", "Hometown", "Place", "Residence", "Lives In",
+                    "Catchment", "Col3", "Zxq", "Visit", "Cohort", "Treatment City", "Cohort City"]
+        columns = [(h, [self.TOWNS[(i * (k + 1)) % 12] for i in range(30)]) for k, h in enumerate(headers)]
+        self.assert_redacted(probe(self.tmp, "decide", columns), "place headers")
+        header = headers[::20]
+        rows = [[self.TOWNS[(i * (k + 1)) % 12] for k in range(len(header))] for i in range(200)]
+        p, out, report = self.run_file(write_csv(self.tmp / "places.csv", header, rows))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assert_hidden(p, out, report, [w for t in self.TOWNS for w in t.split() if len(w) >= 6])
+
+    # High (second review) and medium (second review): names and places in scripts without
+    # letter case, also with qualifiers, under any column name and any locale.
+    SCRIPT_NAMES = {
+        "zh": ["许清远", "邓若溪", "韩书瑶", "唐景行", "冯语桐", "曹嘉禾", "彭思远", "蒋若琳", "蔡明轩",
+               "潘雨萱", "袁浩宇", "卢欣怡"],
+        "ja": ["藤原真央", "石川陽斗", "前田花音", "岡田蒼", "後藤咲良", "長谷川樹", "村上楓", "近藤琴音",
+               "坂本隼", "遠藤美羽", "青木大和", "藤田芽依"],
+        "ko": ["류현우", "배지민", "송예린", "황도현", "안서윤", "홍시우", "전하윤", "고준서", "문지안",
+               "양민서", "손태윤", "백나연"],
+        "ar": ["حسن المالكي", "ريم السالم", "طارق النجار", "دينا الخطيب", "سامي الحداد", "لمى الصباغ",
+               "وليد البيطار", "رنا الشامي", "زياد العلي", "هالة الأحمد", "كريم الفارس", "منى الصالح"],
+        "he": ["אביב לוי", "שירה מזרחי", "יונתן אברהם", "ליאת דהן", "נדב פרץ", "מאיה ביטון", "אלון חדד",
+               "רותם עזרא", "ברק אוחיון", "נוגה יוסף", "אסף מלכה", "טל עמר"],
+        "hi": ["आदित्य कुमार", "स्नेहा राव", "करण मल्होत्रा", "दिव्या नायर", "मनीष अग्रवाल", "रश्मि सक्सेना",
+               "तरुण भट्ट", "मीनाक्षी अय्यर", "गौरव कपूर", "श्वेता बंसल", "निखिल सेठी", "पल्लवी दुबे"],
+        "th": ["กิตติ สมบูรณ์", "ปวีณา ทองคำ", "วรวุฒิ ศรีงาม", "นภัสสร ใจงาม", "ชยพล รุ่งเรือง", "อรุณี แก้วใส",
+               "ภาณุ บุญเลิศ", "สุนิสา มั่นคง", "ธีรวัฒน์ สายทอง", "พิมพ์ชนก ดวงดี", "อภิชาติ ศักดิ์ดี", "จิราพร เพชรงาม"],
+        "places": ["清溪镇", "杏林村", "望江镇", "竹园乡", "金沙湾", "凤鸣村", "柳岸镇", "白鹭洲", "松涛村",
+                   "青石镇", "梨花乡", "碧水湾"],
+    }
+    SCRIPT_SHAPES = ["{n}", "{n} 38", "{n}(45)", "{n}（男）", "{n}(F)", "患者：{n}", "{n}（女）", "{n} - RN",
+                     "Dr {n}", "{n} 先生", "{n}님"]
+
+    def test_names_in_scripts_without_case_are_redacted_with_any_qualifier(self):
+        headers = ["Zxq", "Col7", "Notes By", "Visit Type", "Referral Source", "Provider", "Diagnosis",
+                   "Status", "Class", "Location", "Contact Person", "姓名备注", "담당", "Info"]
+        for locale in ("us", "cn", "kr", "jp"):
+            columns = [(h, [shape.format(n=names[(i * 7) % 12]) for i in range(24)])
+                       for names in self.SCRIPT_NAMES.values() for shape in self.SCRIPT_SHAPES for h in headers]
+            self.assert_redacted(probe(self.tmp, "decide", columns, locale), f"scripts, locale {locale}")
+        header = [f"{script} {k}" for script in self.SCRIPT_NAMES for k in range(len(self.SCRIPT_SHAPES))]
+        rows = [[shape.format(n=names[(i * 7) % 12]) for names in self.SCRIPT_NAMES.values()
+                 for shape in self.SCRIPT_SHAPES] for i in range(120)]
+        p, out, report = self.run_file(write_csv(self.tmp / "scripts.csv", header, rows))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assert_hidden(p, out, report, [n for names in self.SCRIPT_NAMES.values() for n in names])
+
+    # High (second review): a year and a month under any column name keeps only the year.
+    def test_year_months_under_any_column_name_keep_only_the_year(self):
+        months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        forms = [lambda y, m: f"{y}-{m:02d}", lambda y, m: f"{y}/{m:02d}", lambda y, m: f"{y}{m:02d}",
+                 lambda y, m: f"{y}.{m:02d}", lambda y, m: f"{y}-{m}", lambda y, m: f"{y} {months[m - 1]}",
+                 lambda y, m: f"{months[m - 1]} {y}", lambda y, m: f"{m:02d}/{y}",
+                 lambda y, m: f"{months[m - 1]}-{y}"]
+        headers = ["Visit Month", "Admit", "Encounter", "Period", "Admission", "Cohort Month", "Month",
+                   "Month of Visit", "Reporting Period", "Sample Month", "Enrollment", "Enrolled", "Visit",
+                   "Event", "Baseline", "Index Month", "Dx Month", "Ym", "Zxq", "Col1", "Diagnosis",
+                   "Visit Type", "Treatment Arm", "Stage", "Notes", "Provider", "Visit Location", "State",
+                   "Period Start", "Fecha", "Monat", "Mois", "月份", "Wave", "Cycle", "Epoch", "Snapshot"]
+        values = [(2018 + k // 12, k % 12 + 1) for k in range(36)]
+        columns = [(h, [form(*values[(i + k) % 36]) for i in range(72)])
+                   for k, h in enumerate(headers) for form in forms]
+        decided = probe(self.tmp, "decide", columns)
+        self.assertEqual([(h, a) for h, a, _ in decided if a != "year"], [], "year-month columns")
+
+    # Medium (third review): type, status and payer columns of identifier words are kept on
+    # request instead of refused, and a default run exits 0.
+    def test_payer_type_and_status_columns_can_be_kept(self):
+        cols = {"Insurance Type": ["Medicare", "Commercial", "Medicaid"], "Insurance Status": ["Insured", "Uninsured"],
+                "Insurance Plan Type": ["HMO", "PPO"], "Medicare Status": ["Enrolled", "Not Enrolled"],
+                "Medicaid Eligible": ["Yes", "No"], "Subscriber Status": ["Active", "Inactive"],
+                "Account Type": ["Checking", "Savings"], "License Status": ["Active", "Expired"],
+                "Certificate Type": ["Birth", "Death"], "Login Status": ["Success", "Failed"],
+                "Passport Status": ["Valid", "Expired"], "Insurance": ["Medicare", "Self-pay"],
+                "Primary Insurance": ["Medicaid", "Commercial"], "Payer Type": ["Public", "Private"],
+                "Coverage Type": ["Medicare Advantage", "Commercial"], "Plan Category": ["Bronze", "Gold"]}
+        header = list(cols)
+        rows = [[cols[h][(i + k) % len(cols[h])] for k, h in enumerate(header)] for i in range(60)]
+        raw = write_csv(self.tmp / "payer.csv", header, rows)
+        p, out, report = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        for col in header:
+            refused = run("plan", str(raw), "--keep", col)
+            self.assertEqual(refused.returncode, 0, (col, refused.stderr))
+        p, out, report = self.run_file(raw, *[a for h in header for a in ("--keep", h)])
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        for i, col in enumerate(header):
+            self.assertEqual([r[col] for r in out], [row[i] for row in rows], col)
+
+    # Medium (third review): ages over 89 under a column name for age in another language.
+    def test_ages_over_89_are_grouped_under_age_names_in_other_languages(self):
+        header = ["Edad", "Alter", "Idade", "年龄", "年齢", "나이", "Età", "Leeftijd", "Wiek", "Возраст",
+                  "العمر", "גיל", "आयु", "อายุ", "Edad (años)", "Alter in Jahren", "Âge", "Edad al diagnóstico",
+                  "年龄（岁）", "연령", "Idade do paciente", "Eta (anni)", "Ålder", "Yaş", "sex"]
+        ages = ["34", "95", "102", "61", "90", "89", "47", "91"]
+        rows = [[ages[(i + k) % len(ages)] for k in range(len(header) - 1)] + ["F"] for i in range(40)]
+        raw = write_csv(self.tmp / "ages.csv", header, rows)
+        for locale in ("us", "es", "de", "cn", "jp", "kr", "fr", "it"):
+            p, out, _ = self.run_file(raw, "--locale", locale)
+            self.assertEqual(p.returncode, 0, (locale, p.stdout + p.stderr))
+            for k, col in enumerate(header[:-1]):
+                expected = ["90+" if int(row[k]) >= 90 else row[k] for row in rows]
+                self.assertEqual([r[col] for r in out], expected, (locale, col))
+        for col in ("Edad", "年龄", "Alter"):
+            refused = run("plan", str(raw), "--keep", col)
+            self.assertEqual(refused.returncode, 2, col)
+            self.assertIn("cannot be kept", refused.stderr)
+        # "ETA" alone is an arrival time, not an age, and keeps its numbers.
+        eta = write_csv(self.tmp / "eta.csv", ["ETA", "sex"], [[str(80 + i), "F"] for i in range(20)])
+        p, out, _ = self.run_file(eta)
+        self.assertEqual([r["ETA"] for r in out], [str(80 + i) for i in range(20)])
+
+    # Lows of all three reviews: lower case names, initials, surnames alone, short notes and
+    # over-redacted measurements.
+    def test_documented_limits_are_redacted_and_blood_pressure_is_kept(self):
+        cols = {
+            "Group": [f"{f.lower()} {l.lower()}" for f, l in zip(self.FIRST, self.LAST)],
+            "Staff Code": [f"{f[0]}{l[0]}" for f, l in zip(self.FIRST, self.LAST)],
+            "Diagnosis": self.LAST, "Cohort": self.TOWNS,
+            "Clinical Notes": [f"Spoke to {f} {l}." for f, l in zip(self.FIRST, self.LAST)],
+            "Comments": [f"per {f}" for f in self.FIRST],
+            "Initial": [f[0] for f in self.FIRST],
+            "Blood Pressure": ["139/76", "120/80", "110/70", "145/92"],
+        }
+        header = list(cols)
+        rows = [[cols[h][(i + k) % len(cols[h])] for k, h in enumerate(header)] for i in range(120)]
+        p, out, report = self.run_file(write_csv(self.tmp / "limits.csv", header, rows))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        for col in header[:-1]:
+            self.assertEqual({r[col] for r in out}, {"[REDACTED]"}, col)
+        self.assertEqual([r["Blood Pressure"] for r in out], [row[-1] for row in rows])
+        self.assert_hidden(p, out, report, self.FIRST + self.LAST + self.TOWNS)
+
+    def test_vocabulary_counts_only_as_whole_values_and_not_under_person_names(self):
+        verified = probe(self.tmp, "verified", [
+            ("Sex", ["Male", "female", " F ", "Non-binary", "Unknown"]),
+            ("Race", ["White", "Black or African American", "Native Hawaiian & Other Pacific Islander",
+                      "Black / African American", "Two or More Races", "Patient Refused"]),
+            ("Ethnicity", ["Not Hispanic or Latino", "Hispanic/Latino", "Unknown"]),
+            ("Smoking", ["Never smoker", "Former smoker", "Current every day smoker"]),
+            ("Response", ["CR", "Partial response", "Stable disease", "Not evaluable"]),
+            ("Unit", ["mg/dL", "mmol/L", "%", "x10^9/L"]),
+            ("Lab", ["5.2 mg/dL", "<0.5", ">= 10", "1,250", "12%", "120/80"]),
+            ("Referring Physician", ["Unknown", "N/A", "none"]),
+            ("State", ["California", "NH", "New Mexico", "Ontario"]),
+            ("Country of Birth", ["Mexico", "Saint Vincent and the Grenadines", "USA", "Other"]),
+        ])
+        for header, flags in verified:
+            self.assertTrue(all(flags), (header, flags))
+        refused = probe(self.tmp, "verified", [
+            # A vocabulary word with anything around it, or a name that is a vocabulary word.
+            ("Sex", ["Male (wife)", "Female 45", "male nurse"]),
+            ("Race", ["White, Alice", "Alice White", "Black Okafor"]),
+            # Under a column name naming a person, a role, a relative, a contact or a place,
+            # only missing-value words count.
+            ("Referring Physician", ["White", "Yes", "Male", "Black"]),
+            ("Visit Location", ["Left", "Right", "Normal"]),
+            ("Contact Preference", ["Yes", "No"]),
+            ("Mother", ["White"]),
+            ("Lab", ["10-20", "5/10", "03/14", "7 apples"]),
+            ("State", ["Larkspur County", "Oakshaw"]),
+            ("Diagnosis", ["Heart Failure", "Asthma"]),
+            # A relative word anywhere in the name, and words in brackets that are not this
+            # tool's placeholders.
+            ("Family History", ["White", "Black", "Yes"]),
+            ("Col1", ["[OKAFOR]", "[ALICE]", "[CORLA_N]"]),
+        ])
+        for header, flags in refused:
+            self.assertFalse(any(flags), (header, flags))
+
+    def test_grammars_never_accept_a_bare_alphabetic_word(self):
+        bare = ["Alice", "Okafor", "IV", "II", "III", "IIIA", "Tis", "Tx", "Nx", "Mx", "pTis", "GX", "A",
+                "B", "AB", "O", "Stage", "Grade", "Low", "Poorly", "Rh", "Positive", "Gleason", "ECOG",
+                "Ensembl", "rs", "Arg", "Gly", "c.", "p.", "Ala", "ENSG", "NM", "LOINC", "Atc", "Mutation"]
+        for header in ("Col1", "Notes", "Provider", "Diagnosis", "Drug", "Variant", "Gene", "Code"):
+            flags = probe(self.tmp, "grammar", [(header, bare)])[0][1]
+            self.assertEqual([w for w, f in zip(bare, flags) if f], [], header)
+        codes = {
+            "Col1": ["E11.9", "J45.909", "C34.90", "V45.81", "E880.9", "2345-7", "14682-9", "718-7",
+                     "rs113488022", "ENSG00000141510", "ENSG00000146648.18", "NM_004333.6",
+                     "NM_001126112.3", "c.35G>A", "p.V600E", "p.(Arg248Gln)", "c.5266dupC",
+                     "NM_004333.6(BRAF):c.1799T>A", "g.140453136A>T", "T2N0M0", "pT1aN1bM0", "T3", "N1",
+                     "Stage IIIA", "stage 2", "FIGO IB1", "NYHA class III", "Grade 2", "G3", "low grade",
+                     "poorly differentiated", "3+4=7", "Gleason 7", "ISUP 2", "ECOG 1", "ECOG PS 2",
+                     "KPS 80", "A+", "O-", "AB positive", "B neg", "Rh+", "A型", "AB형"],
+            "Stage": ["IIIA", "IV", "II", "0", "2a"], "TNM": ["Tis", "Tx", "Nx", "Mx"],
+            "Blood Type": ["A", "B", "AB", "O"], "Dx Code": ["I10", "E119", "S72001A"],
+            "ATC Code": ["C10AA05", "A10BA02", "N02BE01"], "Mutation": ["V600E", "G12D", "L858R", "T790M"],
+        }
+        for header, flags in probe(self.tmp, "grammar", list(codes.items())):
+            self.assertEqual([v for v, f in zip(codes[header], flags) if not f], [], header)
+        # A check digit that does not match is not a LOINC code; record numbers rarely pass.
+        flags = probe(self.tmp, "grammar", [("Col1", ["2345-6", "14682-1", "48213-7"])])[0][1]
+        self.assertEqual(flags, [False, False, False])
+        # Subject numbers shaped like short ICD codes are codes only under a diagnosis name,
+        # and letters after the dot of an ICD-10 code need a digit.
+        flags = probe(self.tmp, "grammar", [("Subject Code", ["S01", "P012", "A101", "K12.ALIC", "T12.ABC"])])[0][1]
+        self.assertEqual(flags, [False] * 5)
+
+    def test_single_letters_from_more_than_one_group_are_not_a_category(self):
+        cols = {"Sex": ["M", "F"], "Flag": ["H", "L", "N"], "Side": ["L", "R", "B"], "Reply": ["Y", "N"],
+                "Abo": ["A", "B", "O"], "Initial": ["A", "C", "M", "R"], "Col1": ["M", "F", "H", "S"]}
+        decided = {h: a for h, a, _ in probe(self.tmp, "decide", list(cols.items()))}
+        self.assertEqual(decided, {"Sex": "keep", "Flag": "keep", "Side": "keep", "Reply": "keep",
+                                   "Abo": "keep", "Initial": "redact", "Col1": "redact"})
+
+    def test_numbers_shaped_like_dates_with_no_separator_are_not_kept(self):
+        cols = {"Visit Day": ["0314", "1225", "0704"], "Col9": ["03142021", "12252020", "07042019"],
+                "Code6": ["031421", "122520"], "Steps": ["4500", "7200", "10500"],
+                "Counts": ["1012", "1130", "1225"], "Years": ["2015", "2018"]}
+        decided = {h: a for h, a, _ in probe(self.tmp, "decide", list(cols.items()))}
+        self.assertEqual(decided, {"Visit Day": "redact", "Col9": "redact", "Code6": "redact",
+                                   "Steps": "keep", "Counts": "keep", "Years": "keep"})
+
+    def test_plan_names_columns_for_the_persons_decision_and_run_warns_on_kept_text(self):
+        header = ["Diagnosis", "Visit", "Sex", "Notes", "Glucose"]
+        rows = [[["Heart Failure", "Asthma"][i % 2], ["Screening", "Week 4"][i % 2], "F",
+                 "Discussed the plan at length with the family and the team today.", f"{5 + i % 3}.1"]
+                for i in range(30)]
+        raw = write_csv(self.tmp / "decide.csv", header, rows)
+        plan = run("plan", str(raw))
+        self.assertEqual(plan.returncode, 0, plan.stderr)
+        self.assertIn("Need the person's decision (redact: text the script cannot verify is free of identifiers;",
+                      plan.stdout)
+        self.assertIn("keep with --keep COLUMN once the person confirms it): Diagnosis, Visit", plan.stdout)
+        self.assertIn("Free text, redacted and never kept", plan.stdout)
+        refused = run("plan", str(raw), "--keep", "Notes")
+        self.assertEqual(refused.returncode, 2)
+        self.assertIn("free text", refused.stderr)
+        p, out, report = self.run_file(raw, "--keep", "Diagnosis", "--keep", "Visit")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertIn("Kept on the person's word, scrubbed for patterns only (2): Diagnosis, Visit", p.stdout)
+        self.assertIn("the person must spot-check these columns", p.stdout)
+        self.assertIn("scrubbed for identifier patterns only", report["kept_text_note"])
+        self.assertIn("spot-check", report["kept_text_note"])
+        self.assertEqual([d["column"] for d in report["kept_unverified_text_columns"]], ["Diagnosis", "Visit"])
+        self.assertEqual(report["columns_needing_decision"], [])
+        self.assertEqual({r["Notes"] for r in out}, {"[REDACTED]"})
+        # The residual check honours --keep for names in such a column, never for patterns.
+        written = self.tmp / "out" / "decide_deidentified.csv"
+        rows[0][0] = f"{self.FIRST[0]} {self.LAST[0]}"
+        rows[1][1] = "call 415-555-0199"
+        write_csv(written, header, [[r[0], r[1], r[2], "[REDACTED]", r[4]] for r in rows])
+        bad = run("verify", str(written), "--reference-year", REFERENCE_YEAR)
+        self.assertEqual(bad.returncode, 3, bad.stdout + bad.stderr)
+        self.assertIn("Visit: phone pattern", bad.stdout)
+        self.assertNotIn("Diagnosis:", bad.stdout)
+
+    def test_regression_table_of_an_ordinary_clinical_export(self):
+        cols = {
+            "Diagnosis": ["Heart Failure", "Type 2 Diabetes", "Asthma", "Chronic Kidney Disease"],
+            "Diagnosis Code": ["I50.9", "E11.9", "J45.909", "N18.3"],
+            "Drug": ["Metformin", "Lisinopril", "Albuterol", "Furosemide"],
+            "ATC Code": ["A10BA02", "C09AA03", "R03AC02", "C03CA01"],
+            "Dose": ["500 mg", "10 mg", "2.5 mg", "40 mg"],
+            "Site": ["North Campus", "Harbor Clinic", "Lakeview Center"],
+            "Primary Site": ["Breast", "Lung", "Colon", "Prostate"],
+            "Hemoglobin": ["13.2", "11.8 g/dL", "12.5", "9.9"],
+            "Creatinine": ["<0.5", "1.1", "0.9", "1.4"],
+            "Lab Flag": ["H", "L", "N"],
+            "LOINC Code": ["718-7", "2160-0", "2345-7", "2093-3"],
+            "Blood Pressure": ["120/80", "139/76", "110/70"],
+            "ECOG": ["0", "1", "2"],
+            "Pain Score": ["3", "7", "0", "10"],
+            "Stage": ["IIA", "IIIB", "IV", "Stage I"],
+            "TNM": ["T2N0M0", "T3N1M0", "T1aN0M0"],
+            "Grade": ["G1", "G2", "G3"],
+            "Gene ID": ["ENSG00000141510", "ENSG00000146648", "ENSG00000133703"],
+            "Variant": ["p.V600E", "c.35G>A", "p.G12D"],
+            "Treatment Arm": ["Placebo", "Arm A", "Arm B"],
+            "Visit": ["Screening", "Baseline", "Week 4", "End of Study"],
+            "Visit Number": ["1", "2", "3", "4"],
+            "Visit Date": ["2021-03-04", "2021-06-10", "2022-01-15"],
+            "Race": ["White", "Asian", "Black or African American", "American Indian or Alaska Native"],
+            "Ethnicity": ["Not Hispanic or Latino", "Hispanic or Latino"],
+            "Sex": ["Female", "Male"],
+            "State": ["California", "Oregon", "Nevada"],
+            "Country": ["United States", "Mexico", "Canada"],
+            "Smoking Status": ["Never smoker", "Former smoker", "Current every day smoker"],
+            "Notes": ["Patient tolerated the infusion well and will return for the next cycle.",
+                      "Reports mild nausea after the second dose, managed with ondansetron at home."],
+        }
+        self.assertEqual(len(cols), 30)
+        header = list(cols)
+        rows = [[cols[h][(i + k) % len(cols[h])] for k, h in enumerate(header)] for i in range(150)]
+        raw = write_csv(self.tmp / "clinical30.csv", header, rows)
+        unverified = ["Diagnosis", "Drug", "Site", "Primary Site", "Treatment Arm", "Visit"]
+        expected = {h: "keep" for h in header}
+        expected.update({h: "redact" for h in unverified + ["Notes"]})
+        expected["Visit Date"] = "year"
+        p, out, report = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual({d["column"]: d["action"] for d in report["decisions"]}, expected)
+        self.assertEqual([d["column"] for d in report["columns_needing_decision"]], unverified)
+        for i, col in enumerate(header):
+            if expected[col] == "keep":
+                self.assertEqual([r[col] for r in out], [row[i] for row in rows], col)
+        self.assertEqual({r["Visit Date"] for r in out}, {"2021", "2022"})
+        # The person confirms the six columns; the run keeps them and exits 0.
+        p, out, report = self.run_file(raw, *[a for h in unverified for a in ("--keep", h)])
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        for i, col in enumerate(header):
+            if col not in ("Notes", "Visit Date"):
+                self.assertEqual([r[col] for r in out], [row[i] for row in rows], col)
+        self.assertEqual([d["column"] for d in report["kept_unverified_text_columns"]], unverified)
+        ok = run("verify", str(self.tmp / "out" / "clinical30_deidentified.csv"), "--reference-year", REFERENCE_YEAR)
+        self.assertEqual(ok.returncode, 0, ok.stdout + ok.stderr)
 
 
 class NoNetwork(unittest.TestCase):

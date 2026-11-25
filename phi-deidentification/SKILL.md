@@ -94,38 +94,52 @@ From this skill's folder:
 python3 scripts/safe_harbor.py plan /path/to/export.csv
 ```
 
-It writes nothing and prints one line per column: the action and the reason. Show the
-person that table and explain the three groups:
+It writes nothing and prints one line per column: the action and the reason. The script
+fails closed: it keeps a column only when it can verify every value in it. Show the person
+that table and explain the groups:
 
 - **Identifiers by name** (`patient_name`, `fname`, `participant`, `proband`, `mother`,
-  `spouse`, `dob`, `born`, `byear`, `age_group`, `zip_code`, `hometown`, `suburb`, `mrn`,
-  ...) are replaced and cannot be kept.
-- **Columns the scanner cannot vouch for** are redacted or pseudonymized, reduced to the
-  year, or for old years grouped as `[90_OR_OLDER]`: free text, unique numbers, mostly
-  distinct text, some cells with identifier patterns, numbers shaped like ZIP codes,
-  latitude and longitude, birth years of people over 89, or a year and a month (`202103`,
-  `2021.03`), text values shaped like names or places (capitalised words that are not
-  common category words such as Male, White or Never; a category word in the column name
-  does not stop this when the name also names a person, a role, a title or a place, as in
-  `Treatment Physician`, `Visit Dr`, `Test Verifier` or `Visit Location`, or when the values
-  are names of two or more words or an initial and a surname), text in a script without
-  capital letters (Chinese, Japanese, Korean, Arabic, Hebrew, Hindi, Thai), where a name
-  cannot be told from a category word, unless every value is a common word such as 男 or
-  여, and columns whose name usually holds a name or a place but has other uses
-  (`Subject`, `First`, `Last`, `Contact`, `Family`, `Region`, `Home`, `Company`, `School`).
-  Ask the person whether any of them is safe to keep, for example a site column of hospital
-  names, a pair of score columns read as coordinates, or a diagnosis column written in
-  Chinese. Free text can never be kept.
-- **Kept columns** stay, with any identifier pattern inside a cell replaced. The plan lists
-  the kept text columns again on their own. Ask the person to confirm, column by column,
-  that none of them holds names, places or other identifiers the scanner cannot see: a
-  name in lower case, initials or a short all-capital name, a single word (a surname alone
-  or a one-word town) in a column named for a category such as diagnosis, a place in a
-  state or country column, which Safe Harbor lets the script keep, or, in a column kept on
-  request, a name inside a longer value in a script without capital letters.
+  `spouse`, `dob`, `born`, `byear`, `age_group`, `edad`, `年龄`, `zip_code`, `hometown`,
+  `suburb`, `mrn`, ...) are replaced and cannot be kept.
+- **Kept, verified.** Every value is a number that passes the numeric checks (not shaped like
+  a ZIP code, a phone, a record number, a date, a birth year of someone over 89 or a
+  coordinate), a code of a closed grammar (ICD-9 or ICD-10, LOINC, ATC, HGVS, rsID, Ensembl,
+  RefSeq, TNM, a stage, a grade, ECOG, a blood group), a whole value of a closed vocabulary
+  (sex and gender, yes and no, missing-value words, census race and ethnicity, result flags
+  such as H and L, laterality, response categories, smoking status, units), a date (reduced to
+  the year) or a state or country under a state or country column. Under a column name that
+  names a person, a role, a relative, a contact or a place (`Referring Physician`,
+  `Family History`, `Visit Location`), only the missing-value words count. Identifier
+  patterns inside kept cells are still replaced.
+- **Need the person's decision.** Every other text column, such as diagnoses, drugs, sites,
+  arms or visits written as words. The plan lists them under "Need the person's decision" and
+  gives each one the line "redact: text the script cannot verify is free of identifiers; keep
+  with --keep COLUMN once the person confirms it". A name with a qualifier ("Nakamura,
+  Alice (wife)"), in lower case, as initials, or in a script without capital letters cannot
+  be told from a category word, so the script does not try.
+- **Columns the scanner cannot vouch for** for another reason: identifier patterns in some
+  cells, unique numbers, numbers shaped like ZIP codes, coordinates, old birth years or dates,
+  and column names that usually hold a name or a place (`Subject`, `First`, `Contact`,
+  `Region`, `Home`, `Company`). They are redacted or pseudonymized, and can be kept the same
+  way, for example a pair of score columns read as coordinates.
+- **Free text** is redacted and can never be kept.
+
+Then ask the person about the columns that need a decision **by column name only**. Do not
+describe, sample or guess what they hold. For example:
+
+> The script could not verify these columns, so it redacted them: Diagnosis, Drug, Visit.
+> Does each one hold only category values, with no names, places, dates, contact details or
+> other identifiers? I will keep the ones you confirm.
 
 Then add `--keep COLUMN` for each column the person confirmed, and `--redact COLUMN` for any
 column they want removed. A column can also be named `#N` (its position).
+
+**Kept text is scrubbed for patterns only.** A column kept with `--keep` loses phone numbers,
+email and web addresses, ID numbers, dates and the other identifier patterns, but a name, a
+place or another identifier with no pattern stays in it. The run prints these columns again
+("Kept on the person's word, scrubbed for patterns only") and the report lists them
+(`kept_unverified_text_columns`). Tell the person, every time, that they must spot-check each
+of these columns before the data leaves the institution.
 
 ### 3. Run
 
@@ -140,12 +154,13 @@ folder, then scans the output again. Exit codes:
 
 | Exit | Meaning | What to do |
 |---|---|---|
-| 0 | Done; the residual check found no identifier pattern or shape (a pattern check, not proof) | Report the summary and the human spot-check requirement |
+| 0 | Done; the residual check found no identifier pattern or shape, and verified again every kept column the person did not name with `--keep` (a check, not proof) | Report the summary, the columns kept on the person's word, and the human spot-check requirement |
 | 2 | Refused (unknown column, a request to keep an identifier or free text, a first row that looks like data, a file separated by `;` or `\|`, an unreadable file) | Pass on the message; fix the options, or ask the person to fix the file |
-| 3 | The residual check found identifiers; nothing was written | Rerun with `--redact` for the columns it names. A column named for the shape of its values (names or places, ZIP codes, coordinates, old years) may instead be kept with `--keep` once the person confirms it holds no identifiers |
+| 3 | The residual check found identifiers; nothing was written | Rerun with `--redact` for the columns it names. A column named for the shape of its values (names or places, text it cannot verify, ZIP codes, coordinates, old years) may instead be kept with `--keep` once the person confirms it holds no identifiers |
 
 To check an output again later: `python3 scripts/safe_harbor.py verify <output file>`
-(it reads the report beside the file when there is one).
+(it reads the report beside the file when there is one; without the report it cannot know
+which columns the person kept, so it reports their text as text it cannot verify).
 
 ### 4. Hand over
 
@@ -153,11 +168,14 @@ Tell the person, in their language:
 
 - how many rows and columns were processed, which columns were replaced, redacted or kept,
   and how many cells changed (all from the report);
-- which kept columns hold text (`kept_text_columns` in the report), and that the person has
-  to confirm each one holds no names or places;
+- which columns were kept on the person's word (`kept_unverified_text_columns` in the
+  report), that they were scrubbed for patterns only, and that the person has to spot-check
+  each one for names, places and other identifiers;
+- which columns were redacted because the script could not verify them and nobody kept
+  them (`columns_needing_decision`);
 - that the output must be spot-checked by a person before it leaves the institution, and
-  what to look for: names or other identifiers in kept text columns, a ZIP code or other
-  location in a column not named for it, rare values or combinations that could single
+  what to look for: names or other identifiers in columns kept on request, a ZIP code or
+  other location in a column not named for it, rare values or combinations that could single
   someone out (very old age, rare diagnosis, small towns), identifiers in column names;
 - that only the first sheet of a workbook was processed, when the report says other
   sheets were skipped;
@@ -178,9 +196,11 @@ When the person needs a paragraph for a manuscript or an IRB, fill this in from 
 > types. Names and record numbers
 > were replaced by pseudonyms; dates were reduced to the year; ages over 89 were grouped
 > as 90 or older; ZIP codes were truncated to three digits (000 for prefixes of 20,000 or
-> fewer people); other direct identifiers and free text were removed. [N] cells in [M]
-> columns were changed. The output was checked again for identifier patterns and reviewed
-> by [who] before use.
+> fewer people); other direct identifiers and free text were removed. Other text columns
+> were kept only when every value was a number, a code of a closed code system, a word of a
+> closed category list or an allowed state or country, or when [who] confirmed the column.
+> [N] cells in [M] columns were changed. The output was checked again for identifier
+> patterns and reviewed by [who] before use.
 
 Do not call the dataset "de-identified under HIPAA Safe Harbor" unless the person confirms
 that the human review was done and the limits below were addressed, or that an expert
@@ -191,17 +211,19 @@ determination covers it.
 `references/safe-harbor-mode.md` lists, for each of the 18 identifiers, what the script
 replaces and what a person still has to check. In short, it does not:
 
-- find names written in kept text without a title or label ("seen by Halvorsen"), names
-  in lower case, as initials or as a short all-capital word, or a surname alone or a
-  one-word town in a column named for a category (diagnosis, cohort, visit) that names no
-  person, role or place; names of two or more words, or an initial and a surname, are
-  found under any column name;
-- tell a name from a category word in a script without capital letters: such text is
-  redacted unless the person keeps the column, and inside a longer value of a kept column
-  a name in it is found only after a title or a label ("Dr. 박지훈");
-- recognise a bare five-digit ZIP code inside text, a column of ZIP codes that mostly
-  lost their leading zero under a name it does not know, or a local seven-digit phone
-  number without a label;
+- find a name, a place or another identifier with no pattern in a column the person kept
+  with `--keep`: such a column is scrubbed for patterns only ("seen by Halvorsen", a name in
+  lower case, with a qualifier, as initials, or in a script without capital letters except
+  after a title or a label such as "Dr. 박지훈");
+- keep any text it cannot match against its closed lists: an ordinary diagnosis, drug,
+  site, arm or visit column, and a vocabulary word with anything around it ("Female (45)"),
+  are redacted until the person keeps them. Its lists hold a few words that are also
+  surnames (White, Black), which it keeps under a column name that names no person, role or
+  place;
+- recognise a bare five-digit ZIP code inside kept text, a column of ZIP codes that mostly
+  lost their leading zero under a name it does not know, a local seven-digit phone number
+  without a label, or a record number that repeats across visits in a column of numbers
+  under a name it does not know (only unique numbers are pseudonymized);
 - recognise a day and a month with no year in kept text unless a word such as "seen",
   "on" or "dated" comes before it ("14/3" alone stays), or a month name in another
   language without a year;

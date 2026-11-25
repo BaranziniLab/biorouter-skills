@@ -24,9 +24,12 @@ What it does, per the 18 identifiers of 45 CFR 164.514(b)(2), is listed in
 references/safe-harbor-mode.md. In short: identifier columns found by name
 are replaced (names and record numbers by pseudonyms, dates by their year,
 ZIP codes by their first three digits or 000, ages over 89 by "90+", the rest
-by [REDACTED]); free text and columns the scanner cannot vouch for are
-redacted unless the person asks to keep them; every kept cell is scrubbed of
-identifier patterns; and the output is scanned again before it is kept.
+by [REDACTED]). Every other column fails closed: it is kept only when every
+value is verified as a number, a code of a closed grammar, a word of a closed
+vocabulary (sex, race, yes and no, ...), a date or an allowed state or country.
+Any other text is redacted until the person keeps it with --keep; free text can
+never be kept. Every kept cell is scrubbed of identifier patterns, and the
+output is scanned again before it is kept.
 
 Exit codes: 0 done and the output passed the residual check; 2 refused (bad
 arguments, a file it cannot read, a header row that looks like data); 3 the
@@ -602,9 +605,42 @@ def _is_age_token(token: str) -> bool:
     return bool(AGE_TOKEN.fullmatch(token))
 
 
-# Words that name a person or a role wherever they stand in a column name. A column
-# named with one holds people, so a category word beside it ("Treatment Physician",
-# "Lab Technician", "Physician (Treatment)") never makes its values a category.
+# "Age" in other languages. These words mean age wherever they stand in a column name
+# ("Edad al diagnostico", "Idade (anos)").
+AGE_WORDS_OTHER_LANGUAGES = frozenset({"edad", "idade", "leeftijd", "wiek", "umur", "usia", "tuoi",
+                                       "eletkor", "varsta", "lebensalter", "levensjaar"})
+# These mean age only alone or beside a word for years ("Alter", "Alter in Jahren", "Alder
+# (ar)"), because they are English words or abbreviations too. Italian "eta" counts with its
+# accent ("Età") or beside "anni", because ETA is also an arrival time.
+AGE_WORDS_ALONE = frozenset({"alter", "alder", "yas", "vek", "ika", "starost"})
+YEAR_WORDS_OTHER_LANGUAGES = frozenset({"jahre", "jahren", "j", "anni", "anos", "ans", "annees", "jaar",
+                                        "jaren", "ar", "lat", "let", "years", "yrs", "in", "en", "di", "em"})
+# The same in scripts the column-name tokens do not read: Chinese, Japanese and Korean words
+# are found inside a name, words of other scripts as whole words.
+AGE_WORDS_CJK = ("年龄", "年齡", "年齢", "岁", "歲", "나이", "연령")
+AGE_WORDS_OTHER_SCRIPTS = frozenset({"возраст", "возраста", "вік", "عمر", "العمر", "السن", "سن", "גיל",
+                                     "आयु", "उम्र", "อายุ", "ηλικία", "ηλικια"})
+
+
+def age_in_other_language(header: str, tokens: list[str]) -> bool:
+    """True for a column name that says age in a language other than English or French
+    ("Edad", "Alter", "Idade", "年龄", "年齢", "나이", "Возраст", "العمر")."""
+    if set(tokens) & AGE_WORDS_OTHER_LANGUAGES:
+        return True
+    if set(tokens) & AGE_WORDS_ALONE and not set(tokens) - AGE_WORDS_ALONE - YEAR_WORDS_OTHER_LANGUAGES:
+        return True
+    raw = unicodedata.normalize("NFKC", str(header)).casefold()
+    if "eta" in tokens and ("et\u00e0" in raw or set(tokens) & {"anni", "paziente"}):
+        return True
+    if any(w in raw for w in AGE_WORDS_CJK):
+        return True
+    return bool(set(re.split(r"[\s_\-/,;:()\[\].]+", raw)) & AGE_WORDS_OTHER_SCRIPTS)
+
+
+# Words that name a person or a role wherever they stand in a column name ("Treatment
+# Physician", "Lab Technician", "Physician (Treatment)"). They make a name column a column of
+# a clinician's or another person's name (name_rule), and under such a column name only the
+# missing-value words of the vocabulary count as verified (ColumnContext).
 PERSON_ROLE_WORDS = frozenset("""
 physician doctor md surgeon nurse rn np clinician provider practitioner attending hospitalist
 intern fellow technologist midwife midwives pcp author signer cosigner signatory witness
@@ -639,7 +675,8 @@ tutora acompanante accompagnateur accompagnatrice begleiter begleiterin
 # Head", "Source Contact", "Event Patient", "Cohort Member", "Visit Dr", "Group Prof").
 # Before a category word they say whose category it is ("Head Injury Type", "Contact
 # Method", "Patient Diagnosis"). Words with a common other meaning ("Doc" for document,
-# "Admin" for administration, "Charge", "Family") are left to the values (category_column).
+# "Admin" for administration, "Charge", "Family") are not on the list; their values are
+# verified like any other column's (verify_column).
 HEAD_ROLE_WORDS = frozenset("""
 patient pt subject participant member individual person people client resident contact head
 lead chief chair principal pi owner holder donor recipient tech user consumer partner
@@ -678,8 +715,8 @@ higher older younger larger smaller greater fewer wider deeper longer shorter fa
 better earlier lesser gender agender cisgender transgender genderqueer queer payer payor former
 prefer titer titre zoster flutter khmer frontier ringers
 """.split())
-# Words that say a column holds places, so a category word beside them ("Visit Location",
-# "Service Area", "Treatment Center", "Event Setting") never makes the values a category.
+# Words that say a column holds places ("Visit Location", "Service Area", "Treatment Center",
+# "Event Setting"): under such a column name only missing-value words count as verified.
 PLACE_WORDS = frozenset("""
 location locations loc locale locales place places area areas venue venues community
 communities zone zones campus campuses setting settings site sites center centers centre
@@ -781,6 +818,8 @@ def name_rule(header: str) -> tuple[str, str, str] | None:
     identifiers on their own, and a column of IP addresses is still found by its values.
     """
     t = column_tokens(header)
+    if age_in_other_language(header, t):
+        return ("age", "age", "age")
     if not t:
         return None
     ts = set(t)
@@ -1296,23 +1335,6 @@ def _clinical_word(w: str) -> bool:
     return any(len(w) >= n and w.endswith(end) for end, n in CLINICAL_ENDINGS)
 
 
-# Column names that say what category a value belongs to. Their values are not read as
-# names when they also repeat like a category and the name names no person (category_column).
-CATEGORY_HEADER_WORDS = frozenset("""
-sex gender race ethnicity ethnic ancestry smoking smoker tobacco alcohol drinking status
-vital outcome outcomes result results diagnosis diagnoses dx diag drug drugs medication
-medications med meds treatment treatments therapy regimen arm procedure procedures test
-tests lab labs specimen sample organism pathogen bacteria virus antibiotic condition
-conditions disease diseases problem comorbidity comorbidities symptom symptoms allergy
-allergies allergen vaccine gene genes protein variant mutation tissue cancer tumor tumour
-histology stage grade severity type subtype category class phenotype genotype response
-marital language laterality side blood specialty speciality department dept service unit
-ward disposition source route modality method indication complication complications event
-events adverse toxicity cohort group visit diet education insurance payer biomarker biomarkers
-marker markers finding findings impression religion religious faith denomination
-occupation occupations profession professions job employment industry strain species phase
-cycle reason frequency
-""".split())
 # "site" says what category its values are only after a word that makes it a body site.
 CATEGORY_HEADER_PHRASES = ("primary site", "tumor site", "tumour site", "body site", "anatomic site",
                            "anatomical site", "biopsy site", "injection site", "infection site",
@@ -1505,96 +1527,455 @@ def name_or_place_like(value: str) -> bool:
     return (len(core) >= 2 or (len(core) == 1 and dotted_initial)) and max(len(c) for c in core) >= 3
 
 
-# Nouns that, as the last word of a column name after a category word, still name an
-# attribute of that category ("Diagnosis Code", "Treatment Intent", "Allergy Reaction").
-ATTRIBUTE_NOUNS = frozenset("""
-code codes description descriptions desc detail details value values term terms label labels
-list history hx intent reaction reactions approach mode modes certainty behavior behaviour
-morphology form forms technique mechanism etiology cause causes purpose priority acuity
-summary symbol symbols abbreviation abbreviations unit units flag flags interpretation
-category categories option options choice choices answer answers response responses
+# ================================================================ verification (fail closed)
+# A default run keeps a column that no rule above names as an identifier only when it can
+# positively verify every value that is not blank as one of:
+#   (a) a number (with an optional comparator and unit) that passes the numeric identifier
+#       checks (value_shape_rule, unique numbers, coordinate pairs);
+#   (b) a value of a closed code grammar (ICD-9 and ICD-10, LOINC, ATC, HGVS, rsID, Ensembl,
+#       RefSeq, TNM, a stage, a grade, ECOG or Karnofsky, a blood group), none of which
+#       accepts a bare alphabetic word;
+#   (c) a whole value of a closed phrase vocabulary (sex and gender, yes and no, missing-value
+#       words, US census race and ethnicity, result flags, laterality, response categories,
+#       smoking status, units, and the common words of scripts without capital letters);
+#       under a column name that names a person, a role, a relative, a contact or a place,
+#       only the missing-value words count;
+#   (d) a date, which the value rules reduce to the year, or a state or country name under
+#       a state or country column.
+# Every other text column is redacted, and the person keeps it with --keep once they confirm
+# it. Three rounds of heuristics that tried to recognise every name in text did not converge
+# (qualifiers, scripts without capitals, initials, lower case): the script no longer decides
+# that text is free of identifiers.
+
+
+def fold(v: str) -> str:
+    """A value with case, width and spacing folded, for whole-value matching."""
+    s = unicodedata.normalize("NFKC", str(v)).casefold().replace("_", " ").replace("&", " and ")
+    s = " ".join(s.split())
+    return re.sub(r"\s*/\s*", "/", s)
+
+
+def _phrases(text: str) -> frozenset:
+    return frozenset(fold(p) for p in text.split("|") if p.strip())
+
+
+# Words that say a value is missing, unknown or none. These are the only vocabulary words
+# that count under a column name naming a person, a role, a relative, a contact or a place.
+MISSING_PHRASES = frozenset(fold(v) for v in MISSING_VALUES) | _phrases("""
+unkn|u|not reported|not stated|not specified|unspecified|not assessed|not done|not tested|
+not evaluated|not performed|not obtained|not asked|asked but unknown|not answered|no answer|
+no data|no information|no info|blank|empty|(blank)|prefer not to say|prefer not to answer|
+prefer not to disclose|choose not to disclose|declined to answer|declined to state|
+declined to specify|patient declined|patient refused|refused to answer|don't know|do not know|
+dont know|unable to determine|undetermined|unavailable|not given|not provided|other/unknown|
+unknown/not reported|unknown or not reported|not applicable/unknown|unknown/declined|none known
+""")
+CASELESS_MISSING = frozenset("""
+未知 不详 不詳 不明 无 無 なし 미상 모름 없음 مجهول לא ידוע अज्ञात ไม่ทราบ
+""".split()) | frozenset({"غير معروف", "לא ידוע"})
+SEX_GENDER = _phrases("""
+male|female|m|f|man|woman|men|women|boy|girl|intersex|other|nonbinary|non-binary|non binary|
+transgender|transgender male|transgender female|transgender man|transgender woman|trans male|
+trans female|trans man|trans woman|ftm|mtf|female-to-male|male-to-female|female to male|
+male to female|genderqueer|gender queer|gender non-conforming|gender nonconforming|agender|
+two-spirit|two spirit|cisgender|cisgender male|cisgender female|cisgender man|cisgender woman|
+cis male|cis female|genderfluid|gender fluid|questioning|x|undifferentiated|ambiguous|
+masculino|femenino|hombre|mujer|varon|varón|mannlich|männlich|weiblich|divers|masculin|feminin|
+féminin|homme|femme|maschio|femmina|maschile|femminile|feminino
+""")
+YES_NO = _phrases("yes|no|y|n|true|false|t|f|si|sí|ja|nein|oui|non|sim|nao|não|checked|unchecked")
+# OMB race and ethnicity categories (1997 and the 2024 revision, with its detailed checkboxes),
+# in the spellings exports use.
+RACE_ETHNICITY = _phrases("""
+white|black|black or african american|black or african-american|african american|african-american|
+black/african american|asian|asian american|american indian or alaska native|
+american indian or alaskan native|american indian/alaska native|american indian/alaskan native|
+american indian|alaska native|alaskan native|native american|
+native hawaiian or other pacific islander|native hawaiian and other pacific islander|
+native hawaiian/other pacific islander|
+native hawaiian or pacific islander|native hawaiian|other pacific islander|pacific islander|
+asian or pacific islander|middle eastern or north african|middle eastern|north african|mena|
+hispanic or latino|hispanic/latino|hispanic or latina|hispanic|latino|latina|latinx|latine|
+not hispanic or latino|not hispanic/latino|non-hispanic|non hispanic|nonhispanic|not hispanic|
+not latino|non-hispanic white|non-hispanic black|non-hispanic asian|white non-hispanic|
+black non-hispanic|white, non-hispanic|black, non-hispanic|nh white|nh black|nh asian|caucasian|
+some other race|other race|multiracial|multi-racial|multiple|multiple races|more than one race|
+two or more races|two or more|mixed|mixed race|biracial|asian indian|chinese|filipino|japanese|
+korean|vietnamese|other asian|samoan|chamorro|guamanian or chamorro|mexican|mexican american|
+chicano|puerto rican|cuban|other hispanic|dominican|salvadoran|guatemalan|colombian|lebanese|
+iranian|egyptian|syrian|moroccan|israeli|race unknown|unknown race|ethnicity unknown|api|aian|nhpi
+""")
+RESULT_FLAGS = _phrases("""
+h|l|n|a|aa|hh|ll|hhh|lll|>|<|*|c|critical|crit|panic|high|low|normal|abnormal|abn|abnl|nl|wnl|
+within normal limits|within normal range|out of range|in range|above normal|below normal|
+above range|below range|abnormal high|abnormal low|critical high|critical low|very high|very low|
+elevated|decreased|increased|reduced|raised|positive|negative|pos|neg|+|++|+++|++++|+/-|±|trace|
+1+|2+|3+|4+|present|absent|detected|not detected|undetected|none detected|reactive|non-reactive|
+nonreactive|non reactive|weakly reactive|indeterminate|equivocal|borderline|inconclusive|
+invalid|valid|pending|final|preliminary|prelim|corrected|amended|cancelled|canceled|resulted|
+susceptible|sensitive|intermediate|resistant|s|i|r|sdd|ns|non-susceptible|nonsusceptible|
+confirmed|not confirmed|presumptive positive|presumptive negative|unremarkable
+""")
+LATERALITY = _phrases("""
+left|right|bilateral|both|unilateral|midline|central|l|r|b|lt|rt|bil|bilat|left side|right side|
+both sides|left and right|right and left|left-sided|right-sided|ipsilateral|contralateral
+""")
+RESPONSE = _phrases("""
+cr|pr|sd|pd|ne|non-cr/non-pd|non-cr non-pd|ncr/npd|complete response|partial response|
+stable disease|progressive disease|not evaluable|inevaluable|unevaluable|non-evaluable|
+objective response|no response|minor response|mr|very good partial response|vgpr|
+stringent complete response|scr|pathologic complete response|pathological complete response|
+pcr|near complete response|complete remission|partial remission|cri|crh|mlfs|mrd negative|
+mrd positive|mrd-negative|mrd-positive|responder|non-responder|nonresponder|non responder|
+progression|no progression|relapse|relapsed|refractory|remission|icr|ipr|isd|iupd|icpd|improved|
+unchanged|no change|worse|worsened|stable|resolved
+""")
+SMOKING = _phrases("""
+never|never smoker|never smoked|non-smoker|nonsmoker|non smoker|former|former smoker|ex-smoker|
+ex smoker|exsmoker|past smoker|quit|current|current smoker|current every day smoker|
+current some day smoker|every day|everyday|some days|some day|daily|daily smoker|occasional|
+occasional smoker|light smoker|heavy smoker|light tobacco smoker|heavy tobacco smoker|smoker|
+smoker, current status unknown|unknown if ever smoked|ever|ever smoker|passive smoker|
+secondhand smoke|second hand smoke|never vaper|former vaper|current vaper
+""")
+UNITS = _phrases("""
+%|mg|g|kg|mcg|µg|ug|ng|pg|fg|ml|l|dl|cl|µl|ul|nl|mg/dl|g/dl|g/l|mg/l|µg/l|ug/l|ng/ml|ng/l|pg/ml|
+µg/ml|ug/ml|mcg/ml|mg/ml|ug/dl|µg/dl|mcg/dl|mmol/l|µmol/l|umol/l|nmol/l|pmol/l|mol/l|meq/l|
+mmol/mol|mosm/kg|mosm/l|iu|iu/l|iu/ml|miu/ml|miu/l|µiu/ml|uiu/ml|u/l|u/ml|ku/l|mu/l|mu/ml|units|
+unit|u/day|units/day|mmhg|cmh2o|kpa|bpm|beats/min|/min|breaths/min|cm|mm|m|km|µm|um|nm|in|inch|
+inches|ft|feet|lb|lbs|oz|kg/m2|kg/m²|g/m2|mg/m2|mg/kg|mcg/kg|µg/kg|ml/kg|ml/min|ml/min/1.73m2|
+ml/min/1.73 m2|ml/min/1.73m²|ml/h|ml/hr|l/min|mg/day|mg/d|g/day|mg/24h|g/24h|mg/24 h|°c|°f|c|k|
+sec|s|second|seconds|ms|msec|min|mins|minute|minutes|h|hr|hrs|hour|hours|d|day|days|wk|wks|week|
+weeks|mo|mos|month|months|y|yr|yrs|year|years|x10^9/l|10^9/l|x10^12/l|10^12/l|x10^3/µl|x10^3/ul|
+10^3/µl|10^3/ul|k/µl|k/ul|k/mm3|x10^6/µl|10^6/µl|m/µl|m/ul|cells/µl|cells/ul|cells/mm3|/µl|/ul|
+/mm3|/hpf|/lpf|fl|pg/cell|copies/ml|log copies/ml|log iu/ml|ratio|index|score|points|pts|mm/h|
+mm/hr|g/kg|kcal|kcal/day|kj|mmol/kg|ppm|ppb|hz|db|mv|µv|uv|ma|gy|cgy|mgy|msv|bq|mbq|mci|mg/g|
+mg/mmol|au/ml|eu/ml|times/day|x/day|/day|/week|/wk|per day|per week|puffs/day|cigarettes/day|
+packs/day|pack-years|pack years|drinks/week|drinks/day|steps|steps/day|mm2|cm2|cm3|mm3|m2|ml/s
+""")
+VOCABULARY = (SEX_GENDER | YES_NO | RACE_ETHNICITY | RESULT_FLAGS | LATERALITY | RESPONSE | SMOKING
+              | UNITS | MISSING_PHRASES)
+
+# States and countries, which Safe Harbor allows, for columns named for them (state, country,
+# country of birth, nationality, ...): US states, territories and their postal codes, Canadian
+# provinces, Australian states, and countries with their ISO 3166 codes.
+GEOGRAPHY_NAMES = _phrases("""
+alabama|alaska|arizona|arkansas|california|colorado|connecticut|delaware|florida|georgia|hawaii|
+idaho|illinois|indiana|iowa|kansas|kentucky|louisiana|maine|maryland|massachusetts|michigan|
+minnesota|mississippi|missouri|montana|nebraska|nevada|new hampshire|new jersey|new mexico|
+new york|north carolina|north dakota|ohio|oklahoma|oregon|pennsylvania|rhode island|
+south carolina|south dakota|tennessee|texas|utah|vermont|virginia|washington|west virginia|
+wisconsin|wyoming|district of columbia|washington dc|washington d.c.|d.c.|puerto rico|guam|
+us virgin islands|u.s. virgin islands|virgin islands|american samoa|northern mariana islands|
+alberta|british columbia|manitoba|new brunswick|newfoundland and labrador|newfoundland|
+nova scotia|ontario|prince edward island|quebec|québec|saskatchewan|northwest territories|
+nunavut|yukon|new south wales|victoria|queensland|south australia|western australia|tasmania|
+northern territory|australian capital territory|
+afghanistan|albania|algeria|andorra|angola|antigua and barbuda|argentina|armenia|australia|
+austria|azerbaijan|bahamas|the bahamas|bahrain|bangladesh|barbados|belarus|belgium|belize|benin|
+bhutan|bolivia|bosnia and herzegovina|botswana|brazil|brunei|bulgaria|burkina faso|burundi|
+cabo verde|cape verde|cambodia|cameroon|canada|central african republic|chad|chile|china|
+people's republic of china|colombia|comoros|congo|republic of the congo|
+democratic republic of the congo|dr congo|drc|costa rica|cote d'ivoire|côte d'ivoire|
+ivory coast|croatia|cuba|cyprus|czechia|czech republic|denmark|djibouti|dominica|
+dominican republic|ecuador|egypt|el salvador|equatorial guinea|eritrea|estonia|eswatini|
+swaziland|ethiopia|fiji|finland|france|gabon|gambia|the gambia|germany|ghana|greece|grenada|
+guatemala|guinea|guinea-bissau|guyana|haiti|honduras|hungary|iceland|india|indonesia|iran|iraq|
+ireland|israel|italy|jamaica|japan|jordan|kazakhstan|kenya|kiribati|kosovo|kuwait|kyrgyzstan|
+laos|latvia|lebanon|lesotho|liberia|libya|liechtenstein|lithuania|luxembourg|madagascar|malawi|
+malaysia|maldives|mali|malta|marshall islands|mauritania|mauritius|mexico|micronesia|moldova|
+monaco|mongolia|montenegro|morocco|mozambique|myanmar|burma|namibia|nauru|nepal|netherlands|
+the netherlands|holland|new zealand|nicaragua|niger|nigeria|north korea|north macedonia|
+macedonia|norway|oman|pakistan|palau|palestine|panama|papua new guinea|paraguay|peru|
+philippines|poland|portugal|qatar|romania|russia|russian federation|rwanda|
+saint kitts and nevis|saint lucia|saint vincent and the grenadines|samoa|san marino|
+sao tome and principe|são tomé and príncipe|saudi arabia|senegal|serbia|seychelles|sierra leone|
+singapore|slovakia|slovenia|solomon islands|somalia|south africa|south korea|korea|
+republic of korea|south sudan|spain|sri lanka|sudan|suriname|sweden|switzerland|syria|taiwan|
+tajikistan|tanzania|thailand|timor-leste|east timor|togo|tonga|trinidad and tobago|tunisia|
+turkey|türkiye|turkiye|turkmenistan|tuvalu|uganda|ukraine|united arab emirates|uae|
+united kingdom|uk|great britain|britain|england|scotland|wales|northern ireland|united states|
+united states of america|usa|u.s.|u.s.a.|america|uruguay|uzbekistan|vanuatu|vatican city|
+holy see|venezuela|vietnam|viet nam|yemen|zambia|zimbabwe|hong kong|macau|macao|greenland|
+bermuda|british virgin islands|cayman islands|aruba|curacao|curaçao|gibraltar|faroe islands|
+french polynesia|new caledonia|reunion|réunion|martinique|guadeloupe|french guiana|
+western sahara|palestinian territories|other|other country|foreign|abroad|outside the us|
+ab|bc|mb|nb|nl|ns|nt|nu|on|pe|qc|sk|yt|nsw|vic|qld|sa|wa|tas|act|gu|vi|as|mp|dc|xk|xkx|
+ad|ae|af|ag|ai|al|am|ao|aq|ar|at|au|aw|ax|az|ba|bb|bd|be|bf|bg|bh|bi|bj|bl|bm|bn|bo|bq|br|bs|bt|
+bv|bw|by|bz|ca|cc|cd|cf|cg|ch|ci|ck|cl|cm|cn|co|cr|cu|cv|cw|cx|cy|cz|de|dj|dk|dm|do|dz|ec|ee|eg|
+eh|er|es|et|fi|fj|fk|fm|fo|fr|ga|gb|gd|ge|gf|gg|gh|gi|gl|gm|gn|gp|gq|gr|gs|gt|gw|gy|hk|hm|hn|hr|
+ht|hu|id|ie|il|im|in|io|iq|ir|is|it|je|jm|jo|jp|ke|kg|kh|ki|km|kn|kp|kr|kw|ky|kz|la|lb|lc|li|lk|
+lr|ls|lt|lu|lv|ly|ma|mc|md|me|mf|mg|mh|mk|ml|mm|mn|mo|mq|mr|ms|mt|mu|mv|mw|mx|my|mz|na|nc|ne|nf|
+ng|ni|no|np|nr|nz|om|pa|pf|pg|ph|pk|pl|pm|pn|pr|ps|pt|pw|py|qa|re|ro|rs|ru|rw|sb|sc|sd|se|sg|sh|
+si|sj|sl|sm|sn|so|sr|ss|st|sv|sx|sy|sz|tc|td|tf|tg|th|tj|tk|tl|tm|tn|to|tr|tt|tv|tw|tz|ua|ug|um|
+us|uy|uz|va|vc|ve|vg|vn|vu|wf|ws|ye|yt|za|zm|zw|
+afg|alb|dza|and|ago|atg|arg|arm|aus|aut|aze|bhs|bhr|bgd|brb|blr|bel|blz|ben|btn|bol|bih|bwa|bra|
+brn|bgr|bfa|bdi|cpv|khm|cmr|can|caf|tcd|chl|chn|col|com|cog|cod|cri|civ|hrv|cub|cyp|cze|dnk|dji|
+dma|dom|ecu|egy|slv|gnq|eri|est|swz|eth|fji|fin|fra|gab|gmb|geo|deu|gha|grc|grd|gtm|gin|gnb|guy|
+hti|hnd|hun|isl|ind|idn|irn|irq|irl|isr|ita|jam|jpn|jor|kaz|ken|kir|prk|kor|kwt|kgz|lao|lva|lbn|
+lso|lbr|lby|lie|ltu|lux|mdg|mwi|mys|mdv|mli|mlt|mhl|mrt|mus|mex|fsm|mda|mco|mng|mne|mar|moz|mmr|
+nam|nru|npl|nld|nzl|nic|ner|nga|mkd|nor|omn|pak|plw|pse|pan|png|pry|per|phl|pol|prt|qat|rou|rus|
+rwa|kna|lca|vct|wsm|smr|stp|sau|sen|srb|syc|sle|sgp|svk|svn|slb|som|zaf|ssd|esp|lka|sdn|sur|swe|
+che|syr|twn|tjk|tza|tha|tls|tgo|ton|tto|tun|tur|tkm|tuv|uga|ukr|are|gbr|usa|ury|uzb|vut|vat|ven|
+vnm|yem|zmb|zwe|hkg|mac|pri|grl|bmu|gum|asm|vir|vgb|cym|abw|cuw|gib|fro|pyf|ncl|reu|mtq|glp|guf|
+esh
+""") | frozenset(s.lower() for s in US_STATES.strip("(?:)").split("|"))
+
+# Words of a column name that make it name a person, a relative or a contact wherever they
+# stand (person_role_words and place_words find the rest).
+PERSON_ANYWHERE_WORDS = (frozenset(RELATIVE_WORDS) - {"emergency"}) | frozenset(
+    {"contacts", "kin", "relatives", "relation", "relationship", "family", "families", "familia",
+     "famille", "familie", "households"})
+# Column names that let a grammar accept a short form it would not accept under any name.
+ICD_HEADER_WORDS = frozenset("""icd dx diag diagnosis diagnoses diagnostic comorbidity comorbidities
+condition conditions problem problems cause""".split())
+ATC_HEADER_WORDS = frozenset("atc drug drugs medication medications med meds medicine medicines rx".split())
+STAGE_HEADER_WORDS = frozenset("""stage stages staging stg figo ajcc uicc nyha rai binet iss riss dukes
+bclc class grade grading phase tier tnm""".split())
+TNM_HEADER_WORDS = STAGE_HEADER_WORDS | frozenset("t n m ct cn cm pt pn pm yp ypt ypn".split())
+BLOOD_HEADER_WORDS = frozenset("blood abo bloodtype bloodgroup rh rhesus".split())
+VARIANT_HEADER_WORDS = frozenset("""variant variants mutation mutations mut alteration alterations
+change changes hgvs hgvsp hgvsc protein aa amino substitution substitutions codon snv""".split())
+
+
+class ColumnContext:
+    """What a column name says about the values the vocabulary and the grammars accept."""
+
+    def __init__(self, header: str):
+        t = column_tokens(header)
+        ts = set(t)
+        self.person_or_place = bool(person_role_words(t, NAME_TRAILING) or place_words(t)
+                                    or ts & PERSON_ANYWHERE_WORDS)
+        self.geography = is_allowed_geography(header)
+        self.icd = bool(ts & ICD_HEADER_WORDS)
+        self.atc = bool(ts & ATC_HEADER_WORDS)
+        self.stage = bool(ts & STAGE_HEADER_WORDS)
+        self.tnm = bool(ts & TNM_HEADER_WORDS)
+        self.blood = bool(ts & BLOOD_HEADER_WORDS)
+        self.variant = bool(ts & VARIANT_HEADER_WORDS)
+        self.loinc = "loinc" in ts
+
+
+# (a) Numbers, with an optional comparator and a unit of UNITS ("<0.5", "5.2 mg/dL", "12%",
+# "1,250"), and a blood pressure ("120/80": the first number larger, both in their range, so a
+# day and a month never pass).
+_NUM = r"[+-]?(?:\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?"
+NUMBER_WITH_UNIT = re.compile(r"(?:<=|>=|=<|=>|<|>|≤|≥|=|~|≈)?\s*(?P<n>" + _NUM
+                              + r")\s*(?P<u>[^\d\s].*)?")
+BLOOD_PRESSURE = re.compile(r"(\d{2,3})\s*/\s*(\d{2,3})(?:\s*mm\s*hg)?", re.I)
+
+
+def _plain(value: str) -> str:
+    return " ".join(unicodedata.normalize("NFKC", str(value)).split())
+
+
+def number_like(value: str) -> str | None:
+    """The number in a value that is a number, with an optional comparator and unit, or a
+    blood pressure; None for anything else."""
+    s = _plain(value)
+    m = NUMBER_WITH_UNIT.fullmatch(s)
+    if m and (not m.group("u") or fold(m.group("u")) in UNITS):
+        return m.group("n").replace(",", "")
+    m = BLOOD_PRESSURE.fullmatch(s)
+    if m and 50 <= int(m.group(1)) <= 300 and 20 <= int(m.group(2)) <= 200 \
+            and int(m.group(1)) > int(m.group(2)):
+        return m.group(1)
+    return None
+
+
+# (b) Closed code grammars. Each needs a digit, a sign or a fixed prefix word, so no bare
+# alphabetic word passes; the short forms that are letters only ("IIIA", "Tis", "AB") pass
+# only under a column name that says what they are (stage, TNM, blood group).
+_AA1 = "[ACDEFGHIKLMNPQRSTVWY]"
+_AA3 = "(?:Ala|Arg|Asn|Asp|Cys|Gln|Glu|Gly|His|Ile|Leu|Lys|Met|Phe|Pro|Ser|Thr|Trp|Tyr|Val|Ter|Sec|Pyl|Xaa)"
+_AA = f"(?:{_AA3}|{_AA1})"
+_REFSEQ = r"(?:AC|AP|NC|NG|NM|NP|NR|NT|NW|NZ|XM|XP|XR|YP|WP)_\d{6,9}(?:\.\d{1,3})?"
+_ENSEMBL = r"ENS(?:[A-Z]{3})?[EFGPRT]\d{11}(?:\.\d{1,3})?"
+_POS = r"[-*]?\d+(?:[+-]\d+)?"
+_NUC = "[ACGTUNacgtun]"
+_HGVS_NUC = (rf"[cgmnor]\.{_POS}(?:_{_POS})?(?:{_NUC}*>{_NUC}+|(?:del|dup|inv)(?:{_NUC}+|\d+)?"
+             rf"|(?:ins|delins){_NUC}+|=|{_NUC}*\[\d+\])")
+_P_CHANGE = (rf"{_AA}\d+(?:_{_AA}\d+)?(?:{_AA}|\*|=|\?|fs(?:\*|Ter|X)?\d*|del|dup|(?:ins|delins){_AA}+"
+             rf"|ext(?:\*|Ter)?-?\d*)")
+_HGVS_PROT = rf"p\.(?:\({_P_CHANGE}\)|{_P_CHANGE}|=|\?|0\??|\(=\))"
+_HGVS_REF = (rf"(?:(?:{_REFSEQ}|{_ENSEMBL}|LRG_\d+(?:t\d+|p\d+)?|chr(?:[1-9]|1\d|2[0-2]|X|Y|MT?))"
+             r"(?:\([A-Z0-9-]{1,15}\))?:)?")
+ICD10_DOTTED = re.compile(r"[A-Z]\d[0-9A-Z]\.(?=[0-9A-Z]{0,3}\d)[0-9A-Z]{1,4}", re.I)
+ICD9_DOTTED = re.compile(r"V\d{2}\.\d{1,2}|E\d{3}\.\d", re.I)
+ICD_PLAIN = re.compile(r"[A-Z]\d[0-9A-Z](?:\d{1,3}[0-9A-Z]?)?|V\d{2}|E\d{3}", re.I)
+LOINC = re.compile(r"(\d{1,7})-(\d)")
+ATC = re.compile(r"[ABCDGHJLMNPRSV]\d{2}(?:[A-Z](?:[A-Z](?:\d{2})?)?)?", re.I)
+RSID = re.compile(r"rs\d{1,12}", re.I)
+ENSEMBL = re.compile(_ENSEMBL)
+REFSEQ = re.compile(_REFSEQ)
+HGVS = re.compile(_HGVS_REF + rf"(?:{_HGVS_NUC}|{_HGVS_PROT})")
+SHORT_PROTEIN = re.compile(rf"{_AA1}\d{{1,4}}(?:{_AA1}|\*|X|fs\*?\d*|del|dup)")
+_TNM_PREFIX = r"(?:[cpyrau]{1,3})?"
+TNM_FULL = re.compile(rf"{_TNM_PREFIX}T(?:[0-4][a-d]?[1-3]?|is|x)(?:\((?:m|\d+)\))?\s*{_TNM_PREFIX}"
+                      rf"N(?:[0-3][a-c]?|x)(?:\((?:sn|f|i[+-]|mol[+-])\))?\s*{_TNM_PREFIX}M(?:[01][a-d]?|x)",
+                      re.I)
+TNM_PART = re.compile(rf"{_TNM_PREFIX}(?:T(?:[0-4][a-d]?[1-3]?|is|x)|N(?:[0-3][a-c]?|x)|M(?:[01][a-d]?|x))",
+                      re.I)
+_STAGE_VALUE = r"(?:(?:0|i{1,3}|iv|v)(?:[a-d][1-3]?)?|[0-5](?:[a-d][1-3]?)?)"
+STAGE_PREFIXED = re.compile(
+    r"(?:(?:clinical|pathologic(?:al)?|c|p|y|yp)\s+)?(?:stage|stg\.?|class|phase|figo|nyha|ajcc|uicc"
+    r"|ann\s+arbor|rai|binet|r-?iss|iss|dukes|ckd|gold|bclc|grade)(?:\s+(?:stage|class|grade|group))?"
+    r"\s*:?\s*" + _STAGE_VALUE, re.I)
+STAGE_BARE = re.compile(_STAGE_VALUE + r"|gx", re.I)
+GRADE = re.compile(
+    r"g[1-4]|(?:(?:who|nottingham|isup|fnclcc|histologic(?:al)?|tumou?r|nuclear|fuhrman)\s+)?"
+    r"(?:grade|gr\.?)(?:\s+group)?\s*:?\s*(?:[1-5]|i{1,3}|iv|x)|(?:low|high|intermediate)[- ]grade"
+    r"|(?:well|moderately|poorly)[- ]differentiated"
+    r"|(?:gleason(?:\s+score)?\s*:?\s*)?[1-5]\s*\+\s*[1-5](?:\s*=\s*(?:[2-9]|10))?"
+    r"|gleason(?:\s+score)?\s*:?\s*(?:[2-9]|10)|isup\s*[1-5]", re.I)
+PERFORMANCE = re.compile(
+    r"(?:ecog|who|zubrod)(?:\s*(?:ps|performance\s+status))?\s*[:=]?\s*[0-5]|ps\s*[:=]?\s*[0-5]"
+    r"|(?:kps|karnofsky)(?:\s*(?:score|ps))?\s*[:=]?\s*(?:100|[1-9]0|0)\s*%?", re.I)
+BLOOD_GROUP = re.compile(
+    r"(?:a|b|ab|o)\s*(?:rh\s*(?:\(d\)\s*)?)?(?:[+-]|pos(?:itive)?|neg(?:ative)?)"
+    r"|rh\s*(?:\(d\)\s*)?(?:[+-]|pos(?:itive)?|neg(?:ative)?)|(?:a|b|ab|o)\s*[型형](?:\s*rh\s*[+-])?",
+    re.I)
+BLOOD_BARE = re.compile(r"a[12]?|b|a[12]?b|o", re.I)
+ANYWHERE_CODES = (ICD10_DOTTED, ICD9_DOTTED, RSID, ENSEMBL, REFSEQ, HGVS, STAGE_PREFIXED, GRADE,
+                  PERFORMANCE, BLOOD_GROUP)
+
+
+def _luhn_check_digit(payload: str) -> int:
+    """The check digit LOINC appends (the mod 10 algorithm of the LOINC users' guide)."""
+    total = 0
+    for i, c in enumerate(reversed(payload)):
+        d = int(c) * (2 if i % 2 == 0 else 1)
+        total += d - 9 if d > 9 else d
+    return (10 - total % 10) % 10
+
+
+def loinc_code(value: str) -> bool:
+    m = LOINC.fullmatch(_plain(value))
+    return bool(m) and _luhn_check_digit(m.group(1)) == int(m.group(2))
+
+
+def code_grammar(value: str, ctx: ColumnContext) -> bool:
+    """True when the whole value is a code of a closed grammar (see the section comment)."""
+    s = _plain(value)
+    if not s or any(rx.fullmatch(s) for rx in ANYWHERE_CODES) or loinc_code(s):
+        return bool(s)
+    if TNM_FULL.fullmatch(s) or TNM_PART.fullmatch(s):
+        return bool(re.search(r"\d", s)) or ctx.tnm
+    return bool((ctx.icd and ICD_PLAIN.fullmatch(s)) or (ctx.atc and ATC.fullmatch(s))
+                or (ctx.stage and STAGE_BARE.fullmatch(s)) or (ctx.blood and BLOOD_BARE.fullmatch(s))
+                or (ctx.variant and SHORT_PROTEIN.fullmatch(s)))
+
+
+def vocabulary_value(value: str, ctx: ColumnContext) -> bool:
+    """(c) and (d): a whole value of the vocabulary (only its missing-value words under a column
+    name that names a person, a role, a relative, a contact or a place), or a state or country
+    under a state or country column."""
+    s = value.strip()
+    key = fold(s)
+    if key in MISSING_PHRASES or s in CASELESS_MISSING:
+        return True
+    if ctx.geography and key in GEOGRAPHY_NAMES:
+        return True
+    return not ctx.person_or_place and (key in VOCABULARY or s in CASELESS_CATEGORY_VALUES)
+
+
+# Groups of single letters with one meaning each; a column of single letters from more than
+# one group may be initials.
+SINGLE_LETTER_GROUPS = (frozenset("mfx"), frozenset("yntf"), frozenset("lrb"), frozenset("hlnac"),
+                        frozenset("sir"))
+# What this tool writes, which a check of its own output reads as verified. Only these
+# placeholders count: a cell that is some other word in brackets ("[OKAFOR]") is text.
+TOOL_OUTPUT = re.compile(r"90\+(?: years)?")
+TOOL_PLACEHOLDERS = frozenset("""
+[REDACTED] [PHONE] [URL] [EMAIL] [HANDLE] [DEVICE_ID] [IP] [GEO] [ID] [SSN] [HEALTH_PLAN_ID]
+[ACCOUNT] [VEHICLE_ID] [DATE] [ZIP] [ADDRESS] [CITY] [NAME] [90_OR_OLDER] [PHOTO] [IMAGE_FILE]
+[BIOMETRIC_OR_CODE]
 """.split())
 
 
-def _category_head(tokens: list[str]) -> bool:
-    """True when the last word of a column name (before "name", "first" and numbers) is
-    a category or attribute noun, as in "Visit Type", "Lab Test", "Diagnosis Code" and
-    "Primary Site", rather than a person or a thing ("Visit Host", "Treatment Dr")."""
-    if _has(tokens, *CATEGORY_HEADER_PHRASES):
-        return True
-    rest = [t for t in tokens if not t.isdigit()]
-    while rest and rest[-1] in NAME_TRAILING:
-        rest.pop()
-    if not rest:
-        return False
-    head = rest[-1]
-    known = CATEGORY_HEADER_WORDS | QUALIFIER_WORDS | ATTRIBUTE_NOUNS
-    return head in known or (len(head) > 3 and head.endswith("s") and head[:-1] in known)
-
-
-def single_name_like(value: str) -> bool:
-    """One capitalised word that is not a category, medical or anatomical word: a surname
-    or a town ("Okafor", "Quillbrook"), or a word the vocabulary does not know."""
+def value_verified(value: str, ctx: ColumnContext, own_output: bool = False) -> bool:
+    """True when the value is a number, a code, a vocabulary word, an allowed place or blank."""
     s = value.strip()
-    if not s or " " in s or "," in s or s.lower() in STATE_COUNTRY_NAMES:
-        return False
-    letters = re.sub(r"['\u2019.-]", "", s)
-    if not letters.isalpha() or len(letters) < 3:
-        return False
-    title = letters[0].isupper() and any(c.islower() for c in letters[1:])
-    caps = letters.isupper() and len(letters) >= 5
-    return (title or caps) and not _vocabulary_word(s.lower().strip("."))
+    if not s or s in TOOL_PLACEHOLDERS or TOOL_OUTPUT.fullmatch(s):
+        return True
+    if own_output and PSEUDONYM.fullmatch(s):
+        return True
+    return number_like(s) is not None or code_grammar(s, ctx) or vocabulary_value(s, ctx)
 
 
-def category_column(header: str, vals: list[str]) -> bool:
-    """True when the column name says what category its values are ("Diagnosis", "Visit
-    Type", "Primary Site"), names no person, role or place, and the values look like a
-    category: they repeat like one, and few of them have the shape of a person's or a
-    place's name. A role anywhere in the name ("Treatment Physician", "Physician (Lab)",
-    "Test Verifier") or a person as its last word ("Event Patient", "Visit Dr") makes it a
-    column of people, whose names repeat across visits as much as any category does; a
-    place word ("Visit Location", "Service Area") a column of places. Whatever the name,
-    values that read as names of people or places (name_or_place_like) are not a category
-    ("Diagnosis" holding "Alice Okafor"), and when the last word of the name is not a
-    category noun ("Visit Host"), neither are single capitalised words the vocabulary does
-    not know ("Okafor"). Two such values, or a third of the distinct values, are enough."""
-    t = column_tokens(header)
-    if not (set(t) & CATEGORY_HEADER_WORDS or _has(t, *CATEGORY_HEADER_PHRASES)):
-        return False
-    if person_role_words(t, NAME_TRAILING) or place_words(t):
-        return False
-    distinct = set(vals)
-    if not (len(distinct) <= CATEGORY_MAX_DISTINCT or len(vals) >= CATEGORY_MIN_REPEATS * len(distinct)):
-        return False
-    single = not _category_head(t)
-    like = sum(1 for v in distinct if name_or_place_like(v) or (single and single_name_like(v))
-               or caseless_name_shaped(v))
-    return like < 2 and like * 3 < len(distinct)
+def scrub_cell(scrubber: "Scrubber", value: str, ctx: ColumnContext) -> tuple[str, list[str]]:
+    """Scrubber.scrub, except that a whole value of a code grammar keeps the codes the generic
+    code rule would replace ("S72001A" under a diagnosis column, "C10AA05" under a drug column,
+    "NM_001126112.3"), and a LOINC code under a LOINC column keeps its "2093-3" shape. Every
+    other pattern (a phone, an email, a date, ...) is still replaced."""
+    out, found = scrubber.scrub(value)
+    if found and code_grammar(value, ctx):
+        allowed = {"code"} | ({"date"} if ctx.loinc and loinc_code(value) else set())
+        if set(found) <= allowed:
+            return value, []
+    return out, found
 
 
-def name_shape_rule(header: str, values: list[str]) -> tuple[str, str, str, int] | None:
-    """(finding, action, phi type, cells) for a text column holding values shaped like
-    names of people or places, unless it is a category column (category_column) or a
-    state or country column, which Safe Harbor allows."""
-    if is_allowed_geography(header):
-        return None
-    vals = _shape_values(values)
-    if not vals or all(is_number(v) for v in vals) or category_column(header, vals):
-        return None
-    shaped = {v for v in set(vals) if name_shaped(v)}
-    if not shaped:
-        return None
-    caseless = sum(1 for v in shaped if caseless_name_shaped(v))
-    if caseless == len(shaped):
-        what = ("are words in a script without capital letters, where names cannot be told from "
-                "other words")
-    elif caseless:
-        what = ("are capitalised words that are not common category words, or words in a script "
-                "without capital letters")
-    else:
-        what = "are capitalised words that are not common category words"
-    return (f"text values shaped like names or places ({len(shaped)} of {len(set(vals))} distinct "
-            f"values {what})", "redact", "name", sum(1 for v in vals if v in shaped))
+def verify_column(header: str, values: list[str], reference_year: int,
+                  ctx: ColumnContext | None = None, own_output: bool = False) -> dict:
+    """Which values of a column the script can vouch for. Returns the distinct values it cannot
+    verify (`unverified`), how many of them have the shape of a name or a place, and for a
+    column that mixes numbers with other verified values, a numeric identifier finding."""
+    ctx = ctx or ColumnContext(header)
+    distinct = {v.strip() for v in values if v.strip()}
+    bad = {v for v in distinct if not value_verified(v, ctx, own_output)}
+    names = sum(1 for v in bad if not has_caseless_text(v) and (name_shaped(v) or name_or_place_like(v)))
+    caseless = sum(1 for v in bad if has_caseless_text(v))
+    # Single letters are kept only when they all belong to one group (M and F, Y and N, L and
+    # R, H, L and N, ...): a handful of first initials spans several groups.
+    singles = {fold(v) for v in distinct - bad if len(fold(v)) == 1 and fold(v).isascii()
+               and fold(v).isalpha() and fold(v) not in MISSING_PHRASES}
+    groups = SINGLE_LETTER_GROUPS + ((frozenset("abo"),) if ctx.blood else ()) \
+        + ((frozenset("iv"),) if ctx.stage else ())
+    if singles and not any(singles <= g for g in groups):
+        bad |= {v for v in distinct if fold(v) in singles}
+    numeric = None
+    cells = [v.strip() for v in values if v.strip() and v.strip() not in TOOL_PLACEHOLDERS]
+    nums = [n for n in (number_like(v) for v in cells) if n is not None]
+    if not bad and nums and not all(is_number(v) for v in cells):
+        shape = value_shape_rule(header, nums, reference_year)
+        if shape:
+            numeric = shape[0]
+        elif upstream.is_high_cardinality_numeric(nums):
+            numeric = "unique numbers (possible record or account number)"
+    return {"distinct": len(distinct), "unverified": bad, "names": names, "caseless": caseless,
+            "numeric": numeric, "cells": sum(1 for v in values if v.strip() in bad),
+            "verified": not bad and numeric is None}
+
+
+def unverified_finding(check: dict, ctx: ColumnContext) -> str:
+    """The plan's reason for redacting a column of text the script cannot verify. It names
+    counts only, never a value."""
+    n, total = len(check["unverified"]), check["distinct"]
+    kinds = ("state or country names, numbers or missing-value words" if ctx.geography
+             else "numbers, codes, dates or common category words")
+    parts = [f"{n} of {total} distinct values are not {kinds}"]
+    if ctx.person_or_place:
+        parts.append("the column name names a person, a role, a relative, a contact or a place, "
+                     "so only missing-value words count as category words")
+    if check["names"]:
+        parts.append(f"{check['names']} of them {'is' if check['names'] == 1 else 'are'} shaped like "
+                     "names or places")
+    if check["caseless"]:
+        parts.append(f"{check['caseless']} of them {'is' if check['caseless'] == 1 else 'are'} in a "
+                     "script without capital letters, where names cannot be told from other words")
+    return ("text the script cannot verify is free of identifiers (" + "; ".join(parts)
+            + "); keep with --keep COLUMN once the person confirms it")
+
+
+def residual_text_finding(check: dict) -> str:
+    """The residual check's problem for kept text it cannot verify. Counts only."""
+    n = len(check["unverified"])
+    if check["names"]:
+        return f"text values shaped like names or places ({check['names']} of {n} distinct values it cannot verify)"
+    if check["caseless"]:
+        return f"text in a script without capital letters that it cannot verify ({n} distinct values)"
+    return f"text the script cannot verify is free of identifiers ({n} distinct values)"
 
 
 # 202103 and 2021.03; 2021.1 is October written as a number that lost its last zero.
@@ -1604,6 +1985,19 @@ YEAR_MONTH_NUMBER = re.compile(r"(1[89]\d{2}|20\d{2})(?:0[1-9]|1[0-2]|\.(?:0[1-9
 def _year_month_number(v: str, reference_year: int) -> bool:
     m = YEAR_MONTH_NUMBER.fullmatch(v)
     return bool(m) and 1880 <= int(m.group(1)) <= reference_year + 10
+
+
+def _compact_date(v: str, reference_year: int) -> bool:
+    """MMDD or DDMM, MMDDYY or DDMMYY, MMDDYYYY or DDMMYYYY, all of one length."""
+    if not re.fullmatch(r"\d{4}|\d{6}|\d{8}", v):
+        return False
+    a, b = int(v[:2]), int(v[2:4])
+
+    def month_day(m: int, d: int) -> bool:
+        return 1 <= m <= 12 and 1 <= d <= 31
+    if len(v) == 8 and not 1880 <= int(v[4:]) <= reference_year + 10:
+        return False
+    return month_day(a, b) or month_day(b, a)
 
 
 def value_shape_rule(header: str, values: list[str], reference_year: int) -> tuple[str, str, str, int] | None:
@@ -1626,6 +2020,13 @@ def value_shape_rule(header: str, values: list[str], reference_year: int) -> tup
     if all(_year_month_number(v, reference_year) for v in vals):
         return (f"a year and a month written as a number in {len(vals)} cells (dates)", "year", "date",
                 len(vals))
+    # A month and a day written with no separator: 0314 or 1403, 031421, 03142021 or 14032021.
+    # Four and six digits count only when one of them keeps a leading zero, as dates do and
+    # counts do not.
+    if all(_compact_date(v, reference_year) for v in vals) and (
+            any(len(v) == 8 for v in vals) or any(v.startswith("0") for v in vals)):
+        return (f"a month and a day written as a number with no separator in {len(vals)} cells "
+                "(possible dates)", "redact", "date", len(vals))
     toks = set(column_tokens(header))
     if toks & {"years", "yrs", "yr", "yo"}:
         nums = [float(v) for v in vals]
@@ -1692,35 +2093,44 @@ def decide_columns(data: list[dict], headers: list[str], locale: dict, scrubber:
     for i, col in enumerate(headers, start=1):
         values = [str(row.get(col, "") or "") for row in data]
         nonempty = [v for v in values if v.strip()]
-        d = {"index": i, "column": col, "kept_on_request": False, "forced_redaction": False}
+        ctx = ColumnContext(col)
+        d = {"index": i, "column": col, "kept_on_request": False, "forced_redaction": False,
+             "verified": False}
         # Free text is never kept: a name inside a sentence has no pattern to find. A long
-        # value made only of category words ("American Indian or Alaska Native") is not text.
-        prose = [v for v in nonempty if not _is_category_value(v)]
+        # value made only of category words ("American Indian or Alaska Native") or verified
+        # as a whole ("Saint Vincent and the Grenadines" under a country column) is not text.
+        prose = [v for v in nonempty if not _is_category_value(v) and not value_verified(v, ctx)]
         d["free_text"] = bool(prose) and (upstream.looks_like_free_text(prose)
                                           or any(caseless_prose(v) for v in prose))
         rule = column_name_rule(col, nonempty, scrubber) or locale_name_rule(col, locale)
-        qualified = not rule and bool(name_rule(col))
+        # A state or country column is allowed by Safe Harbor, but its values are checked like
+        # any other column: only state and country names are vouched for (verify_column).
+        if rule and rule[2] == "allowed_geography":
+            rule = None
+        qualified = not rule and bool(name_rule(col)) and not ctx.geography
         if rule:
             finding, action, phi = rule
-            d.update(kind="allowed" if phi == "allowed_geography" else "identifier",
-                     finding=f"column name: {finding}", action=action, phi_type=phi)
+            d.update(kind="identifier", finding=f"column name: {finding}", action=action, phi_type=phi)
         elif not nonempty:
-            d.update(kind="none", finding="empty column", action="keep", phi_type=None)
+            d.update(kind="none", finding="empty column", action="keep", phi_type=None, verified=True)
         else:
-            scrubbed = [scrubber.scrub(v) for v in nonempty]
+            scrubbed = [scrub_cell(scrubber, v, ctx) for v in nonempty]
             hits = [found for _, found in scrubbed if found]
-            # A cell that is nothing but one identifier (a date, an email, a code).
+            # A cell that is nothing but one identifier (a date, an email, a code), counted
+            # against the cells that are not missing-value words.
             whole = [found[0] for out, found in scrubbed
                      if found and (PLACEHOLDER.fullmatch(out.strip())
                                    or re.fullmatch(r"\d{4}", out.strip())
                                    or out.strip() == "90+ years")]
-            if whole and len(whole) / len(nonempty) > 0.5:
+            present = [v for v in nonempty if fold(v) not in MISSING_PHRASES]
+            check = verify_column(col, nonempty, reference_year, ctx)
+            if whole and len(whole) / max(1, len(present)) > 0.5:
                 phi = max(set(whole), key=whole.count)
                 action = {"date": "year", "code": "pseudonym_id", "age": "age"}.get(phi, "redact")
-                if phi == "zip" and all(re.fullmatch(r"\s*\d{5}(?:-\d{4})?\s*", v) for v in nonempty):
+                if phi == "zip" and all(re.fullmatch(r"\s*\d{5}(?:-\d{4})?\s*", v) for v in present):
                     action = "zip3"
                 d.update(kind="identifier_values",
-                         finding=f"values: {len(whole)} of {len(nonempty)} cells are {phi.replace('_', ' ')} identifiers",
+                         finding=f"values: {len(whole)} of {len(present)} cells are {phi.replace('_', ' ')} identifiers",
                          action=action, phi_type=phi)
             elif hits:
                 d.update(kind="uncertain",
@@ -1738,20 +2148,31 @@ def decide_columns(data: list[dict], headers: list[str], locale: dict, scrubber:
                          action="pseudonym_id", phi_type="id")
             elif shape:  # five-digit numbers that repeat: possible ZIP codes
                 d.update(kind="uncertain", finding=f"values: {shape[0]}", action=shape[1], phi_type=shape[2])
-            elif not all(is_number(v) for v in nonempty) and len(set(nonempty)) >= 2 \
-                    and len(set(nonempty)) / len(nonempty) > 0.5:
-                d.update(kind="uncertain",
-                         finding=f"many distinct text values ({len(set(nonempty))} of {len(nonempty)}): possible names or codes",
-                         action="redact", phi_type="unknown")
-            elif names := name_shape_rule(col, nonempty):
-                d.update(kind="uncertain", finding=f"values: {names[0]}", action=names[1], phi_type=names[2])
+            elif check["unverified"]:
+                # Fail closed: text the script cannot vouch for is the person's decision.
+                d.update(kind="unverified", finding=unverified_finding(check, ctx), action="redact",
+                         phi_type="unverified")
+            elif check["numeric"]:
+                d.update(kind="uncertain", finding=f"values: {check['numeric']}", action="redact",
+                         phi_type="id")
+            elif ctx.geography:
+                d.update(kind="allowed", action="keep", phi_type="allowed_geography", verified=True,
+                         finding="column name: state or country (allowed); every value is a state or "
+                                 "country name, a number or a missing-value word")
             elif qualified:
-                d.update(kind="none", action="keep", phi_type=None,
+                d.update(kind="none", action="keep", phi_type=None, verified=True,
                          finding="category values under an identifier word (a type, status or payer column)")
+            elif not present:
+                d.update(kind="none", finding="only missing-value words", action="keep",
+                         phi_type=None, verified=True)
+            elif all(is_number(v) for v in present):
+                d.update(kind="none", finding="numbers, no identifier shape found", action="keep",
+                         phi_type=None, verified=True)
             else:
-                d.update(kind="none", finding="no identifier found", action="keep", phi_type=None)
-        # Text the scanner keeps can still hold a name it has no way to see (lower case,
-        # a category word, a single all-capital word); the plan lists these for the person.
+                d.update(kind="none", action="keep", phi_type=None, verified=True,
+                         finding="every value verified (a number, a code, a date or a common category word)")
+            if d["kind"] in ("uncertain", "identifier_values"):
+                d["verified"] = check["verified"]
         d["text"] = any(not is_number(v) for v in _shape_values(values))
         # A name inside a longer value in a script without capital letters is not found.
         d["caseless"] = any(has_caseless_text(v) for v in _shape_values(values))
@@ -1763,7 +2184,7 @@ def decide_columns(data: list[dict], headers: list[str], locale: dict, scrubber:
     pairs = coordinate_pairs(unvouched)
     for d in decisions:
         if d["index"] in pairs:
-            d.update(kind="uncertain", action="redact", phi_type="geo",
+            d.update(kind="uncertain", action="redact", phi_type="geo", verified=False,
                      finding="values: decimal numbers shaped like latitude and longitude "
                              "(with the column next to it)")
 
@@ -1788,7 +2209,7 @@ def decide_columns(data: list[dict], headers: list[str], locale: dict, scrubber:
             raise UsageError(
                 f"column {ref!r} is a Safe Harbor identifier by its name ({d['finding']}); "
                 "it cannot be kept. Rename the column only if its name is wrong.")
-        if d["free_text"] and d["kind"] != "allowed":
+        if d["free_text"]:
             raise UsageError(
                 f"column {ref!r} holds free text; Safe Harbor mode cannot keep it, because names "
                 "inside sentences have no pattern to find. Leave it redacted, or have the person "
@@ -1903,6 +2324,7 @@ def apply_decisions(data: list[dict], headers: list[str], decisions: list[dict],
     names = upstream.PseudonymGenerator(prefix="P", reserved=reserved)
     ids = upstream.IDReplacer(prefix="ID", reserved=reserved)
     changed = {c: 0 for c in headers}
+    ctxs = {c: ColumnContext(c) for c in headers}
     out_rows = []
     for row in data:
         new = {}
@@ -1930,7 +2352,7 @@ def apply_decisions(data: list[dict], headers: list[str], decisions: list[dict],
             elif action == "age":
                 nv = age_cap(v, col, scrubber)
             else:  # keep: scrub identifier patterns out of the cell
-                nv = scrubber.scrub(v)[0]
+                nv = scrub_cell(scrubber, v, ctxs[col])[0]
             if nv != v:
                 changed[col] += 1
             new[col] = nv
@@ -1941,10 +2363,18 @@ def apply_decisions(data: list[dict], headers: list[str], decisions: list[dict],
 # ================================================================ residual check
 def residual_findings(rows: list[dict], headers: list[str], decisions: list[dict] | None,
                       scrubber: Scrubber, reference_year: int) -> list[dict]:
-    """Columns whose output still holds an identifier, with counts. No values."""
+    """Columns whose output still holds an identifier, with counts. No values.
+
+    Every kept column is scanned for identifier patterns. A kept column the person did not
+    name with --keep is also checked as the run classified it: by the shape of its numbers,
+    and by verifying again that every value is a number, a code, a vocabulary word or an
+    allowed place (verify_column). A column the person kept is trusted for those shapes, never
+    for patterns. Without the run's report (decisions is None) no column counts as kept on
+    request, so text the script cannot verify fails the check."""
     findings = []
     by_col = {d["column"]: d for d in decisions} if decisions else {}
     actions, kept_on_request = {}, set()
+    ctxs = {i: ColumnContext(col) for i, col in enumerate(headers, start=1)}
     for i, col in enumerate(headers, start=1):
         d = by_col.get(col)
         if d is None:
@@ -1954,25 +2384,32 @@ def residual_findings(rows: list[dict], headers: list[str], decisions: list[dict
             actions[i] = d["action"]
             if d.get("kept_on_request"):
                 kept_on_request.add(i)
-    # Kept columns (unless the person kept them on request) are also checked by the
-    # shape of their values, as the run classified them.
     shape_checked = [(i, [str(row.get(col, "") or "") for row in rows])
                      for i, col in enumerate(headers, start=1)
                      if actions[i] == "keep" and i not in kept_on_request]
-    shapes = {i: value_shape_rule(headers[i - 1], vals, reference_year) or name_shape_rule(headers[i - 1], vals)
-              for i, vals in shape_checked}
+    shapes = {}
+    for i, vals in shape_checked:
+        shape = value_shape_rule(headers[i - 1], vals, reference_year)
+        if shape:
+            shapes[i] = (shape[0], shape[3])
+            continue
+        check = verify_column(headers[i - 1], vals, reference_year, ctxs[i], own_output=decisions is None)
+        if check["unverified"]:
+            shapes[i] = (residual_text_finding(check), check["cells"])
+        elif check["numeric"]:
+            shapes[i] = (check["numeric"], sum(1 for v in vals if number_like(v)))
     pairs = coordinate_pairs(shape_checked)
     for i, col in enumerate(headers, start=1):
         action = actions[i]
         counts: dict[str, int] = {}
         if shapes.get(i):
-            finding, _, _, cells = shapes[i]
+            finding, cells = shapes[i]
             counts[finding] = cells
         if i in pairs:
             counts["decimal numbers shaped like latitude and longitude"] = pairs[i]
         for row in rows:
             v = str(row.get(col, "") or "").strip()
-            if not v or PLACEHOLDER.fullmatch(v):
+            if not v or v in TOOL_PLACEHOLDERS:
                 continue
             problem = None
             # Transformed columns are checked by their shape; a pseudonym such as
@@ -2004,7 +2441,7 @@ def residual_findings(rows: list[dict], headers: list[str], decisions: list[dict
             else:
                 scan = True
             if problem is None and scan:
-                kinds = scrubber.find(v)
+                kinds = scrub_cell(scrubber, v, ctxs[i])[1]
                 if kinds:
                     problem = f"{kinds[0].replace('_', ' ')} pattern"
             if problem:
@@ -2037,31 +2474,56 @@ def print_plan(decisions: list[dict], withheld: set[int], changed: dict | None =
         if len(name) > width:
             name = name[: width - 3] + "..."
         print(f"  {d['index']:>3}  {name:<{width}}  {label:<16}  {count}  {d['finding']}{note}")
-    uncertain = [display_name(d, withheld) for d in decisions if d["kind"] == "uncertain" and d["action"] != "keep"]
+    names = lambda ds: ", ".join(display_name(d, withheld) for d in ds)  # noqa: E731
+    pending = [d for d in decisions if d["kind"] == "unverified" and d["action"] != "keep"
+               and not d["forced_redaction"]]
+    if pending:
+        print("\n  Need the person's decision (redact: text the script cannot verify is free of identifiers;")
+        print("  keep with --keep COLUMN once the person confirms it): " + names(pending))
+        print("  Ask the person, naming only these columns, whether each one holds nothing but category")
+        print("  values, with no names, places, dates, contact details or other identifiers.")
+    free = [d for d in decisions if d["free_text"] and d["action"] != "keep"]
+    if free:
+        print("\n  Free text, redacted and never kept (a name inside a sentence has no pattern to find): "
+              + names(free))
+    uncertain = [d for d in decisions if d["kind"] == "uncertain" and d["action"] != "keep"
+                 and not d["free_text"]]
     if uncertain:
-        print("\n  Redacted or changed because the scanner cannot vouch for them: " + ", ".join(uncertain))
+        print("\n  Redacted or changed because the scanner cannot vouch for them: " + names(uncertain))
         print("  Keep one only after the person confirms it holds no identifiers (--keep COLUMN).")
-    kept = [display_name(d, withheld) for d in decisions if d["action"] == "keep"]
+    kept = [d for d in decisions if d["action"] == "keep"]
     if kept:
-        print("  Kept (identifier patterns inside them are replaced): " + ", ".join(kept))
-    text = kept_text_columns(decisions)
-    if text:
-        print("  Kept text the scanner cannot fully check for names (a name in lower case, initials or")
-        print("  a short all-capital name, a single word under a category column such as diagnosis, a")
-        print("  surname or a one-word town, or a place under a state or country column): "
-              + ", ".join(display_name(d, withheld) for d in text))
-        caseless = [d for d in text if d.get("caseless")]
+        print("  Kept (identifier patterns inside them are replaced): " + names(kept))
+    verified = [d for d in kept_text_columns(decisions) if d.get("verified")]
+    if verified:
+        print("  Kept text the script verified (every value a number, a code, a date, a common category")
+        print("  word such as a sex, a race or yes and no, or a state or country name): " + names(verified))
+    on_word = kept_unverified_columns(decisions)
+    if on_word:
+        print("  Kept on the person's word: " + names(on_word))
+        print("  " + KEPT_TEXT_WARNING)
+        caseless = [d for d in on_word if d.get("caseless")]
         if caseless:
             print("  Of these, text in a script without capital letters (Chinese, Japanese, Korean, Arabic,")
-            print("  Hebrew, Hindi, Thai, ...), where a name inside a longer value is not found: "
-                  + ", ".join(display_name(d, withheld) for d in caseless))
-        print("  Ask the person to confirm these hold no names, places or other identifiers.")
+            print("  Hebrew, Hindi, Thai, ...), where not even a titled name inside a longer value is certain")
+            print("  to be found: " + names(caseless))
+
+
+KEPT_TEXT_WARNING = ("Kept text is scrubbed for identifier patterns only (phone and fax numbers, email "
+                     "and web addresses, ID and record numbers, dates, street addresses, IP addresses, "
+                     "titled names): a name, a place or another identifier with no pattern stays in it, "
+                     "so the person must spot-check these columns before the data leaves the institution.")
 
 
 def kept_text_columns(decisions: list[dict]) -> list[dict]:
-    """Kept columns holding text, including state and country columns: their values are
-    not checked for the shape of a name or a place, so the person confirms each one."""
+    """Kept columns holding text, verified or kept on the person's word."""
     return [d for d in decisions if d["action"] == "keep" and d.get("text")]
+
+
+def kept_unverified_columns(decisions: list[dict]) -> list[dict]:
+    """Text columns kept on request that the script could not verify: kept on the person's
+    word, scrubbed for patterns only, and named again for the person's spot-check."""
+    return [d for d in kept_text_columns(decisions) if d["kept_on_request"] and not d.get("verified")]
 
 
 def load_input(path: Path, scrubber: Scrubber):
@@ -2159,23 +2621,34 @@ def cmd_run(args) -> int:
              "name_withheld": d["index"] in withheld,
              "finding": d["finding"], "action": d["action"],
              "kept_on_request": d["kept_on_request"], "redacted_on_request": d["forced_redaction"],
-             "text": d["text"], "cells_changed": changed.get(d["column"], 0)}
+             "text": d["text"], "verified": bool(d.get("verified")),
+             "needs_decision": d["kind"] == "unverified" and not d["kept_on_request"],
+             "cells_changed": changed.get(d["column"], 0)}
             for d in decisions
         ],
         "residual_check": {
             "clean": not residual,
             "findings": [{**f, "column": None if f["index"] in withheld else f["column"]} for f in residual],
         },
+        "columns_needing_decision": [
+            {"index": d["index"], "column": None if d["index"] in withheld else d["column"]}
+            for d in decisions if d["kind"] == "unverified" and d["action"] != "keep"
+        ],
         "kept_text_columns": [
             {"index": d["index"], "column": None if d["index"] in withheld else d["column"],
-             "kept_on_request": d["kept_on_request"], "script_without_case": bool(d.get("caseless"))}
+             "kept_on_request": d["kept_on_request"], "verified": bool(d.get("verified")),
+             "script_without_case": bool(d.get("caseless"))}
             for d in kept_text_columns(decisions)
         ],
-        "kept_text_note": ("Kept text columns can hold names the scanner cannot see (lower case, initials, "
-                           "a short all-capital name, a single word under a category column such as a "
-                           "surname or a one-word town, a place under a state or country column, a name "
-                           "inside a longer value in a script without capital letters); the person "
-                           "confirms each one holds no identifiers."),
+        "kept_unverified_text_columns": [
+            {"index": d["index"], "column": None if d["index"] in withheld else d["column"],
+             "script_without_case": bool(d.get("caseless"))}
+            for d in kept_unverified_columns(decisions)
+        ],
+        "kept_text_note": ("A default run keeps only text it verifies: every value a number, a code, a "
+                           "date, a common category word or a state or country name. Text the person "
+                           "kept with --keep (kept_unverified_text_columns) was not verified. " +
+                           KEPT_TEXT_WARNING),
         "mapping_written": False,
         "human_review": ("Automated de-identification is not a Safe Harbor determination. A person "
                          "must spot-check the output, confirm that no remaining information could "
@@ -2226,10 +2699,16 @@ def cmd_run(args) -> int:
     report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print("\nResidual check passed: the output was scanned again and no identifier pattern or "
           "shape was found. This is a pattern check, not proof that the data is de-identified.")
-    text = kept_text_columns(decisions)
-    if text:
-        print(f"Kept text columns the person must confirm hold no names or places ({len(text)}): "
-              + ", ".join(display_name(d, withheld) for d in text))
+    on_word = kept_unverified_columns(decisions)
+    if on_word:
+        print(f"Kept on the person's word, scrubbed for patterns only ({len(on_word)}): "
+              + ", ".join(display_name(d, withheld) for d in on_word))
+        print(KEPT_TEXT_WARNING)
+    pending = [d for d in decisions if d["kind"] == "unverified" and d["action"] != "keep"
+               and not d["forced_redaction"]]
+    if pending:
+        print(f"Redacted as text the script cannot verify ({len(pending)}); keep one with --keep "
+              "COLUMN once the person confirms it: " + ", ".join(display_name(d, withheld) for d in pending))
     print(f"Output: {out_path}")
     print(f"Report: {report_path}")
     if mapping_path is not None:
