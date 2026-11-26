@@ -1658,7 +1658,7 @@ class FailClosedTextColumns(unittest.TestCase):
             flags = probe(self.tmp, "grammar", [(header, bare)])[0][1]
             self.assertEqual([w for w, f in zip(bare, flags) if f], [], header)
         codes = {
-            "Col1": ["E11.9", "J45.909", "C34.90", "V45.81", "E880.9", "2345-7", "14682-9", "718-7",
+            "Col1": ["E11.9", "J45.909", "C34.90", "V45.81", "E880.9",
                      "rs113488022", "ENSG00000141510", "ENSG00000146648.18", "NM_004333.6",
                      "NM_001126112.3", "c.35G>A", "p.V600E", "p.(Arg248Gln)", "c.5266dupC",
                      "NM_004333.6(BRAF):c.1799T>A", "g.140453136A>T", "T2N0M0", "pT1aN1bM0", "T3", "N1",
@@ -1668,12 +1668,16 @@ class FailClosedTextColumns(unittest.TestCase):
             "Stage": ["IIIA", "IV", "II", "0", "2a"], "TNM": ["Tis", "Tx", "Nx", "Mx"],
             "Blood Type": ["A", "B", "AB", "O"], "Dx Code": ["I10", "E119", "S72001A"],
             "ATC Code": ["C10AA05", "A10BA02", "N02BE01"], "Mutation": ["V600E", "G12D", "L858R", "T790M"],
+            "LOINC Code": ["2345-7", "14682-9", "718-7"], "Lab Test": ["2345-7", "14682-9", "718-7"],
         }
         for header, flags in probe(self.tmp, "grammar", list(codes.items())):
             self.assertEqual([v for v, f in zip(codes[header], flags) if not f], [], header)
-        # A check digit that does not match is not a LOINC code; record numbers rarely pass.
-        flags = probe(self.tmp, "grammar", [("Col1", ["2345-6", "14682-1", "48213-7"])])[0][1]
-        self.assertEqual(flags, [False, False, False])
+        # A check digit that does not match is not a LOINC code. Round 5: a LOINC code counts only under a
+        # column name that names a LOINC code, a lab, a test or an observation, because record numbers
+        # often carry the same mod 10 check digit.
+        flags = probe(self.tmp, "grammar", [("LOINC Code", ["2345-6", "14682-1", "48213-7"]),
+                                            ("Col1", ["2345-7", "14682-9", "718-7"])])
+        self.assertEqual([f for _, f in flags], [[False, False, False], [False, False, False]])
         # Subject numbers shaped like short ICD codes are codes only under a diagnosis name,
         # and letters after the dot of an ICD-10 code need a digit.
         flags = probe(self.tmp, "grammar", [("Subject Code", ["S01", "P012", "A101", "K12.ALIC", "T12.ABC"])])[0][1]
@@ -1766,7 +1770,8 @@ class FailClosedTextColumns(unittest.TestCase):
         header = list(cols)
         rows = [[cols[h][(i + k) % len(cols[h])] for k, h in enumerate(header)] for i in range(150)]
         raw = write_csv(self.tmp / "clinical30.csv", header, rows)
-        unverified = ["Diagnosis", "Drug", "Site", "Primary Site", "Treatment Arm", "Visit"]
+        # Round 5: Visit Date keeps its year, so Visit Number (1 to 4) beside it is a possible date element.
+        unverified = ["Diagnosis", "Drug", "Site", "Primary Site", "Treatment Arm", "Visit", "Visit Number"]
         expected = {h: "keep" for h in header}
         expected.update({h: "redact" for h in unverified + ["Notes"]})
         expected["Visit Date"] = "year"
@@ -3013,7 +3018,7 @@ Tên|İsim|Ad|フリガナ|ふりがな|Kana|Pinyin|Romaji|Romanized|Ten|Nama|Is
 Jina|Hasta Adı|Nama Pasien|Paciente|Pacjent|Pasient|Patientnavn|Potilas|Pacient|Policy Holder|Bearer|Head|Owner|
 Teacher|Relation|Related|Associate|Co-signer|Responsible Party|Stepdaughter|Godmother|Lodger|Examinee|Attendee|
 Primary Mom|Second Guardian|Patient's Twin|Contact 2|Hermana|Ehefrau|Moglie|Fiancee|Twin Info|Witness Details|
-Contact 1st|Proxy Other|Guardian Primary|Customer Data""".replace("\n", "").split("|")
+Contact 1st|Proxy Other|Guardian Primary|Customer Data|Department Head""".replace("\n", "").split("|")
     PLACES_AND_THINGS = """Dirección|Adresse|Anschrift|Straße|Rue|Calle|住所|주소|Адрес|Avenue|Road|Apt|Suite|Courriel|
 Correo|Mobil|電話|전화|Телефон|メール|이메일|邮箱|Foto|Imagen|Matricula|Kennzeichen|Targa|车牌|Domain|Hostname|Plate|
 Device|Link|Web|Image|Face|Voice|Company|School|Church|Home|Indirizzo|Endereço|Adres|Notes|Comments|Note|Remarks|
@@ -3029,7 +3034,7 @@ Attending|Referring Physician|Referral|Hospital|Clinic|Unit|Ward|Department|Loca
 Organism|Histology|Outcome|Disposition|Result|Value|Col6|Comorbidity|Allergy|Language|Religion|Occupation|Specimen Type|
 Gene Symbol|Lab Test|Antibiotic|Symptom|Chief Complaint|Diagnosis Description|Cause of Death|Study Site|Cohort|Group|
 Category|Family History|Contact Method|Discharge Destination|Ward Name|Nurse|Pharmacist|Technician|Mutational Signature|
-Questionnaire Domain|Assay Plate|Department Head""".replace("\n", "").split("|")
+Questionnaire Domain|Assay Plate""".replace("\n", "").split("|")
 
     def test_keep_is_refused_for_columns_named_for_people_places_records_and_notes_in_any_language(self):
         names = self.NAMES * 3
@@ -3289,6 +3294,441 @@ Questionnaire Domain|Assay Plate|Department Head""".replace("\n", "").split("|")
         ok = run("verify", str(self.tmp / "out" / "clinical30_r4_deidentified.csv"), "--reference-year",
                  REFERENCE_YEAR)
         self.assertEqual(ok.returncode, 0, ok.stdout + ok.stderr)
+
+
+class NumbersColumnNamesCodesAndKeepOfRoundFive(unittest.TestCase):
+    """Round 5 of the fail-closed review (2026-11-25, 1.0.1): numbers and column names, where the script
+    still decided by shape. A week or a day of the year beside a year; record numbers and dates written in
+    groups or with a two-digit year in a column name; code grammars with an open part; and --keep under a
+    person word that is not clinical or care staff. Each test generates many header variants and value
+    shapes of the kind the review found. Every name, number, date and place here is invented."""
+
+    NAMES = ["Quillmont Ana", "Okerbrae Joao", "Varnstead Lia", "Delmorrow Rui", "Fintally Mae",
+             "Graywick Ines", "Haskenvale Teo", "Lorrimere Sol"]
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="safe_harbor_test_"))
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def run_file(self, path: Path, *extra: str) -> tuple[subprocess.CompletedProcess, list[dict], dict]:
+        out_dir = self.tmp / "out"
+        if out_dir.exists():
+            shutil.rmtree(out_dir)
+        p = run("run", str(path), "-o", str(out_dir), "--reference-year", REFERENCE_YEAR, *extra)
+        out = out_dir / f"{path.stem}_deidentified{path.suffix}"
+        report = out_dir / "deidentification_report.json"
+        return (p, read_rows(out) if out.exists() else [],
+                json.loads(report.read_text(encoding="utf-8")) if report.exists() else {})
+
+    WEEK_NAMED = """Wk|Week|Epi Wk|Epi Week|Sample Week|Admit Week|Weeknum|Week No|Week Number|ISO Wk|Epiweek|MMWR Week|
+Semana|Woche|Semaine|Settimana|Hafta|Tydzien|Tydzień|Minggu|Viikko|Vecka|周|週|주|неделя|أسبوع|Wk of Dx|Dx Week|
+Admit Wk|Onset Week|Event Week|Visit Week|Calendar Week|KW""".replace("\n", "").split("|")
+    NEUTRAL = """W|Col3|Z|V4|Value|Result|Group|Col2|Period|Interval|Field 7|X|Q9|Var 3|Wochen|Item|Entry|Seen|Code|
+Stratum|Cluster|Bin""".replace("\n", "").split("|")
+
+    # Medium (two findings): a week of the year (1 to 53) beside a year column was kept verbatim under
+    # every name but a few full phrases, and a day of the year (1 to 366) kept every value under 90.
+    def test_weeks_and_days_of_the_year_beside_a_year_are_redacted(self):
+        import random
+        rng = random.Random(51)
+        n = 120
+        years = [str(rng.randrange(2005, 2024)) for _ in range(n)]
+        year_forms = [("Year", years), ("Admit Year", years), ("Dx Yr", [y[2:] for y in years]),
+                      ("Col1", years), ("Visit Date", [f"{y}-0{1 + i % 9}-1{i % 9}" for i, y in enumerate(years)])]
+
+        def weeks(kind: int) -> list[str]:
+            if kind == 0:
+                return [str(1 + (i * 7) % 53) for i in range(n)]
+            if kind == 1:  # a few missing-value codes
+                return [str(1 + (i * 5) % 52) if i % 17 else "99" for i in range(n)]
+            return [str(rng.randrange(1, 54)) for _ in range(n)]
+        tables = []
+        for k, h in enumerate(self.WEEK_NAMED + self.NEUTRAL):
+            yh, yv = year_forms[k % len(year_forms)]
+            tables.append([(yh, yv), (h, weeks(k % 3)), ("Sex", ["F", "M"] * (n // 2))])
+        for table, result in zip(tables, table_probe(self.tmp, tables)):
+            actions = dict(result)
+            self.assertNotIn(actions[table[1][0]], ("keep", "age"), [h for h, _ in table])
+            self.assertEqual(actions["Sex"], "keep")
+        # A day of the year beside a year is redacted, not grouped as ages (which kept every value under 90).
+        doy = [str(1 + (i * 37) % 366) for i in range(n)]
+        tables = [[(yh, yv), (h, doy)] for h in ("Col2", "Value", "Result", "Seen", "Day", "Q", "Entry", "Ordinal")
+                  for yh, yv in year_forms[:3]]
+        for table, result in zip(tables, table_probe(self.tmp, tables)):
+            self.assertEqual(dict(result)[table[1][0]], "redact", [h for h, _ in table])
+        # Named for a week, a column is redacted without a year too (0 to 53, as %U writes it); under a
+        # neutral name, numbers covering most of the 53 weeks are.
+        alone = [(h, [str((i * 3) % 54) for i in range(n)]) for h in self.WEEK_NAMED]
+        alone += [(h, [str(1 + (i * 11) % 53) for i in range(n)]) for h in ("Col3", "Value", "Z", "X")]
+        alone += [(h, [str((i * 11) % 54) for i in range(n)]) for h in ("Col3", "Value", "Z", "X")]
+        alone += [(h, [str(1 + (i * 37) % 366) for i in range(300)]) for h in ("Col2", "Value", "Result")]
+        self.assertEqual([h for h, a, _ in probe(self.tmp, "decide", alone) if a in ("keep", "age")], [])
+        # Measurements beside a year stay: vital signs, labs, scores, plural durations, counts and numbers with 0.
+        controls = [("Admit Year", years), ("Heart Rate", [str(55 + i % 60) for i in range(n)]),
+                    ("Sodium", [str(130 + i % 15) for i in range(n)]), ("Systolic BP", [str(95 + i % 90) for i in range(n)]),
+                    ("SpO2", [str(88 + i % 12) for i in range(n)]), ("Glucose", [str(70 + (i * 13) % 250) for i in range(n)]),
+                    ("Pain Score", [str(1 + i % 10) for i in range(n)]), ("Weeks", [str(1 + i % 40) for i in range(n)]),
+                    ("Gestational Weeks", [str(20 + i % 22) for i in range(n)]), ("LOS (days)", [str(1 + i % 60) for i in range(n)]),
+                    ("Number of Visits", [str(1 + i % 30) for i in range(n)]), ("ECOG", [str(i % 5) for i in range(n)]),
+                    ("Comorbidities", [str(i % 6) for i in range(n)]), ("eGFR", [str(15 + (i * 9) % 105) for i in range(n)]),
+                    ("Interval (days)", [str(1 + i % 40) for i in range(n)]), ("Week 4 Pain Score", [str(i % 11) for i in range(n)])]
+        self.assertEqual([h for h, a in table_probe(self.tmp, [controls])[0] if a != "keep"], [])
+        # End to end: the review's table. No week is written, the plan says why, and verify catches a
+        # written week of the year.
+        rows = [[years[i], str(1 + (i * 7) % 53), ["F", "M"][i % 2]] for i in range(n)]
+        raw = write_csv(self.tmp / "weeks.csv", ["Admit Year", "Admit Week", "Sex"], rows)
+        p, out, report = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual({r["Admit Week"] for r in out}, {"[REDACTED]"})
+        self.assertEqual([r["Admit Year"] for r in out], years)
+        self.assertIn("date element", p.stdout)
+        self.assertEqual([d["column"] for d in report["columns_needing_decision"]], ["Admit Week"])
+        written = write_csv(self.tmp / "written.csv", ["Year", "Q4", "Sex"], rows)
+        p = run("verify", str(written), "--reference-year", REFERENCE_YEAR)
+        self.assertEqual(p.returncode, 3, p.stdout + p.stderr)
+        # The person can keep it on their word.
+        p, out, report = self.run_file(raw, "--keep", "Admit Week")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual([d["column"] for d in report["kept_unverified_columns"]], ["Admit Week"])
+
+    # Medium: a record number written into a column name in groups with spaces or underscores was shown,
+    # reported and copied to the output.
+    def test_record_numbers_written_in_groups_in_column_names_are_refused(self):
+        import random
+        rng = random.Random(52)
+        templates = ["Patient {}", "Pt {}", "ID {}", "Weight {}", "Sample {}", "{} Visit", "Chart_{}", "Subject {}",
+                     "MRN {}", "Lab {} Result", "Hb {}", "Col {}", "Case {}", "患者{}", "{}"]
+        loose = [" ", "_", "  ", " _ ", "'", " ' ", ":", ") ", " #", "+"]
+        rows, numbers = [], []
+        for t in templates:
+            for _ in range(6):
+                digits = str(rng.randrange(10 ** 4, 10 ** 10))
+                parts, rest = [], digits
+                while rest:
+                    k = rng.randrange(1, 5)
+                    parts.append(rest[:k])
+                    rest = rest[k:]
+                if len(parts) < 2:
+                    parts = [digits[:2], digits[2:]]
+                sep = rng.choice(loose) if len(parts) == 2 else rng.choice(loose + ["-", ".", ",", "/", " - "])
+                numbers.append(sep.join(parts))
+                rows.append(["Diagnosis", t.format(numbers[-1]), "Sex"])
+        self.assertEqual([r[1] for r, res in zip(rows, header_probe(self.tmp, rows)) if res != "refused"], [])
+        # Ordinary numbers in a column name are still shown.
+        ordinary = ["Col1", "TP53", "Q3", "2nd Dose", "Visit 2021", "Year 2020", "Week 104", "Day 28", "IL-6",
+                    "CA 19-9", "CA 15-3", "Col 4527", "HbA1c (%)", "pH 7.40", "BMI 18.5-24.9", "Temp 37.5-38.5",
+                    "Glucose 70-100", "BP 120/80", "2019-2020", "CD4 2020", "HbA1c 2021", "Score 0-10", "Grade 3/4",
+                    "PHQ-9", "Version 1.2.3", "Dose 2.5 mg", "Visit 1 2", "Week 12-24", "COVID-19 Vaccine 2"]
+        results = header_probe(self.tmp, [["Diagnosis", h, "Sex"] for h in ordinary])
+        self.assertEqual([h for h, res in zip(ordinary, results) if res != []], [])
+        # End to end: nothing of the numbers is printed or written, and --keep-all-names does not override.
+        header = ["Measure", "Patient 376 7393", "Pt 37 67 393", "Patient 37_67_393", "ID 12 34 56 78", "Weight 12 345"]
+        raw = write_csv(self.tmp / "wide.csv", header, [[f"m{k}"] + [str(40 + k)] * 5 for k in range(12)])
+        for extra in ((), ("--keep-all-names",)):
+            p = run("plan", str(raw), *extra)
+            self.assertEqual(p.returncode, 2, p.stdout + p.stderr)
+            for h in header[1:]:
+                self.assertNotIn(h.split(" ", 1)[1], p.stdout + p.stderr)
+        p, out, report = self.run_file(raw)
+        self.assertEqual(p.returncode, 2, p.stdout + p.stderr)
+        self.assertFalse((self.tmp / "out").exists() and any((self.tmp / "out").iterdir()))
+
+    # Medium: a date written into a column name with a two-digit year or a month and a day was shown and
+    # copied to the output.
+    def test_dates_in_column_names_with_two_digit_years_or_days_are_never_shown(self):
+        import random
+        rng = random.Random(53)
+        months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Sept", "Oct", "Nov", "Dec",
+                  "March", "October", "Ene", "Abr", "Dic", "Janv", "Mrz", "Okt", "Dez", "Juin", "Mai"]
+        prefixes = ["", "Visit ", "Lab ", "WBC ", "HbA1c ", "Hb_", "Weight ", "Dx "]
+        separated, compact = [], []
+        for _ in range(140):
+            m = rng.choice(months)
+            m = rng.choice([m, m.lower(), m.upper()])
+            num = f"{rng.randrange(0, 100):02d}" if rng.random() < 0.5 else str(rng.randrange(1, 32))
+            p = rng.choice(prefixes)
+            sep = rng.choice(["-", " ", "/", ".", "'", " - ", "_"])
+            separated.append(p + (f"{m}{sep}{num}" if rng.random() < 0.6 else f"{num}{sep}{m}"))
+            compact.append(p + (f"{m}{num}" if rng.random() < 0.6 else f"{num}{m}"))
+        numeric = ["03/14", "3/14", "14/3", "12/24/20", "3-14-21", "03-14", "14-03-21", "14.3.", "03.14", "1/13",
+                   "Visit 03/14", "Lab 3/14", "WBC 14/3", "Hb 03-14", "Score 10.03.21", "Day 3/14/2021"]
+        quarters = ["Q1 20", "Q1 2020", "2020Q1", "Q3-21", "Q4'19", "1Q20", "2021 Q2", "Lab Q2 21", "q1_2020",
+                    "Q2 of 2020", "1st Quarter 2020", "Quarter 2 2021", "Qtr 3 '21"]
+        weeks = ["Wk 12 2020", "Week 12 2020", "W12 2020", "2020-W12", "2020W05", "Week 12, 2021", "Wk 3/2019",
+                 "2021 Week 7", "Visit W40 2020"]
+        refused = separated + numeric + quarters + weeks
+        results = header_probe(self.tmp, [["Diagnosis", h, "Sex"] for h in refused])
+        self.assertEqual([h for h, res in zip(refused, results) if res != "refused"], [])
+        # Joined with no separator, a month abbreviation and one or two digits is also the shape of a gene
+        # symbol (OCT4, SEPT9, DEC1): never shown, withheld rather than refused.
+        results = header_probe(self.tmp, [["Diagnosis", h, "Sex"] for h in compact])
+        self.assertEqual([h for h, res in zip(compact, results) if res != "refused" and 2 not in res], [])
+        genes = ["OCT4", "Oct4", "SEPT9", "DEC1", "MARCH5", "NOV", "Mar19", "Sep12", "Jan20",
+                 # A month name as a word of its own names the month of each person's measurement.
+                 "Weight March", "June Visit", "Visit May", "Lab Oct", "Marzo"]
+        self.assertEqual(header_probe(self.tmp, [["Diagnosis", g, "Sex"] for g in genes]), [[2]] * len(genes))
+        # Ordinary names with a number are still shown.
+        shown = ["Q3", "Q10", "Q123", "Week 12", "Week 104", "Week 12-24", "Grade 3/4", "Score 3/10", "Marker 2",
+                 "Sepsis 3", "Apgar 5", "Decline 2", "Visit 12", "Month 6", "Day 14", "Junior 2", "Dose 1/2"]
+        results = header_probe(self.tmp, [["Diagnosis", h, "Sex"] for h in shown])
+        self.assertEqual([h for h, res in zip(shown, results) if res != []], [])
+        # End to end: a wide export of monthly labs is refused without printing a name, and a gene symbol
+        # is shown once the person confirms it by position.
+        raw = write_csv(self.tmp / "monthly.csv", ["Diagnosis", "WBC Mar-19", "WBC Apr-19", "Sex"],
+                        [["Asthma", "6.1", "5.9", "F"]] * 10)
+        p = run("plan", str(raw))
+        self.assertEqual(p.returncode, 2, p.stdout + p.stderr)
+        self.assertNotIn("Mar-19", p.stdout + p.stderr)
+        raw = write_csv(self.tmp / "genes.csv", ["Diagnosis", "OCT4", "Sex"], [["Asthma", "6.1", "F"]] * 10)
+        p, out, report = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertNotIn("OCT4", p.stdout + json.dumps(report) + json.dumps(out))
+        p, out, report = self.run_file(raw, "--keep-name", "#2")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual([r["OCT4"] for r in out], ["6.1"] * 10)
+
+    # Medium: code grammars with an open part let prefixed record numbers pass verbatim under any column name.
+    def test_code_grammars_accept_only_exact_published_shapes(self):
+        import random
+        rng = random.Random(54)
+
+        def ids(prefix: str, lo: int, hi: int, k: int = 8) -> list[str]:
+            return [f"{prefix}{rng.randrange(10 ** (d - 1), 10 ** d)}" for d in
+                    (rng.randrange(lo, hi + 1) for _ in range(k))]
+        shapes = {
+            "upper and mixed-case rs": ids("RS", 1, 11) + ids("Rs", 3, 9) + ids("rS", 3, 9),
+            "rs with a leading zero or eleven digits": ["rs0" + x[2:] for x in ids("rs", 5, 8)] + ids("rs", 11, 12),
+            "RefSeq of the wrong length": [f"{p}_{rng.randrange(10 ** (d - 1), 10 ** d)}" for p in ("NM", "NR", "XM", "XP",
+                                           "NP", "XR") for d in (5, 7, 8, 10)],
+            "Ensembl of the wrong length": ids("ENSG", 10, 10) + ids("ENST", 12, 12) + ids("ENSP", 9, 9),
+            "ICD-10 with a letter third or in lower case": ["H8Q.600", "T3L.K9", "B7Z.12", "Q4X.1", "e11.9", "j45.909",
+                                                           "K1A.22", "A0B.1"],
+            "ICD-9 E codes outside their ranges": ["E456.8", "E321.4", "E700.1", "E031.0", "E099.1", "E512.3"],
+            "ICD-10 categories past their chapter's last": ["E95.1", "H99.2", "T90.1", "D95.0", "K99.1", "P99.2"],
+            "HGVS of a base by itself": ["c.722478C>C", "c.12345A>A", "g.140453136T>T", "c.35G>G"],
+            "a mod 10 check digit": [f"{n}-{_luhn(str(n))}" for n in range(452783, 452813)],
+        }
+        headers = ["Col1", "Value", "Ref", "Code", "Seen", "Entry", "Result", "Measure", "Key", "Encounter", "Specimen"]
+        columns = [(h, values * 4) for values in shapes.values() for h in headers]
+        decided = probe(self.tmp, "decide", columns)
+        self.assertEqual([(h, a) for (h, _), (_, a, _) in zip(columns, decided) if a == "keep"], [])
+        for name, values in shapes.items():
+            flags = probe(self.tmp, "grammar", [("Col1", values)])[0][1]
+            self.assertEqual([v for v, f in zip(values, flags) if f], [], name)
+        # The exact published shapes are codes under any column name; LOINC under a LOINC, lab or test name.
+        exact = ["rs113488022", "rs7412", "rs1570391677", "ENSG00000141510", "ENST00000269305.4", "ENSMUSG00000059552",
+                 "NM_004333.6", "NP_000537.3", "XM_011523456.2", "NC_000007.14:g.140453136A>T", "NG_007726.3",
+                 "E11.9", "C4A.9", "Z3A.20", "M1A.071", "O9A.111", "C7B.00", "T88.7", "J45.909", "S72.001A", "V45.81",
+                 "E880.9", "E001.0", "c.35G>A",
+                 "p.V600E"]
+        flags = probe(self.tmp, "grammar", [("Col1", exact)])[0][1]
+        self.assertEqual([v for v, f in zip(exact, flags) if not f], [])
+        loinc = ["2345-7", "14682-9", "718-7", "2160-0"]
+        flags = probe(self.tmp, "grammar", [(h, loinc) for h in ("LOINC", "Lab Test", "Test Code", "Observation",
+                                                                  "Col1", "Code", "Ref")])
+        self.assertEqual([all(f) for _, f in flags], [True] * 4 + [False] * 3)
+        # End to end: record numbers with the RS prefix repeating over visits are not written, and in kept
+        # text an upper-case RS number is replaced while an rsID stays.
+        mrns = ids("RS", 7, 7, 10)
+        rows = [[mrns[i % 10], ["rs7412 and RS4527832 noted", "rs429358 seen"][i % 2], "F"] for i in range(40)]
+        raw = write_csv(self.tmp / "rs.csv", ["Ref", "Finding", "Sex"], rows)
+        p, out, report = self.run_file(raw, "--keep", "Finding")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        written = json.dumps(out)
+        for m in mrns + ["RS4527832"]:
+            self.assertNotIn(m, written)
+        self.assertIn("rs7412", written)
+        self.assertIn("rs429358", written)
+
+    PERSON_HEADS = """Who|Case|Cases|Index Case|Controls|Reporter|Author|Signer|Signatory|Agent|Advocate|Chaplain|Courier|
+Manager|Supervisor|Director|Principal|Officer|Rep|Referrer|Kind|Responsable|Tía|Tío|Requester|Endorser|Deceased|
+Enrolled|Referred By|Referred_By|Interpreter|Inpatient|Outpatient|Department Head|Investigator|Coordinator|Reviewer|
+Rater|Seen By|Signed By|Visit With|Assigned To|Lab Sign-off|Scribe|Navigator|Social Worker|Case Manager|Nurse Manager|
+Witness|Teacher|Insurance Agent|Study Coordinator|Principal Investigator|Recorder|Abstractor|Translator|Primary Reporter|
+Reporter 2|Author Info|Visit Reporter|Treatment Author|Test Reader|Ward Charge Manager|Unit Supervisor|Group Admin Officer|
+Sponsor|Monitor|Team|Care Team|Owner|Lead|Chief|Examiner|Assessor|Observer|Interviewer|Volunteer|Employee|Statistician|
+Receptionist|Paramedic|Clerk|Secretary|Analyst|Consultant|Prof|Mentor|Referee|Group Admin|Unit Charge|Ward Charge|
+Referring|Ordering|Admitting|Treating|Consulting|Diagnosing""".replace("\n", "").split("|")
+    STAFF_HEADS = """Physician|Physicians|Doctor|Dr|MD|Nurse|RN|NP|Surgeon|Clinician|Provider|Attending|Attending Physician|
+Resident Physician|Fellow|Intern|Pharmacist|Therapist|Physical Therapist|Respiratory Therapist|Physiotherapist|
+Technician|Lab Technician|Tech|Technologist|Midwife|Referring Physician|Ordering Provider|PCP|Radiologist|Psychiatrist|
+Physician Assistant|Nurse Practitioner|Médecin|Arzt|Enfermera|Surgeon 2|Primary Nurse|Charge Nurse|Seen By Physician|
+Ward Resident|
+Chemotherapy Agent|Femoral Head|Holter Monitor|Diagnosis|Hospital|Site|Ward|Clinic|Patient Status|Patient Type|
+Provider Specialty|Referral|Payer|Insurer""".replace("\n", "").split("|")
+
+    # Medium (and a low of the same kind): --keep was accepted for columns named for someone who is not
+    # clinical staff (Who, Case, Reporter, Author, Signer, Manager, Director, Officer, Rep, Kind, Tía, ...).
+    def test_keep_under_a_person_word_is_accepted_only_for_clinical_and_care_staff(self):
+        names = self.NAMES * 3
+        columns = [(h, names) for h in self.PERSON_HEADS] + [(h, names) for h in self.STAFF_HEADS]
+        results = keep_probe(self.tmp, columns)
+        refused = len(self.PERSON_HEADS)
+        self.assertEqual([h for h, outcome, _ in results[:refused] if outcome != "refused"], [])
+        for (h, _), (_, outcome, message) in zip(columns[:refused], results[:refused]):
+            self.assertIn("cannot be kept", message, h)
+            for v in names:
+                self.assertNotIn(v, message)
+        self.assertEqual([(h, m[:120]) for h, outcome, m in results[refused:] if outcome != "kept"], [])
+        # Numbers and codes under a person word can still be kept (a case or a subject number).
+        codes = keep_probe(self.tmp, [(h, ["S-014", "S-015", "1001", "1002"] * 5) for h in ("Case", "Who", "Reporter",
+                                                                                              "Controls")])
+        self.assertEqual([o for _, o, _ in codes], ["kept"] * 4)
+        # End to end: the plan lists the column apart, --keep exits 2, and no name is printed.
+        rows = [["Asthma", names[i], names[i + 1], "F"] for i in range(20)]
+        raw = write_csv(self.tmp / "roles.csv", ["Diagnosis", "Reporter", "Physician", "Sex"], rows)
+        plan = run("plan", str(raw))
+        self.assertEqual(plan.returncode, 0, plan.stdout + plan.stderr)
+        tail = plan.stdout.split("cannot be kept under their names", 1)
+        self.assertEqual(len(tail), 2, plan.stdout)
+        self.assertIn("Reporter", tail[1].split("\n\n", 1)[0])
+        p, out, report = self.run_file(raw, "--keep", "Reporter")
+        self.assertEqual(p.returncode, 2, p.stdout + p.stderr)
+        self.assertIn("clinical or care staff", p.stderr)
+        for v in names:
+            self.assertNotIn(v, p.stdout + p.stderr + plan.stdout)
+        p, out, report = self.run_file(raw, "--keep", "Physician", "--keep", "Diagnosis")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual([d["column"] for d in report["kept_unverified_columns"]], ["Diagnosis", "Physician"])
+        self.assertEqual({r["Reporter"] for r in out}, {"[REDACTED]"})
+
+    # Lows of round 5 that were cheap and safe to fix.
+    def test_smaller_gaps_of_round_five(self):
+        # Short surnames that are also column words are withheld alone, and shown beside another column word.
+        alone = ["Das", "Fu", "Du", "Do", "Lo", "Da", "Di", "De", "La", "Kin", "Nam", "Son", "Man", "Max", "Pat",
+                 "Tod", "Sin", "Tin", "Spring", "Hay", "Best", "Al", "Ed", "Val", "Kit"]
+        self.assertEqual(header_probe(self.tmp, [["Diagnosis", h, "Sex"] for h in alone]), [[2]] * len(alone))
+        beside = ["Max Temp", "Pat No", "Best Response", "Next Kin", "Spring Visit", "LOS", "Day", "Case", "Gene"]
+        self.assertEqual(header_probe(self.tmp, [["Diagnosis", h, "Sex"] for h in beside]), [[]] * len(beside))
+        # A fiscal year is a year; ordinary clinical words are column words and can be kept.
+        words = ["FY2022 Cost", "FY2020", "FY 2021", "Haplotype", "Karyotype", "HPO Terms", "Chemotherapy",
+                 "Adherence", "Compliance", "Seriousness", "Prosthesis", "Income Bracket", "Urbanicity", "Rurality",
+                 "Sx", "Pregnancy", "Menopause", "Split", "Fold", "Feature3"]
+        self.assertEqual(header_probe(self.tmp, [["Diagnosis", h, "Sex"] for h in words]), [[]] * len(words))
+        kept = keep_probe(self.tmp, [(h, ["Alpha", "Beta", "Gamma"] * 4) for h in words[3:]])
+        self.assertEqual([h for h, o, _ in kept if o != "kept"], [])
+        # A public accession in a column name is refused, and shown when the person confirms it by position.
+        accessions = ["GSM1234567", "SRR1234567", "TCGA-02-0001", "ILMN_1234567", "cg12345678", "LOC100132062",
+                      "CHEMBL123456", "GO:0008150", "HMDB0000001", "C00031", "P04637", "R-HSA-109582", "PRJNA123456",
+                      "NCT01234567"]
+        for acc in accessions:
+            raw = write_csv(self.tmp / "acc.csv", ["Diagnosis", acc, "Sex"], [["Asthma", "2.5", "F"]] * 5)
+            p = run("plan", str(raw))
+            self.assertEqual(p.returncode, 2, (acc, p.stdout + p.stderr))
+            self.assertNotIn(acc, p.stdout + p.stderr)
+            p = run("plan", str(raw), "--keep-name", "#2")
+            self.assertEqual(p.returncode, 0, (acc, p.stdout + p.stderr))
+            self.assertIn(acc, p.stdout)
+        raw = write_csv(self.tmp / "acc.csv", ["Diagnosis", "Patient 3767393", "Sex"], [["Asthma", "2.5", "F"]] * 5)
+        self.assertEqual(run("plan", str(raw), "--keep-name", "#2").returncode, 2)
+        # Repeated record numbers of seven digits in any written form under a measurement name; a viral load
+        # written with an exponent is a measurement.
+        base = [4527832 + k for k in range(5)]
+        forms = [lambda x: f"-{x}", lambda x: f"{x}.", lambda x: f"{x}.5", lambda x: f"{x:.6E}", lambda x: f"{x:.5e}"]
+        columns = [(h, [f(base[i % 5]) for i in range(60)]) for h in ("Level", "Total", "Score", "Count") for f in forms]
+        self.assertEqual([h for h, a, _ in probe(self.tmp, "decide", columns) if a == "keep"], [])
+        loads = [f"{(i % 9 + 1) * 1.37:.2E}".replace("E+00", "E+06") for i in range(40)]
+        self.assertEqual([a for _, a, _ in probe(self.tmp, "decide", [("Viral Load (copies/mL)", loads)])], ["keep"])
+        # A claim, policy, invoice, plan, visit or record word as the last word of a measurement name.
+        unique = [str(10 ** 6 + i * 3711) for i in range(60)]
+        heads = ["Rate Plan", "Total Policy", "Cost Claim", "Charge Invoice", "Length of Stay Visit",
+                 "Number of Visits Record", "Amount Account"]
+        self.assertEqual([h for h, a, _ in probe(self.tmp, "decide", [(h, unique) for h in heads]) if a == "keep"], [])
+        money = ["Claim Amount", "Number of Records", "Total Cost", "Cost per Visit", "Policy Cost"]
+        self.assertEqual([h for h, a, _ in probe(self.tmp, "decide", [(h, unique) for h in money]) if a != "keep"], [])
+        # A local telephone number written as a decimal, ZIP prefixes under postal code names, and decimal
+        # ages under Y.O.
+        phones = [f"555.{rng4:04d}" for rng4 in range(100, 160)]
+        decided = probe(self.tmp, "decide", [("Value", phones), ("Result", phones),
+                                             ("Post Code", ["036", "059", "941", "100"] * 5),
+                                             ("ZCTA", ["036", "059", "941", "100"] * 5),
+                                             ("PIN Code", ["036", "059", "941", "100"] * 5),
+                                             ("Y.O.", [f"{30 + i}.5" for i in range(40)] + ["95.5"])])
+        self.assertEqual([a for _, a, _ in decided], ["redact", "redact", "zip3", "zip3", "zip3", "age"])
+        raw = write_csv(self.tmp / "zip.csv", ["Post Code", "Sex"], [[z, "F"] for z in ("036", "059", "941", "100")])
+        p, out, report = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual([r["Post Code"] for r in out], ["000", "000", "941", "100"])
+
+    # The regression table of round 5: an ordinary 30-column clinical export with a year and a date column.
+    def test_regression_table_of_an_ordinary_clinical_export_after_round_five(self):
+        import random
+        rng = random.Random(55)
+        cols = {
+            "Diagnosis": lambda i: ["Heart Failure", "Type 2 Diabetes", "Asthma", "Chronic Kidney Disease"][i % 4],
+            "ICD-10": lambda i: ["I50.9", "E11.9", "J45.909", "N18.3"][i % 4],
+            "Drug": lambda i: ["Metformin", "Lisinopril", "Albuterol", "Furosemide"][i % 4],
+            "ATC Code": lambda i: ["A10BA02", "C09AA03", "R03AC02", "C03CA01"][i % 4],
+            "Dose (mg)": lambda i: ["500", "10", "2.5", "40"][i % 4],
+            "Primary Site": lambda i: ["Breast", "Lung", "Colon", "Prostate"][i % 4],
+            "Study Site": lambda i: ["North Campus", "Harbor Clinic", "Lakeview Center"][i % 3],
+            "Hemoglobin": lambda i: f"{9 + (i % 70) / 10:.1f}",
+            "Sodium": lambda i: str(130 + i % 15),
+            "Heart Rate": lambda i: str(55 + (i * 7) % 70),
+            "LOINC": lambda i: ["718-7", "2160-0", "2345-7"][i % 3],
+            "Lab Flag": lambda i: ["H", "L", "N"][i % 3],
+            "Pain Score": lambda i: str(i % 11),
+            "ECOG": lambda i: str(i % 4),
+            "Stage": lambda i: ["IIA", "IIIB", "IV", "Stage I"][i % 4],
+            "Gene ID": lambda i: ["ENSG00000141510", "ENSG00000146648", "ENSG00000133703"][i % 3],
+            "SNP": lambda i: ["rs7412", "rs429358", "rs113488022"][i % 3],
+            "Variant": lambda i: ["p.V600E", "c.35G>A", "p.G12D"][i % 3],
+            "Treatment Arm": lambda i: ["Placebo", "Arm A", "Arm B"][i % 3],
+            "Visit": lambda i: ["Screening", "Baseline", "Week 4", "End of Study"][i % 4],
+            "Visit Week": lambda i: str([0, 4, 12, 24, 52][i % 5]),
+            "Diagnosis Year": lambda i: str(2012 + i % 11),
+            "Admission Date": lambda i: f"{2012 + i % 11}-0{1 + i % 9}-1{i % 9}",
+            "Length of Stay (days)": lambda i: str(1 + i % 21),
+            "Race": lambda i: ["White", "Asian", "Black or African American"][i % 3],
+            "Sex": lambda i: ["Female", "Male"][i % 2],
+            "State": lambda i: ["California", "Oregon", "Nevada"][i % 3],
+            "Country": lambda i: ["United States", "Mexico", "Canada"][i % 3],
+            "Attending Physician": lambda i: self.NAMES[i % 8],
+            "Notes": lambda i: ["Tolerated the infusion well and will return for the next cycle as planned.",
+                                "Mild nausea after the second dose, managed with ondansetron at home."][i % 2],
+        }
+        self.assertEqual(len(cols), 30)
+        header = list(cols)
+        rows = [[cols[h](i) for h in header] for i in range(rng.randrange(180, 220))]
+        raw = write_csv(self.tmp / "clinical30_r5.csv", header, rows)
+        unverified = ["Diagnosis", "Drug", "Primary Site", "Study Site", "Treatment Arm", "Visit", "Visit Week",
+                      "Attending Physician"]
+        expected = {h: "keep" for h in header}
+        expected.update({h: "redact" for h in unverified + ["Notes"]})
+        expected["Admission Date"] = "year"
+        p, out, report = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual({d["column"]: d["action"] for d in report["decisions"]}, expected)
+        self.assertEqual([d["column"] for d in report["columns_needing_decision"]], unverified)
+        self.assertEqual(report["columns_that_cannot_be_kept"], [])
+        self.assertFalse(any(d["name_withheld"] for d in report["decisions"]))
+        for k, col in enumerate(header):
+            if expected[col] == "keep":
+                self.assertEqual([r[col] for r in out], [row[k] for row in rows], col)
+        for v in self.NAMES:
+            self.assertNotIn(v, json.dumps(out) + p.stdout)
+        # The person confirms the eight columns: the run keeps them and exits 0, and the notes stay redacted.
+        p, out, report = self.run_file(raw, *[a for h in unverified for a in ("--keep", h)])
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        for k, col in enumerate(header):
+            if col not in ("Notes", "Admission Date"):
+                self.assertEqual([r[col] for r in out], [row[k] for row in rows], col)
+        self.assertEqual({r["Notes"] for r in out}, {"[REDACTED]"})
+        self.assertEqual([d["column"] for d in report["kept_unverified_columns"]], unverified)
+        ok = run("verify", str(self.tmp / "out" / "clinical30_r5_deidentified.csv"), "--reference-year",
+                 REFERENCE_YEAR)
+        self.assertEqual(ok.returncode, 0, ok.stdout + ok.stderr)
+
+
+def _luhn(payload: str) -> int:
+    """The mod 10 check digit LOINC appends, for generating record numbers that carry it."""
+    total = 0
+    for i, c in enumerate(reversed(payload)):
+        d = int(c) * (2 if i % 2 == 0 else 1)
+        total += d - 9 if d > 9 else d
+    return (10 - total % 10) % 10
 
 
 class NoNetwork(unittest.TestCase):
