@@ -398,7 +398,8 @@ class NamesAndShapesTheListMisses(unittest.TestCase):
         for col in ("a", "b", "c"):
             self.assertEqual({r[col] for r in out}, {"[REDACTED]"}, col)
         self.assertEqual([r["d"] for r in out], ["[90_OR_OLDER]", "1955", "1980", "1962"])
-        self.assertEqual([r["e"] for r in out], ["6.1", "7.2", "5.9", "6.8"])
+        # Round 7: decimals under a name that names no measurement ("e") are the person's decision.
+        self.assertEqual([r["e"] for r in out], ["[REDACTED]"] * 4)
         # The check does the same on a file it has no report for.
         bad = run("verify", str(raw), "--reference-year", REFERENCE_YEAR)
         self.assertEqual(bad.returncode, 3, bad.stdout + bad.stderr)
@@ -550,10 +551,16 @@ class NamesUnderUnlistedHeaders(unittest.TestCase):
         p, out, _ = self.run_file(raw)
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         self.assertTrue(all(re.fullmatch(r"P\d{4}", r["Subject"]) for r in out))
-        # A yes/no column and counts under such a name are kept as they are.
+        # A yes/no column and measurements under such a name are kept as they are. Round 7: numbers under a
+        # name that names no measurement ("Children") wait for the person's word, which --keep can give,
+        # since they are not words (this test kept them by default before).
         for i, col in enumerate(header):
-            if col in ("Insured", "Children", "wavelength_nm", "sex"):
+            if col in ("Insured", "wavelength_nm", "sex"):
                 self.assertEqual([r[col] for r in out], [row[i] for row in rows], col)
+        self.assertEqual({r["Children"] for r in out}, {"[REDACTED]"})
+        p, out, _ = self.run_file(raw, "--keep", "Children")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual([r["Children"] for r in out], [row[5] for row in rows])
         # Round 3: a column named for the person ("Subject") that holds names is an identifier by its
         # name, like "Participant", and cannot be kept (it could be kept before). Subject numbers can.
         refused = run("plan", str(raw), "--keep", "Subject")
@@ -959,7 +966,8 @@ class ValuesDecideCategoryColumns(unittest.TestCase):
         raw = write_csv(self.tmp / "kept_categories.csv", header, rows)
         p, out, _ = self.run_file(raw)
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
-        verified = {"Visit Number", "Treatment Responder"}
+        # Round 7: Visit Number names no measurement, so its numbers wait for the person's word too.
+        verified = {"Treatment Responder"}
         for i, col in enumerate(header):
             expected = [row[i] for row in rows] if col in verified else ["[REDACTED]"] * len(rows)
             self.assertEqual([r[col] for r in out], expected, col)
@@ -1944,11 +1952,17 @@ class NumbersDatesAndHeadersOfRoundTwo(unittest.TestCase):
         short = probe(self.tmp, "decide", [(h, [str(1 + (i * 7) % 900) for i in range(64)])
                                            for h in ("Duration (days)", "Length of Stay")])
         self.assertEqual([h for h, action, _ in short if action != "keep"], [])
-        # Small whole numbers and decimals are measurements under any name.
+        # Small whole numbers and decimals were measurements under any name. Round 7: numbers fail closed by name,
+        # so under a name that names no measurement they are the person's decision, and under one that does they
+        # are kept.
         small = probe(self.tmp, "decide", [(h, ["1", "2", "3", "12", "87", "305"] * 5)
                                            for h in ("Value", "Col5", "Result", "Visit No")]
                       + [(h, ["13.2", "7.81", "105.4", "0.03"] * 5) for h in ("Value", "Col5")])
-        self.assertEqual([h for h, action, _ in small if action != "keep"], [])
+        self.assertEqual([action for _, action, _ in small], ["redact"] * 6)
+        small = probe(self.tmp, "decide", [(h, ["1", "2", "3", "12", "87", "305"] * 5)
+                                           for h in ("Glucose", "Pain Score", "Steps", "Dose (mg)")]
+                      + [(h, ["13.2", "7.81", "105.4", "0.03"] * 5) for h in ("Creatinine", "Ratio")])
+        self.assertEqual([action for _, action, _ in small], ["keep"] * 6)
 
     # High (first reviewer) and medium (second reviewer): other numbers shaped like dates, ZIP
     # codes or record numbers under neutral names: YYMMDD, YYMM, packed dates without zeros,
@@ -1976,9 +1990,11 @@ class NumbersDatesAndHeadersOfRoundTwo(unittest.TestCase):
                    for h in headers]
         decided = probe(self.tmp, "decide", columns)
         self.assertEqual(sorted({h for h, action, _ in decided if action == "keep"}), [], "kept")
-        # A column of years is not a date: years are allowed.
-        years = probe(self.tmp, "decide", [(h, ["2015", "2018", "2021", "1999", "2024"] * 6) for h in headers[:4]])
-        self.assertEqual([a for _, a, _ in years], ["keep"] * 4)
+        # A column of years is not a date: years are allowed. Round 7: under a name for a year; under a name
+        # that names no measurement and no year (Value, Result, Key, Entry) they are the person's decision.
+        years = probe(self.tmp, "decide", [(h, ["2015", "2018", "2021", "1999", "2024"] * 6)
+                                           for h in headers[:4] + ["Year", "Admit Year", "Dx Yr", "Jahr"]])
+        self.assertEqual([a for _, a, _ in years], ["redact"] * 4 + ["keep"] * 4)
 
     # High (first reviewer): a birth year of someone over 89 was kept under a date column name
     # that the rules did not read as a birth date.
@@ -2587,13 +2603,20 @@ class HeadersNumbersAndDatePartsOfRoundThree(unittest.TestCase):
         odd = ["0.5", "<1", "130", "-1", "1.5", "unknown", ">100", "0", "250", "4.5"]
         columns = [(h, ages + [odd[k % len(odd)], odd[(k + 3) % len(odd)]]) for k, h in enumerate(headers)]
         decided = probe(self.tmp, "decide", columns)
-        self.assertEqual([(h, a) for h, a, _ in decided if a != "age"], [], "ages over 89 not grouped")
+        # Round 7: the other numbers of such a column are not verified either, so under a name that does not say
+        # age the column is redacted (this test grouped it as ages, keeping the numbers under 90, before); under
+        # an age word (Kor, Eta) it is grouped.
+        self.assertEqual([(h, a) for h, a, _ in decided if a != ("age" if h in ("Kor", "Eta") else "redact")], [],
+                         "ages over 89 not grouped or redacted")
         rows = [[columns[k][1][i] for k in range(5)] + ["F"] for i in range(len(columns[0][1]))]
         p, out, report = self.run_file(write_csv(self.tmp / "ages_mixed.csv", headers[:5] + ["Sex"], rows))
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         for col in headers[:5]:
             self.assertFalse({"93", "95", "97", "102"} & {r[col] for r in out}, col)
-            self.assertIn("90+", {r[col] for r in out}, col)
+            if col in ("Kor", "Eta"):
+                self.assertIn("90+", {r[col] for r in out}, col)
+            else:
+                self.assertEqual({r[col] for r in out}, {"[REDACTED]"}, col)
 
     # High: numeric month and day-of-month columns were kept, so the admission date could be
     # rebuilt from the year beside them.
@@ -2686,7 +2709,8 @@ class HeadersNumbersAndDatePartsOfRoundThree(unittest.TestCase):
             ("Hemoglobin", [f"{12 + i % 9}.{i % 10}{i % 7}" for i in range(40)]),
             ("Value", [f"{i % 9}.{i % 10}{i % 7}" for i in range(40)]),
             ("Lat Meniscus Tear", ["Yes", "No"] * 20)])
-        self.assertEqual([h for h, a, _ in controls if a != "keep"], [])
+        # Round 7: decimals below 10 under Value, which names no measurement, are the person's decision too.
+        self.assertEqual([h for h, a, _ in controls if a != "keep"], ["Value"])
         self.assertEqual(probe(self.tmp, "decide", [("Value", [f"{12 + i % 9}.{i % 10}{i % 7}" for i in range(40)])]),
                          [["Value", "redact", "unverified"]])
         # End to end, the review's table: a latitude and a longitude with a column between them.
@@ -3129,10 +3153,13 @@ Questionnaire Domain|Assay Plate""".replace("\n", "").split("|")
                 days = [str(rng.randrange(1, 8)) for _ in range(60)]
             tables.append([(y, years), (m, months), (d, days), ("Sex", ["F", "M"] * 30)])
             tables.append([(m, months), (d, days), ("Sex", ["F", "M"] * 30), (y, years)])
+        # Round 7: years are kept by default only under a name for a year (Year, Yr, Jahr, Rok, YY); under a
+        # neutral name (Col1, A, Var 7, F1, SY) they are the person's decision (this test kept them before).
+        neutral = {"Col1", "A", "Var 7", "F1", "SY"}
         for table, result in zip(tables, table_probe(self.tmp, tables)):
             actions = dict(result)
             year = next(h for h, _ in table if h in {s[0] for s in sets})
-            self.assertEqual(actions[year], "keep", table)
+            self.assertEqual(actions[year], "redact" if year in neutral else "keep", table)
             self.assertEqual(actions["Sex"], "keep", table)
             for h, _ in table:
                 if h not in (year, "Sex"):
@@ -3158,7 +3185,9 @@ Questionnaire Domain|Assay Plate""".replace("\n", "").split("|")
                     ("NYHA Class", [str(1 + i % 4) for i in range(60)]), ("ECOG", [str(i % 5) for i in range(60)]),
                     ("GCS", [str(3 + i % 13) for i in range(60)]), ("Hemoglobin", [str(8 + i % 9) for i in range(60)]),
                     ("Sex Code", [str(1 + i % 2) for i in range(60)]), ("Comorbidities", [str(i % 6) for i in range(60)])]
-        self.assertEqual([h for h, a in table_probe(self.tmp, [controls])[0] if a != "keep"], [])
+        # Round 7: a sex code and "Comorbidities" name no measurement, so their numbers wait for the person's
+        # word (this test kept them before); they are not read as dates either way.
+        self.assertEqual([h for h, a in table_probe(self.tmp, [controls])[0] if a != "keep"], ["Sex Code", "Comorbidities"])
         # End to end: the review's table, written as it was found, and verify catches a written month.
         rows = [[str(rng.randrange(2010, 2023)), str(rng.randrange(1, 13)), str(rng.randrange(1, 29)), "F"]
                 for _ in range(60)]
@@ -3199,11 +3228,13 @@ Questionnaire Domain|Assay Plate""".replace("\n", "").split("|")
         decided = probe(self.tmp, "decide", columns)
         self.assertEqual([(h, a) for h, a, _ in decided if a == "keep"], [])
         # Under a column name that names a measurement, and below 1, four places are a measurement.
+        # Round 7: numbers fail closed by name, so the same decimals under Value, which names no measurement, are
+        # the person's decision (this test kept them before).
         controls = [("Weight (kg)", [f"{50 + i / 7:.4f}" for i in range(40)]),
                     ("Troponin", [f"{(i % 50) / 1000:.4f}" for i in range(40)]),
                     ("Creatinine", [f"{0.5 + (i % 30) / 10:.2f}" for i in range(40)]),
                     ("Value", [f"{0.5 + (i % 30) / 10:.2f}" for i in range(40)])]
-        self.assertEqual([h for h, a, _ in probe(self.tmp, "decide", controls) if a != "keep"], [])
+        self.assertEqual([h for h, a, _ in probe(self.tmp, "decide", controls) if a != "keep"], ["Value"])
         # End to end with half the cells precise: nothing of the column is written.
         vals = [f"{rng.uniform(32.5, 42):.5f}" if i % 2 else f"{rng.uniform(32.5, 42):.2f}" for i in range(100)]
         raw = write_csv(self.tmp / "gps.csv", ["Value", "Sex"], [[v, "F"] for v in vals])
@@ -3234,9 +3265,11 @@ Questionnaire Domain|Assay Plate""".replace("\n", "").split("|")
         self.assertEqual([h for h, a, _ in decided if a != "pseudonym_id"], [])
         kept = keep_probe(self.tmp, [(h, small) for h in ("Study ID", "Pat No", "Chart", "Case")])
         self.assertEqual([o for _, o, _ in kept], ["kept"] * 4)
+        # Round 7: a visit, cycle, dose or line number names no measurement, so its numbers are the person's
+        # decision, redacted rather than pseudonymized (this test kept them before); a count is a measurement.
         controls = probe(self.tmp, "decide", [(h, [str(1 + i % 6) for i in range(60)]) for h in
                                               ("Visit No", "Cycle Number", "Dose Number", "Line No", "Number of Visits")])
-        self.assertEqual([h for h, a, _ in controls if a != "keep"], [])
+        self.assertEqual([a for _, a, _ in controls], ["redact"] * 4 + ["keep"])
         decimals = [f"{30 + (i * 3) % 60}.5" for i in range(40)] + ["95.5", "102.5"]
         ages = probe(self.tmp, "decide", [(h, decimals) for h in ("Eta", "Old", "Y Old", "Year", "Elderly",
                                                                   "Seniority", "Senior")])
@@ -3395,7 +3428,8 @@ Stratum|Cluster|Bin""".replace("\n", "").split("|")
                     ("Pain Score", [str(1 + i % 10) for i in range(n)]), ("Weeks", [str(1 + i % 40) for i in range(n)]),
                     ("Gestational Weeks", [str(20 + i % 22) for i in range(n)]), ("LOS (days)", [str(1 + i % 60) for i in range(n)]),
                     ("Number of Visits", [str(1 + i % 30) for i in range(n)]), ("ECOG", [str(i % 5) for i in range(n)]),
-                    ("Comorbidities", [str(i % 6) for i in range(n)]), ("eGFR", [str(15 + (i * 9) % 105) for i in range(n)]),
+                    # Round 7: "Comorbidities" alone names no measurement, so a count names itself one.
+                    ("Comorbidity Count", [str(i % 6) for i in range(n)]), ("eGFR", [str(15 + (i * 9) % 105) for i in range(n)]),
                     ("Interval (days)", [str(1 + i % 40) for i in range(n)]), ("Week 4 Pain Score", [str(i % 11) for i in range(n)])]
         self.assertEqual([h for h, a in table_probe(self.tmp, [controls])[0] if a != "keep"], [])
         # End to end: the review's table. No week is written, the plan says why, and verify catches a
@@ -3509,6 +3543,10 @@ Stratum|Cluster|Bin""".replace("\n", "").split("|")
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         self.assertNotIn("OCT4", p.stdout + json.dumps(report) + json.dumps(out))
         p, out, report = self.run_file(raw, "--keep-name", "#2")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        # Round 7: a gene symbol names no measurement, so its numbers wait for the person's word too.
+        self.assertEqual([r["OCT4"] for r in out], ["[REDACTED]"] * 10)
+        p, out, report = self.run_file(raw, "--keep-name", "#2", "--keep", "OCT4")
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         self.assertEqual([r["OCT4"] for r in out], ["6.1"] * 10)
 
@@ -3905,7 +3943,10 @@ Field 7|Data|Q9|Entry|Item|Obs|V5|Z1|Coordinate Value|Reading|Output|Response|Gr
                     ("Value", [f"{rng.uniform(-3, 3):.2f}" for _ in range(60)]),
                     ("Z", [f"{rng.uniform(-4, 4):.3f}" for _ in range(60)]),
                     ("Col3", [f"{rng.uniform(0, 1):.3f}" for _ in range(60)])]
-        self.assertEqual([h for h, a, _ in probe(self.tmp, "decide", controls) if a != "keep"], [])
+        # Round 7: under a neutral name even decimals below 10 are the person's decision (this test kept them
+        # before), and they are not read as coordinates.
+        decided = probe(self.tmp, "decide", controls)
+        self.assertEqual([h for h, a, _ in decided if a != "keep"], ["Value", "Z", "Col3"])
         # End to end: a latitude and a longitude of three places under Value and Result, apart.
         lat = [f"{rng.uniform(34, 40):.3f}" for _ in range(25)]
         lon = [f"{rng.uniform(-123, -117):.3f}" for _ in range(25)]
@@ -4117,6 +4158,429 @@ Home Location|Comunidad""".replace("\n", "").split("|")
                 self.assertEqual([r[col] for r in out], [row[k] for row in rows], col)
         self.assertEqual({r["Clinical Note"] for r in out}, {"[REDACTED]"})
         self.assertEqual([d["column"] for d in report["kept_unverified_columns"]], unverified)
+
+
+class NumbersByNameDecimalDatesAndHeaderCharactersOfRoundSeven(unittest.TestCase):
+    """Round 7 of the fail-closed review (2026-11-25, 1.0.1): the class still open was numbers under
+    neutral names (one-decimal coordinate pairs, decimal years, Unix timestamps with fractional seconds,
+    record numbers under Value, Result, Col3, X, Y), decided by their shape. Numbers now fail closed by
+    NAME, as text does: a column of numbers is kept by default only under a column name that names a
+    measurement and only when its numbers pass the identifier and date checks. Dates written as decimal
+    numbers are dates under any name, and a header cell holding a NUL, a control or a format character is
+    refused. Each test generates many header variants and value shapes. Every name, number, place and
+    coordinate here is invented."""
+
+    NEUTRAL = """Value|Result|Col3|X|Y|Index|Point|Pos|Geo1|Measure1|Entry|Seen|Event|Period|Item|Field 2|Var 7|Data|
+Reading|Obs|Q7|Response|Outcome|Status|Group|Arm|Cycle|Visit|Wave|Column 12|V9|F1|A|Z|Mid|Spot|Loc|Record|Notes 2|
+Code|Group 2|Measure|Test|Lab|Kind 2|Val|Res|Num|Entry Type|Category|Class|Type|Flag|Label|Tag""".replace(
+        "\n", "").split("|")
+    MEASURED = """Glucose|WBC|Hemoglobin|Sodium|Heart Rate|Systolic BP|SpO2|Temperature (C)|Weight (kg)|BMI|Pain Score|GCS|
+MMSE|PHQ-9|ECOG|Dose (mg)|Daily Dose|Steps|Number of Visits|Visit Count|LOS (days)|Duration (min)|Cost|Free T4|
+Vitamin B12|Ki-67|CA 19-9|IgG|Log2FC|P Value|FDR|Stage|Gleason|Apgar|Value (mg/dL)|Result (%)|Creatinine|eGFR|
+Platelets|Tumor Size (mm)|Gestational Weeks|Charlson|NIHSS|Hematocrit|Albumin|Ferritin|TSH|Lactate""".replace(
+        "\n", "").split("|")
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="safe_harbor_test_"))
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def run_file(self, path: Path, *extra: str) -> tuple[subprocess.CompletedProcess, list[dict], dict]:
+        out_dir = self.tmp / "out"
+        if out_dir.exists():
+            shutil.rmtree(out_dir)
+        p = run("run", str(path), "-o", str(out_dir), "--reference-year", REFERENCE_YEAR, *extra)
+        out = out_dir / f"{path.stem}_deidentified{path.suffix}"
+        report = out_dir / "deidentification_report.json"
+        return (p, read_rows(out) if out.exists() else [],
+                json.loads(report.read_text(encoding="utf-8")) if report.exists() else {})
+
+    @staticmethod
+    def shapes(rng) -> dict:
+        """Ordinary-looking numbers of many shapes, none of them an identifier: the point is that the script
+        cannot tell them from one by their shape alone."""
+        return {
+            "small whole": [str(rng.randrange(1, 6)) for _ in range(40)],
+            "whole to 200": [str(rng.randrange(0, 200)) for _ in range(40)],
+            "one place": [f"{rng.uniform(0, 80):.1f}" for _ in range(40)],
+            "two places": [f"{rng.uniform(0, 9):.2f}" for _ in range(40)],
+            "three places": [f"{rng.uniform(0, 1):.3f}" for _ in range(40)],
+            "negative": [f"{rng.uniform(-5, 5):.1f}" for _ in range(40)],
+            "comparator": [rng.choice(["<0.5", ">10", "3.2", "4.4", "<=1"]) for _ in range(40)],
+            "binary": [str(i % 2) for i in range(40)],
+            "with words": [rng.choice(["12.5", "8.1", "Positive", "Negative"]) for _ in range(40)],
+        }
+
+    # The core of round 7: numbers under a column name that names no measurement are the person's decision,
+    # whatever their shape, and the plan says the script cannot verify that they are not identifiers, dates
+    # or coordinates.
+    def test_numbers_under_names_that_name_no_measurement_wait_for_the_persons_word(self):
+        import random
+        rng = random.Random(71)
+        columns = [(h, vals) for h in self.NEUTRAL for vals in self.shapes(rng).values()]
+        self.assertGreater(len(columns), 450)
+        decided = probe(self.tmp, "decide", columns)
+        self.assertEqual([(h, a) for h, a, _ in decided if a == "keep"], [], "numbers kept under a neutral name")
+        # The same numbers under a column name that names a measurement are kept.
+        plain = {k: v for k, v in self.shapes(rng).items() if k != "with words"}
+        columns = [(h, plain[k]) for h in self.MEASURED for k in ("small whole", "whole to 200", "one place",
+                                                                  "two places", "comparator")]
+        decided = probe(self.tmp, "decide", columns)
+        self.assertEqual([(h, a) for h, a, _ in decided if a != "keep"], [], "measurements not kept")
+        # A number written with its unit names its own measurement, under any column name.
+        units = [rng.choice(["5.2 mg/dL", "140 mmol/L", "12%", "75 kg", "7.1 g/dL"]) for _ in range(40)]
+        self.assertEqual([a for _, a, _ in probe(self.tmp, "decide", [(h, units) for h in ("Value", "Result", "Col3")])],
+                         ["keep"] * 3)
+        # Years are allowed under a name for a year, and the person's decision under any other name.
+        years = [str(rng.randrange(2005, 2025)) for _ in range(40)]
+        named = ["Year", "Admit Year", "Dx Yr", "Jahr", "Year of Diagnosis", "YYYY", "Years", "Ano"]
+        decided = probe(self.tmp, "decide", [(h, years) for h in named + ["Value", "Col3", "Index", "X", "Entry"]])
+        self.assertEqual([a for _, a, _ in decided], ["keep"] * len(named) + ["redact"] * 5)
+        # End to end: the plan lists such a column for the person's decision, says why, names no value, and
+        # --keep keeps it.
+        header = ["Value", "Result", "Sex", "Glucose"]
+        rows = [[f"{40 + i % 50}.{i % 10}", str(i % 7), "F" if i % 2 else "M", str(80 + i % 60)] for i in range(60)]
+        raw = write_csv(self.tmp / "neutral.csv", header, rows)
+        plan = run("plan", str(raw))
+        self.assertEqual(plan.returncode, 0, plan.stdout + plan.stderr)
+        self.assertIn("cannot verify that they are not identifiers, dates or coordinates", plan.stdout)
+        decision = plan.stdout.split("Need the person's decision", 1)[1].split("Ask the person", 1)[0]
+        self.assertIn("Value", decision)
+        self.assertIn("Result", decision)
+        self.assertNotIn("Glucose", decision)
+        for row in rows[:10]:
+            self.assertNotIn(row[0], plan.stdout)
+        p, out, report = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual({r["Value"] for r in out} | {r["Result"] for r in out}, {"[REDACTED]"})
+        self.assertEqual([r["Glucose"] for r in out], [row[3] for row in rows])
+        self.assertEqual({d["column"] for d in report["columns_needing_decision"]}, {"Value", "Result"})
+        p, out, report = self.run_file(raw, "--keep", "Value", "--keep", "Result")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual([r["Value"] for r in out], [row[0] for row in rows])
+        self.assertEqual({d["column"] for d in report["kept_unverified_columns"]}, {"Value", "Result"})
+        self.assertIn("scrubbed for patterns only", p.stdout)
+
+    # An ordinary long-format lab table (Patient ID, Lab, Value, Unit) completes once the person keeps Value.
+    def test_long_format_lab_table_completes_once_the_person_keeps_value(self):
+        import random
+        rng = random.Random(72)
+        labs = [("Glucose", "mg/dL", 70, 180), ("Hemoglobin", "g/dL", 9, 17), ("Sodium", "mmol/L", 132, 146),
+                ("Creatinine", "mg/dL", 0.5, 2.5), ("WBC", "10^3/uL", 3, 15), ("Platelets", "10^3/uL", 120, 420),
+                ("ALT", "U/L", 8, 90), ("Potassium", "mmol/L", 3.2, 5.6)]
+        ids = [str(4100000 + 37 * k) for k in range(30)]
+        rows = []
+        for i in range(240):
+            name, unit, lo, hi = labs[i % 8]
+            x = lo + (hi - lo) * rng.random()
+            rows.append([ids[i % 30], name, f"{x:.1f}" if hi < 50 else str(round(x)), unit])
+        raw = write_csv(self.tmp / "labs_long.csv", ["Patient ID", "Lab", "Value", "Unit"], rows)
+        p, out, report = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertNotIn("Value", [r["Value"] for r in out])
+        # Some values reach 90 (a glucose, an ALT), which under Value reads as a possible age: the column is
+        # redacted, not grouped, because its other numbers are not verified either.
+        self.assertEqual({r["Value"] for r in out}, {"[REDACTED]"})
+        self.assertIn("Value", {d["column"] for d in report["columns_needing_decision"]})
+        self.assertEqual([r["Unit"] for r in out], [row[3] for row in rows])
+        for extra in (("--keep", "Value"), ("--keep", "Value", "--keep", "Lab")):
+            p, out, report = self.run_file(raw, *extra)
+            self.assertEqual(p.returncode, 0, (extra, p.stdout + p.stderr))
+            self.assertEqual([r["Value"] for r in out], [row[2] for row in rows])
+            self.assertTrue(all(re.fullmatch(r"ID\d{4}", r["Patient ID"]) for r in out))
+            for i in ids:
+                self.assertNotIn(i, json.dumps(out))
+        self.assertEqual([r["Lab"] for r in out], [row[1] for row in rows])
+
+    # Medium: dates written as decimal numbers (decimal years, year.week, year.day, decimal birth years, Unix
+    # timestamps with fractional seconds, Julian dates) passed as verified measurements.
+    def test_dates_written_as_decimal_numbers_are_dates_under_any_name(self):
+        import random
+        from datetime import datetime, timezone
+        rng = random.Random(73)
+
+        def epoch(y: int) -> float:
+            return datetime(y, rng.randrange(1, 13), rng.randrange(1, 28), tzinfo=timezone.utc).timestamp()
+        shapes = {
+            "decimal year": [f"{rng.randrange(2015, 2024)}.{rng.randrange(1, 99):02d}" for _ in range(40)],
+            "decimal year 3": [f"{rng.randrange(2015, 2024)}.{rng.randrange(1, 999):03d}" for _ in range(40)],
+            "year.week": [f"{rng.randrange(2015, 2024)}.{rng.randrange(1, 53):02d}" for _ in range(40)],
+            "year.day": [f"{rng.randrange(2015, 2024)}.{rng.randrange(100, 366)}" for _ in range(40)],
+            "year.month one digit": [f"{rng.randrange(2015, 2024)}.{rng.randrange(2, 10)}" for _ in range(40)],
+            "old decimal year": [f"{rng.randrange(1920, 1935)}.{rng.randrange(1, 999):03d}" for _ in range(40)],
+            "year.mmdd": [f"{rng.randrange(1925, 1936)}.{rng.randrange(1, 13):02d}{rng.randrange(1, 29):02d}"
+                          for _ in range(40)],
+            "epoch seconds": [f"{epoch(rng.randrange(2015, 2024)):.0f}.{rng.randrange(100, 999)}" for _ in range(40)],
+            "epoch millis": [f"{epoch(rng.randrange(2015, 2024)) * 1000:.0f}.{rng.randrange(1, 9)}" for _ in range(40)],
+            "negative epoch": [f"{epoch(rng.randrange(1925, 1937)):.0f}.{rng.randrange(10, 99)}" for _ in range(40)],
+            "julian day": [f"{2457000 + rng.randrange(0, 3000)}.5" for _ in range(40)],
+        }
+        headers = self.NEUTRAL[:20] + ["Start Time", "End Time", "Time", "Time Stamp", "Draw Time", "Event Time",
+                                       "Year", "Visit", "Measure", "Period", "Seen", "Entry"]
+        columns = [(h, vals) for h in headers for vals in shapes.values()]
+        decided = probe(self.tmp, "decide", columns)
+        self.assertEqual([(h, a) for h, a, _ in decided if a == "keep"], [], "dates written as decimals kept")
+        # End to end: each becomes its year, and a year 90 or more years ago [90_OR_OLDER].
+        header = ["Value", "Start Time", "Time", "Sex"]
+        rows = [[shapes["decimal year"][i], shapes["epoch seconds"][i], shapes["negative epoch"][i], "F"]
+                for i in range(40)]
+        raw = write_csv(self.tmp / "decimal_dates.csv", header, rows)
+        p, out, report = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertIn("dates written as numbers", p.stdout)
+        self.assertEqual([r["Value"] for r in out], [v.split(".")[0] for v in shapes["decimal year"]])
+        self.assertTrue(all(re.fullmatch(r"20(1[5-9]|2[0-3])", r["Start Time"]) for r in out), out[:3])
+        self.assertEqual({r["Time"] for r in out}, {"[90_OR_OLDER]"})
+        written = json.dumps(out)
+        for row in rows:
+            for v in row[:3]:
+                self.assertNotIn(v, written)
+        # Under a column name that names a measurement, one number that has the shape of a date among
+        # measurements is not enough: a cost of 1999.99, a viral load of 2,450,000.
+        controls = [("Total Cost", ["1999.99"] + [f"{rng.uniform(10, 900):.2f}" for _ in range(39)]),
+                    ("Viral Load", ["2450000"] + [str(rng.randrange(50, 90000)) for _ in range(39)]),
+                    ("Weight (g)", ["1950.5"] + [f"{rng.uniform(2500, 4200):.1f}" for _ in range(39)])]
+        self.assertEqual([a for _, a, _ in probe(self.tmp, "decide", controls)], ["keep"] * 3)
+        # Round 7 too: under a day, a week, a month or a bare time a number of five digits is not a duration,
+        # whole or not, even beyond the range of an Excel serial.
+        late = [f"{rng.randrange(80000, 99999)}.{rng.randrange(1, 9)}" for _ in range(40)]
+        self.assertEqual([a for _, a, _ in probe(self.tmp, "decide", [(h, late) for h in
+                                                                      ("Visit Day", "Days", "LOS", "Event Time")])],
+                         ["redact"] * 4)
+
+    # Medium (moot under round 7): one-decimal latitude and longitude pairs under neutral names were kept as
+    # verified measurements. They are now redacted by default, as numbers under names that name no measurement.
+    def test_one_decimal_coordinate_pairs_under_neutral_names_are_redacted_by_default(self):
+        import random
+        rng = random.Random(74)
+        boxes = {"Munich": (48.0, 48.3, 11.4, 11.8), "Tokyo": (35.5, 35.8, 139.5, 139.9),
+                 "Sydney": (-34.0, -33.7, 151.0, 151.3), "London": (51.4, 51.6, -0.3, 0.1),
+                 "Nairobi": (-1.4, -1.2, 36.7, 36.9), "Beijing": (39.8, 40.0, 116.3, 116.5),
+                 "San Francisco": (37.7, 37.8, -122.5, -122.4), "Boston": (42.3, 42.4, -71.1, -71.0)}
+        pairs = [("Value", "Result"), ("X", "Y"), ("Loc X", "Loc Y"), ("Pos1", "Pos2"), ("Col1", "Col2"),
+                 ("Geo1", "Geo2"), ("A", "B"), ("Y1", "X1"), ("Index", "Group"), ("Point", "Spot"),
+                 ("Measure1", "Measure2"), ("Entry", "Seen"), ("Event", "Period"), ("V1", "V2"), ("Data", "Data 2")]
+        tables = []
+        for lo1, hi1, lo2, hi2 in boxes.values():
+            lat = [f"{rng.uniform(lo1, hi1):.1f}" for _ in range(60)]
+            lon = [f"{rng.uniform(lo2, hi2):.1f}" for _ in range(60)]
+            for a, b in pairs:
+                tables.append([(a, lat), (b, lon), ("Sex", ["F", "M"] * 30)])
+        for table, result in zip(tables, table_probe(self.tmp, tables)):
+            self.assertEqual([a for _, a in result], ["redact", "redact", "keep"], [h for h, _ in table])
+        # End to end: the review's table, 120 rows of Munich at one decimal under Value and Result.
+        rows = [[f"{rng.uniform(48.0, 48.3):.1f}", f"{rng.uniform(11.4, 11.8):.1f}", "F"] for _ in range(120)]
+        raw = write_csv(self.tmp / "munich.csv", ["Value", "Result", "Sex"], rows)
+        p, out, report = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual({r["Value"] for r in out} | {r["Result"] for r in out}, {"[REDACTED]"})
+        self.assertNotIn("verified as measurements", json.dumps(report["decisions"][:2]))
+        self.assertIn("coordinates", p.stdout)
+
+    # Medium: a first row of data whose letters are separated by NUL, zero-width or other format characters
+    # passed the header check, and its raw text reached the plan and the output; a UTF-16 file with no byte
+    # order mark was read as UTF-8.
+    def test_header_cells_with_control_or_format_characters_are_refused(self):
+        name = "Zorbleton Quillmont"
+        seps = ["​", "‌", "‍", "⁠", "﻿", "‎", "‏", "­", "‮",
+                "⁦", "\x01", "\x1f", "\x7f", "\x00"]
+        for k, sep in enumerate(seps):
+            hidden = sep.join(name)
+            for header in ([hidden, "Sex", "Temp"], ["Sex", hidden, "Temp"], ["Sex", "Temp", "Weight" + sep]):
+                path = self.tmp / f"hidden_{k}.csv"
+                with open(path, "w", newline="", encoding="utf-8") as f:
+                    w = csv.writer(f)
+                    w.writerow(header)
+                    w.writerow(["F", "36.6", "70"])
+                p = run("plan", str(path), "--encoding", "utf-8")
+                self.assertEqual(p.returncode, 2, (repr(sep), header, p.stdout + p.stderr))
+                position = next(i for i, h in enumerate(header, start=1) if sep in h)
+                self.assertIn(f"#{position}", p.stderr)
+                self.assertIn("invisible formatting character", p.stderr)
+                for part in name.split():
+                    self.assertNotIn(part, p.stdout + p.stderr)
+                self.assertNotIn(hidden, p.stdout + p.stderr)
+        # A BOM-less UTF-16 file, little or big endian, with a first row of data: refused, with the remedy.
+        rows = ["Zorbleton Smith,M,100.5", "Quillmont Ana,F,98.2", "Okerbrae Joao,M,99.1"]
+        for codec, hint in (("utf-16-le", "utf-16-le"), ("utf-16-be", "utf-16-be")):
+            path = self.tmp / f"u16_{codec}.csv"
+            path.write_bytes("\n".join(rows).encode(codec))
+            for cmd in (("plan", str(path)), ("run", str(path), "-o", str(self.tmp / "o16"))):
+                p = run(*cmd)
+                self.assertEqual(p.returncode, 2, (codec, p.stdout + p.stderr))
+                self.assertIn("UTF-16 text without a byte order mark", p.stderr)
+                self.assertIn("CSV UTF-8", p.stderr)
+                self.assertIn(hint, p.stderr)
+                for part in ("Zorbleton", "Smith", "Quillmont"):
+                    self.assertNotIn(part, p.stdout + p.stderr)
+            self.assertFalse((self.tmp / "o16").exists() and any((self.tmp / "o16").iterdir()))
+        # A name spelled out one letter at a time with an ordinary separator is withheld, never shown.
+        spelled = ["-".join("Zorbleton") + " " + "-".join("Smith"), " ".join("Quillmont"), ".".join("Okerbrae"),
+                   "_".join("Varnstead"), "/".join("Delmorrow"), "*".join("Fintally"), "Z-o-r-b"]
+        results = header_probe(self.tmp, [["Diagnosis", h, "Sex"] for h in spelled])
+        self.assertEqual([r for r in results if r != [2]], [])
+        raw = self.tmp / "spelled.csv"
+        write_csv(raw, ["-".join("Zorbleton") + " " + "-".join("Smith"), "Sex", "Temp"],
+                  [["Quillmont Ana", "F", "98.2"]] * 4)
+        p, out, report = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        written = (self.tmp / "out" / "spelled_deidentified.csv").read_text(encoding="utf-8")
+        self.assertNotIn("Z-o-r", p.stdout + json.dumps(report) + written)
+        self.assertTrue(written.startswith("column_1,Sex,Temp"), written[:40])
+        # The first row of data in a file without one, read as the header row, is refused outright when a
+        # third of its cells look like values.
+        write_csv(raw, ["-".join("Zorbleton") + " " + "-".join("Smith"), "M", "100.5"],
+                  [["Quillmont Ana", "F", "98.2"]] * 4)
+        p = run("plan", str(raw))
+        self.assertEqual(p.returncode, 2, p.stdout + p.stderr)
+        self.assertNotIn("Z-o-r", p.stdout + p.stderr)
+        # Ordinary names, single letters and codes stay shown; a line break in a column name reads as a space.
+        shown = ["T N M", "A B", "X Y Z", "Systolic\nBP", "Heart\tRate", "Q1 Q2", "HbA1c", "U.S. State"]
+        results = header_probe(self.tmp, [["Diagnosis", h, "Sex"] for h in shown])
+        self.assertEqual([h for h, r in zip(shown, results) if r != []], [])
+        # Without a header row the first row is data: format characters in a value make it text the script
+        # cannot verify, redacted, not a refusal.
+        raw = self.tmp / "noheader.csv"
+        raw.write_text("​".join("Zorbleton") + ",F,36.6\nQuillmont Ana,M,37.0\n", encoding="utf-8")
+        p = run("run", str(raw), "-o", str(self.tmp / "nh"), "--no-header")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertNotIn("Zorbleton", (self.tmp / "nh" / "noheader_deidentified.csv").read_text(encoding="utf-8")
+                         .replace("​", ""))
+
+    # Lows and smaller gaps of round 7.
+    def test_smaller_gaps_of_round_seven(self):
+        import random
+        rng = random.Random(75)
+        # A coordinate written after its hemisphere letter is not an ICD-10 code under a neutral name.
+        hemis = [f"{rng.choice('NS')}{rng.randrange(10, 60)}.{rng.randrange(1000, 9999)}" for _ in range(40)]
+        hemis3 = [f"{rng.choice('NSEW')}{rng.randrange(10, 60)}.{rng.randrange(100, 999)}" for _ in range(40)]
+        heads = ["Value", "Col3", "Result", "X", "Y", "Pos", "Code", "Geo", "Point", "Loc"]
+        decided = probe(self.tmp, "decide", [(h, v) for h in heads for v in (hemis, hemis3)])
+        self.assertEqual([(h, a) for h, a, _ in decided if a == "keep"], [])
+        flags = probe(self.tmp, "grammar", [("Diagnosis", ["E11.3211", "S72.001A", "N18.30", "I25.110", "E11.9"]),
+                                            ("Code", ["E11.3211", "S72.001A", "N37.7749", "S33.8688", "W12.4194"])])
+        self.assertEqual([f for _, f in flags], [[True] * 5, [True, True, False, False, False]])
+        # Two capital letters from more than one vocabulary list are initials as often as codes.
+        initials = ["NA", "SD", "PR", "LT", "HH", "NO", "CR", "RT", "NE", "JA", "SI", "LL"]
+        cols = [(h, [initials[(i * 5 + k) % 12] for i in range(150)]) for k, h in
+                enumerate(["Ref", "Value", "Notes", "Code", "Item", "Col1", "Group", "Initials 2"])]
+        self.assertEqual([(h, a) for h, a, _ in probe(self.tmp, "decide", cols) if a == "keep"], [])
+        lists = [("Response", ["CR", "PR", "SD", "PD", "NE"] * 20), ("Side", ["LT", "RT"] * 20),
+                 ("Flag", ["H", "L", "HH", "LL", "N"] * 20), ("State", ["CA", "NY", "TX", "WA"] * 20),
+                 ("Reply", ["NO", "SI", "JA"] * 20)]
+        self.assertEqual([a for _, a, _ in probe(self.tmp, "decide", lists)], ["keep"] * 5)
+        # --keep is refused for words for a person or a place the lists read as ordinary words, and for a
+        # name word spelled with digits.
+        names = ["Quillmont Ana", "Okerbrae Joao", "Varnstead Lia", "Delmorrow Rui"] * 6
+        towns = ["Brindlecove", "Oakshaw", "Marrowmere", "Quellford"] * 6
+        refused = [(h, names) for h in ("Signed", "Sign", "Hx Source", "Source of History", "Salutation", "MI", "To",
+                                        "From", "Resp", "Patient N4me", "Patient Nam3", "M0ther Info", "L4st Name",
+                                        "Sp0use Info", "Fu11 Name")]
+        refused += [(h, towns) for h in ("Geo Location", "Map", "Shelter", "Building", "Block",
+                                         "Education Institution", "Origin", "Geo Area", "GPS Location")]
+        results = keep_probe(self.tmp, refused)
+        self.assertEqual([h for h, outcome, _ in results if outcome != "refused"], [])
+        for (h, values), (_, _, message) in zip(refused, results):
+            for v in set(values):
+                self.assertNotIn(v, message)
+        kept = keep_probe(self.tmp, [(h, ["Rash", "Fever", "Edema"] * 8) for h in ("Vital Sign", "Clinical Sign",
+                                                                                     "Injury Location", "Tumor Origin")]
+                          + [(h, ["Arm A", "Arm B"] * 8) for h in ("Col1", "HbA1c Group", "CD4 Group", "Q3")])
+        self.assertEqual([h for h, outcome, _ in kept if outcome != "kept"], [])
+        # Short study numbers under a code, a label, a token or a sequence of the person or the record are
+        # pseudonymized, so the rows of one patient stay linked.
+        short = [str(100 + (i * 7) % 20) for i in range(100)]
+        heads = ["Pt Code", "Case Code", "Record Code", "Research Number", "Proband No", "Family Number",
+                 "Participant Label", "Subject Token", "Patient Seq", "Subject Code"]
+        self.assertEqual([a for _, a, _ in probe(self.tmp, "decide", [(h, short) for h in heads])],
+                         ["pseudonym_id"] * len(heads))
+        # Ages written as >99 under words that can mean old age, and numbers under neutral names, are not kept.
+        over = [">99", "45", "62", ">99", "71"] * 8
+        decided = probe(self.tmp, "decide", [(h, over) for h in ("Elderly", "Senior", "Old", "Year", "Lifetime", "Eta")])
+        self.assertEqual([(h, a) for h, a, _ in decided if a == "keep"], [])
+        # A long cell of slashes no longer takes quadratic time.
+        raw = write_csv(self.tmp / "slashes.csv", ["Comment Code", "Sex"], [["1/" * 30000, "F"], ["2/2", "M"]])
+        import time
+        start = time.monotonic()
+        p = run("run", str(raw), "-o", str(self.tmp / "sl"))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertLess(time.monotonic() - start, 15)
+        # A wide matrix named by public accessions is confirmed by a range of positions, and its numbers kept
+        # the same way.
+        probes = [f"cg{10000000 + k * 7919:08d}" for k in range(300)]
+        header = ["Sex"] + probes
+        rows = [["F" if i % 2 else "M"] + [f"{rng.random():.3f}" for _ in probes] for i in range(8)]
+        raw = write_csv(self.tmp / "wide.csv", header, rows)
+        p = run("plan", str(raw))
+        self.assertEqual(p.returncode, 2, p.stdout + p.stderr)
+        self.assertIn("--keep-name '#2-#501'", p.stderr)
+        for acc in probes[:20]:
+            self.assertNotIn(acc, p.stderr)
+        p, out, report = self.run_file(raw, "--keep-name", "#2-#301", "--keep", "#2-#301")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual([r[probes[0]] for r in out], [row[1] for row in rows])
+        p = run("plan", str(raw), "--keep-name", "#2-#999")
+        self.assertEqual(p.returncode, 2, p.stdout + p.stderr)
+        self.assertIn("range of positions", p.stderr)
+
+    # The regression table: an ordinary invented 30-column clinical table. A default run keeps the columns it
+    # can verify (measurements under measurement names, codes, category words, states and countries), redacts
+    # the text and the numbers it cannot, and completes with exit 0 once the person keeps the columns they
+    # confirm.
+    def test_ordinary_clinical_table_regression(self):
+        header = ["Patient ID", "Age", "Sex", "Race", "Ethnicity", "State", "Country", "Diagnosis", "ICD10", "Drug",
+                  "ATC", "Dose (mg)", "Site", "Arm", "Visit", "Visit Number", "Visit Date", "Glucose", "HbA1c",
+                  "Creatinine (mg/dL)", "Systolic BP", "Heart Rate", "BMI", "Pain Score", "ECOG", "Stage", "Gene",
+                  "Ensembl ID", "Smoking Status", "Notes"]
+        dx = [("Type 2 diabetes", "E11.9"), ("Hypertension", "I10"), ("Asthma", "J45.909"), ("Heart failure", "I50.9"),
+              ("CKD stage 3", "N18.30"), ("Lung cancer", "C34.90")]
+        drugs = [("Metformin", "A10BA02"), ("Lisinopril", "C09AA03"), ("Albuterol", "R03AC02"), ("Furosemide", "C03CA01")]
+        genes = [("TP53", "ENSG00000141510"), ("EGFR", "ENSG00000146648"), ("KRAS", "ENSG00000133703"),
+                 ("BRCA1", "ENSG00000012048")]
+        pids = [str(4100000 + 37 * k) for k in range(40)]
+        rows = []
+        for i in range(160):
+            d, code = dx[i % 6]
+            dr, atc = drugs[i % 4]
+            g, ens = genes[i % 4]
+            rows.append([pids[i % 40], str(25 + (i * 7) % 60), "F" if i % 2 else "M",
+                         ["White", "Black or African American", "Asian", "American Indian or Alaska Native"][i % 4],
+                         ["Hispanic or Latino", "Not Hispanic or Latino"][i % 2], ["CA", "NY", "TX", "WA"][i % 4],
+                         ["United States", "Canada", "Mexico"][i % 3], d, code, dr, atc, str([500, 1000, 10, 40][i % 4]),
+                         ["Lung", "Breast", "Colon", "Prostate"][i % 4], ["Placebo", "Active"][i % 2],
+                         ["Baseline", "Week 4", "Week 12", "Week 24"][i % 4], str(1 + i % 4),
+                         f"2021-{1 + i % 12:02d}-{1 + i % 28:02d}", str(80 + (i * 13) % 120), f"{5.2 + (i % 30) / 10:.1f}",
+                         f"{0.6 + (i % 20) / 10:.2f}", str(100 + (i * 3) % 60), str(55 + (i * 5) % 50),
+                         f"{19 + (i % 15) * 0.7:.1f}", str(i % 11), str(i % 5),
+                         ["Stage I", "Stage II", "Stage IIIA", "Stage IV"][i % 4], g, ens,
+                         ["Never smoker", "Former smoker", "Current smoker"][i % 3],
+                         "Follow-up in clinic as planned, tolerating treatment well with no new complaints today."])
+        raw = write_csv(self.tmp / "clinical30.csv", header, rows)
+        p, out, report = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        actions = {d["column"]: d["action"] for d in report["decisions"]}
+        kept = {"Sex", "Race", "Ethnicity", "State", "Country", "ICD10", "ATC", "Dose (mg)", "Glucose", "HbA1c",
+                "Creatinine (mg/dL)", "Systolic BP", "Heart Rate", "BMI", "Pain Score", "ECOG", "Stage", "Ensembl ID",
+                "Smoking Status"}
+        unverified = {"Diagnosis", "Drug", "Site", "Arm", "Visit", "Visit Number", "Gene"}
+        self.assertEqual({c for c, a in actions.items() if a == "keep"}, kept)
+        self.assertEqual({d["column"] for d in report["columns_needing_decision"]}, unverified)
+        self.assertEqual(actions["Patient ID"], "pseudonym_id")
+        self.assertEqual(actions["Visit Date"], "year")
+        self.assertEqual(actions["Notes"], "redact")
+        for i, col in enumerate(header):
+            if col in kept:
+                self.assertEqual([r[col] for r in out], [row[i] for row in rows], col)
+        p, out, report = self.run_file(raw, *[a for c in sorted(unverified) for a in ("--keep", c)])
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        for i, col in enumerate(header):
+            if col in kept | unverified:
+                self.assertEqual([r[col] for r in out], [row[i] for row in rows], col)
+        self.assertEqual({d["column"] for d in report["kept_unverified_columns"]}, unverified)
+        written = json.dumps(out)
+        for pid in pids:
+            self.assertNotIn(pid, written)
 
 
 class NoNetwork(unittest.TestCase):

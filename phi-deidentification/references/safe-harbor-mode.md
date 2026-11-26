@@ -91,6 +91,22 @@ a column holds no record numbers cannot be relied on to know that `NHS` names on
 are not places of care (`Home Area`, `Lives`, `Catchment Area`, `Ort`) could be kept; now they
 cannot hold words that can be names (step 6).
 
+A seventh review round found the class still open in numbers under neutral names, where the script
+still decided by shape: one-decimal coordinate pairs (a point to about ten kilometres), decimal years
+(`2018.07`, a year and a week or a day, a decimal birth year of someone over 89), Unix timestamps
+with fractional seconds and record numbers passed as verified measurements under `Value`, `Result`,
+`Col3`, `X`, `Y` and similar names. Since then numbers fail closed by NAME, as text does: a column of
+numbers is kept by default only when its column name names a measurement and its numbers pass the
+identifier and date checks of step 4; any other column of numbers goes to the person's decision, and
+the plan says the script cannot verify that its numbers are not identifiers, dates or coordinates.
+Dates written as numbers (a decimal whose whole part is a calendar year, a Unix timestamp of 10 or 13
+digits, a Julian date of 7 digits) are dates under any name. A header cell holding a NUL, a control
+character or a format character is refused by its position, and a file whose first bytes hold a NUL
+is read as UTF-16 without a byte order mark and refused with the remedy. The cost is over-redaction
+of ordinary numbers under neutral names (`Value` of a long lab table, `Visit Number`, a sex or a
+Likert item coded as a number), which the person undoes with `--keep`, also for a range of
+positions.
+
 ## How a column name is shown
 
 0. **Column names.** The first row is the header row unless the person says the file has none
@@ -139,7 +155,15 @@ cannot hold words that can be names (step 6).
    identifier pattern in any cell is refused, and so is one in which a third of the cells look
    like values or names, unless the person confirms it; two cells with the same name are refused
    by position, without printing them. The rules below read the real column name whether it is
-   shown or not.
+   shown or not. Since round 7 a header cell holding a NUL, another control character or a format
+   character (Unicode Cc or Cf: a zero-width space, joiner or non-joiner, a word joiner, a direction
+   mark or override, a soft hyphen, a byte order mark inside the text) is refused, naming only its
+   position, whatever the person confirms, because such characters split a name into letters each of
+   which is a column word; a tab, a line feed and a carriage return read as spaces, and the plan
+   shows such a name on one line. A word spelled out one letter at a time with one separator between
+   letters (`Z-o-r-b-l-e`, `S m i t h`, `J.o.n.e.s`; four letters or more) is withheld as a value.
+   `--keep-name` takes a range of positions too (`--keep-name '#2-#501'`), so a wide matrix of public
+   accessions can be confirmed in one option.
 
 ## How a column is decided
 
@@ -245,14 +269,35 @@ cannot hold words that can be names (step 6).
    `2021/03`, `2021-3`, `2021 Mar`, `Mar 2021`, `03/2021`), so a monthly export written with
    `%Y-%m` keeps the year only, whether the column is called `Visit Month`, `Period`,
    `Enrolled` or `Col1`.
-4. **By the shape of its numbers.** Numbers fail closed like text, and each cell is judged on
-   its own: a column of numbers is verified only when every number in it reads as a
-   measurement, that is a decimal, a whole number of up to three digits, or a longer whole
-   number under a column name that names a measurement (a lab such as `WBC` or `Ferritin`, a
-   vital sign, a count such as `Steps` or `Number of Visits`, a score, a dose, a unit such as
-   `(mg/dL)` or `%`, money, a duration, a propensity or a z-score), with no word that says
-   identifier (`Lab No`, `Sample ID`) and no last word that names what a row is about (`Glucose
-   Case`, `Count Patient`, `Dose Encounter`, but `Cost per Case` is a measurement). Otherwise:
+4. **By the name and the shape of its numbers.** Numbers fail closed like text, by name since
+   round 7, and each cell is judged on its own. A column of numbers is verified only under a column
+   name that names a measurement: a lab analyte (`WBC`, `Ferritin`, `Free T4`, `Vitamin B12`,
+   `Ki-67`, `CA 19-9`, `IgG`), a vital sign, a count such as `Steps` or `Number of Visits`, a score or
+   a scale (`Pain Score`, `ECOG`, `NYHA`, `Gleason`, `MoCA`, `mRS`, `Apgar`, a stage or a grade), a
+   dose, a unit such as `(mg/dL)` or `%`, money, a duration, a statistic (`P Value`, `FDR`,
+   `Log2FC`, `Mean`, `Median`), a propensity or a z-score, with no word that says identifier (`Lab
+   No`, `Sample ID`) and no last word that names what a row is about (`Glucose Case`, `Count
+   Patient`, `Dose Encounter`, but `Cost per Case` is a measurement); or written with a unit of
+   measurement in its cell (`5.2 mg/dL`, `12%`); or, for a column of four-digit years, or of numbers
+   up to 99 under a word for a year, under a name for a year or a date (`Year`, `Admit Year`, `Dx
+   Yr`, `YYYY`, `Jahr`, `Years`). Every number must also read as a measurement by the checks below.
+   A column of numbers under any other name (`Value`, `Result`, `Col3`, `X`, `Y`, `Index`, `Point`,
+   `Pos`, `Geo1`, `Measure1`, `Entry`, `Seen`, `Event`, `Period`, `Visit Number`, a gene symbol) is
+   redacted and listed for the person's decision: the script cannot verify that its numbers are not
+   identifiers, dates or coordinates (round 7), and when one of the shapes below fits, the plan gives
+   that reason. The checks:
+   - since round 7, dates written as numbers under any column name: a decimal whose whole part is a
+     year from 1850 to five years after the reference year (`2021.07`, `2021.3`, a year and a week or
+     a day, `2021.123`, a decimal birth year, `1926.164`, a year and a month and a day, `1931.0314`), a
+     number of 10 or 13 digits before its point that is a Unix timestamp in seconds or milliseconds
+     within those years, also negative or with fractional seconds (`1629478800.373`,
+     `-1204783199.85`), and a number of 7 digits that is a Julian day number or a year and a day of
+     the year (`2459215.5`, `2021123`; whole ones of seven digits only under a name that names a
+     measurement, since under any other name the record number rule pseudonymizes them). A column of
+     nothing else keeps only the year, read from the number (a year 90 or more years ago becomes
+     `[90_OR_OLDER]`); a column that mixes them with other numbers is redacted; under a column name
+     that names a measurement they must be most of its numbers, so one cost of `1999.99` or one viral
+     load of `2450000` does not make a column of measurements a date;
    - a whole number of four or more digits in any cell, in any written form (`4527832`,
      `00088221`, `6135517.0`, `2589882.00`, `4,527,832`), unless every cell is a year: possible
      record or account numbers, ZIP codes that lost their leading zero, or dates written as
@@ -265,7 +310,10 @@ cannot hold words that can be names (step 6).
    - short whole numbers under a column name of a person's or a record's number (`Study ID`, `Pat
      No`, `Hospital No`, `Subject No`, `Record`, `Chart`, `Case`, `Reference`, `Key`), however few
      their digits: study or record numbers, pseudonymized and kept on the person's word (round
-     4); `Visit No`, `Cycle Number` and `Number of Visits` are sequences or counts;
+     4), and since round 7 a code, a label, a token or a sequence of the person, the record, a
+     proband, a family or a study (`Pt Code`, `Case Code`, `Participant Label`, `Subject Token`,
+     `Patient Seq`, `Family Number`, `Research Number`); `Visit No` and `Cycle Number` are sequences,
+     redacted by their names since round 7, and `Number of Visits` is a count;
    - whole numbers of seven or more digits that repeat more often than they differ, even under a
      column name that names a measurement (`Score`, `Count`, `Level`, `Total`, `Weight`,
      `Amount`, `Dose`), and since round 6 of six or more digits under a count of a patient's visits,
@@ -284,12 +332,16 @@ cannot hold words that can be names (step 6).
      The serial check runs under any column name but one that names a measurement other than
      time; under a day, a week, a month, a duration or a bare time (`Visit Day`, `Days`, `LOS`,
      `Event Time`) a whole number from 10000 up counts too, because such a duration is not
-     plausible; minutes, seconds and hours are left alone;
+     plausible, and since round 7 any number of five digits before its point, whole or not, also
+     beyond the last Excel serial; minutes, seconds and hours are left alone;
    - a whole number from 90 to 125 in any cell (or a number with a unit of time, `95 y`,
      `1140 mo`, `1,100 months`), under a column name that names no measurement, whatever else the
-     column holds (a decimal, `<1`, `130`): possible ages, grouped as `90+`; under a column name
-     with a word that can mean age or old age (`ETA`, `Old`, `Y Old`, `Year`, `Elderly`, `Senior`,
-     `Seniority`) a decimal from 90 to 125 counts too;
+     column holds (a decimal, `<1`, `130`): possible ages. Under a column name with a word that can
+     mean age or old age (`ETA`, `Old`, `Y Old`, `Year`, `Elderly`, `Senior`, `Seniority`), where a
+     decimal from 90 to 125 and an age written as older than (`>99`, round 7) count too, or with a
+     unit of time in every cell, they are grouped as `90+` and the other ages stay; since round 7,
+     under any other name (`Value`, `Result`, `Visit No`) the whole column is redacted, because its
+     other numbers are not verified either;
    - a day of the month (1 to 31), a month (1 to 12) or a weekday (0 to 7) written as a whole
      number in every cell, under a column name that says so in any language and with any
      qualifier (`Day`, `Admit Day`, `Day of Month`, `DD`, `Month`, `Discharge Month`, `MM`,
@@ -363,11 +415,18 @@ cannot hold words that can be names (step 6).
    replaced is kept only when every value that is not blank is one of:
    - (a) a number, with an optional comparator and unit (`<0.5`, `>= 10`, `5.2 mg/dL`, `12%`,
      `1,250`), or a blood pressure (`120/80`, the first number larger, so a day and a month
-     never pass), when the column's numbers pass step 4;
+     never pass), when the column's numbers pass step 4, which since round 7 includes its name:
+     a bare number under a column name that names no measurement is not verified, also beside
+     verified words (`Result` of `Positive` and `12.5`);
    - (b) a code of a closed grammar in its exact published shape (round 5), and nothing else:
      ICD-10-CM in capitals, a letter and two digits (or `C4A`, `C7A`, `C7B`, `D3A`, `M1A`, `O9A`, `Z3A`)
      no later than the last category of its chapter letter (`E89`, `H95`, `K95`, `T88`), with a dot and
-     up to four letters or digits after it, one of them a digit (`E11.9`, `S72.001A`, not `E95.1`); ICD-9 `V` codes
+     up to four letters or digits after it, one of them a digit (`E11.9`, `S72.001A`, not `E95.1`); since
+     round 7 not an `N`, `S`, `T` or `W` code with four digits after the dot, which ICD-10-CM never has
+     (the seventh character of an injury code is a letter), and an `N`, `S`, `E` or `W` code with three
+     or four digits after the dot (`N37.7749`, the shape of a latitude after its hemisphere letter) only
+     under a column name that names a diagnosis, except a diabetes code `E08` to `E13` with four
+     (`E11.3211`); ICD-9 `V` codes
      from V01 to V91 and `E` codes from E000 to E030 and E800 to E999, with a dot; LOINC with a valid
      check digit (`2345-7`) under a column name that names a LOINC code, a lab, a test, an
      observation, a component, an analyte, an assay or a panel, because many record numbers carry
@@ -401,7 +460,11 @@ cannot hold words that can be names (step 6).
      Physician`, `Visit Dr`, `Contact Preference`, `Family History`, `Visit Location`), only the
      missing-value words count, because White, Black and other vocabulary words are also
      surnames. A column of single letters must take them all from one group (M and F, Y and N,
-     L, R and B, H, L and N, S, I and R), because a few initials span several groups;
+     L, R and B, H, L and N, S, I and R), because a few initials span several groups, and since
+     round 7 so must a column of two capital letters verified only as vocabulary words (`CR`, `PR`,
+     `SD`, `NE` of response; `HH`, `LL` of result flags; `LT`, `RT` of laterality; `NO`, `SI`, `JA` of
+     yes and no; `CA`, `NY` of states under a state column), since `NA`, `SD` or `LT` are also a
+     person's initials;
    - (d) a date, which step 3 reduces to the year (a year 90 or more years before the
      reference year becomes `[90_OR_OLDER]` in every date column, whatever its name, because as
      a birth year it reveals an age over 89), or, under a state or country column, a US state,
@@ -480,6 +543,18 @@ cannot hold words that can be names (step 6).
    refuses the column. A number that the scrub of step 7 replaces in a kept column anyway (a telephone
    number, nine or more digits) does not count.
 
+   Round 7 added, when a value is a word: who signed, who is addressed and a middle initial
+   (`Signed`, `Salutation`, `Resp`, and as the whole name `Sign`, `MI`, `To`, `From`), the source of
+   a history (`Hx Source`, `Source of History`), a map, a geographic location, a shelter or a building
+   (`Map`, `Geo Location`, `GPS Location`, `Shelter`, `Building`, and as the whole name `Block` and
+   `Origin`) and an educational institution (`Education Institution`); `Vital Sign`, `Clinical Sign`
+   and `Tumor Origin` are not refused by these words. A word of a column name that mixes letters and digits
+   is also read with its digits as the letters they are written for (0 as o, 1 as i or l, 3 as e, 4 as
+   a, 5 as s, 7 as t), and refuses `--keep` when it then spells a word for a name, a person, a place or
+   a record that would refuse it (`Patient N4me`, `M0ther Info`, `Fu11 Name`); `Col1`, `HbA1c`, `CD4`
+   and `Q3` spell no such word. `--keep` and `--redact` take a range of positions (`--keep '#2-#501'`),
+   and every column in the range is judged as if it were named on its own.
+
    The plan lists the columns `--keep` refuses as ones that cannot be kept under their names, not
    among those needing the person's decision, and the report names them in
    `columns_that_cannot_be_kept` with the reason; the person renames such a column if its name is
@@ -514,14 +589,14 @@ cannot hold words that can be names (step 6).
 
 | # | Identifier | What the script does | What a person still checks |
 |---|---|---|---|
-| A | Names | Patient name columns, and columns named for the person (`participant`, `proband`, `first`, `fname`, `nm`, `姓名`, `이름`, and `subject`, `member` or `donor` holding words), become pseudonyms (`P0001`, the same person keeps the same one); names of relatives, household members, contacts (`Next Kin`, `Contact Person`, `Landlord`, `Lives With`), employers, schools, clinicians and other roles become `[REDACTED]`, and a relative's, contact's or the person's own name column cannot be kept unless every value is a category word or a number. Every other text column is kept only when every value is verified (step 5), so a name in any form is redacted by default whatever the column is called: with a qualifier (`Nakamura, Alice (wife)`, `Alice Nakamura - RN`), in lower case, as initials, a surname alone, or in a script without capital letters (Chinese, Japanese, Korean, Arabic, Hebrew, Hindi, Thai). Titled or labelled names in kept text (`Dr. X`, `Patient: X`, `Patient Name: X`, also `Dr. 박지훈` and `Patient: 林子涵`) become `[NAME]`. A name read from a first row of data as a column name (a surname alone, a titled name, a name in any script) is withheld from the plan, the report and the output (step 0). `--keep` is refused for a column whose name has a word the script does not know or names any person who is not clinical or care staff, in any language (`Pai`, `Mom`, `ICE`, `Twin`, `Witness`, `Paciente`, `Who`, `Case`, `Reporter`, `Author`, `Manager`, `Agent`, `Kind`, `Tía`, `Seen By`), and, since round 6, for a column whose name has such a word anywhere beside a part of a name or nothing else (`Patient Last`, `Mother First`, `MotherLast`, `Pat Info`, `In-law`) or is an abbreviation of a name (`PatNm`, `LNm`); AKA, pseudonym, kana and pinyin columns are names (step 6) | Names with no title or label in a column the person kept with `--keep` (`kept_unverified_columns`), which is scrubbed for patterns only, including a clinical or care staff column kept on the person's word; a vocabulary word that is also a surname (White, Black) under a race column; a column name that carries a name in an ordinary shape |
-| B | Geography smaller than a state | Street, city, county, hometown, suburb, locality, district, precinct, census, coordinate, place-of-birth and `Lives In` columns (also `ciudad`, `municipio`, `ville`, `stadt`, `出生地`, ...) become `[REDACTED]`, and `region`, `home` and `place` columns unless the person keeps them. A town under any other column name is text the script cannot verify, redacted by default (`Visit Location`, `Service Area`, `Cohort`, `Col3`). State and country columns are kept, as Safe Harbor allows, when every value is a state, territory, province or country name or code; a county or a town in one makes the column text the script cannot verify. ZIP columns keep the first three digits, or `000` for the 17 prefixes of 20,000 people or fewer (HHS list, 2000 Census). Columns of mostly five-digit numbers, of four-digit ZIP codes that lost their leading zero, adjacent latitude and longitude columns, a latitude or a longitude on its own (one cell of four or more decimal places, or numbers in range under `Lat`, `Lon`, `Lng` or `Coord`), grid coordinates in metres (`552345.12`), and since round 6 decimals of two or more places within 180 that reach 10, negative decimals from -60 to -180 and a column of decimals within 90 beside a coordinate, under a column name that names no measurement (`Value`, `X`, `Loc X`, `Pos`, `Geo1`), are redacted or pseudonymized by shape unless the column name names a measurement; `--keep` is refused for a place that is not a place of care holding words (`Home Area`, `Lives`, `Catchment Area`, `Area`, `Place`, `Ort`), and for ZIP codes and other numbers of five or more digits under a name that names no measurement; postal code, coordinate and street address column names in other languages and scripts (`PLZ`, `CEP`, `Breitengrad`, `纬度`, `Adresse`, `Calle`, `住所`) are identifiers by name, and a column name carrying a ZIP code or a coordinate (`Weight 94110`, `Weight 37.7749`) is refused. Street addresses, PO boxes, ZIP+4, "City, ST", labelled coordinates, degrees with N/S/E/W and precise "lat, lon" pairs in kept text are replaced | A bare five-digit ZIP inside kept text; a ZIP column under a column name that names a measurement; a lone latitude of one decimal place, or a coordinate whose values all lie below 10, under a neutral name; a coordinate under a column name that names a measurement (`Ratio`, `Score`); towns in a column the person kept (a place of care, a location or a destination can be kept); the ZIP list against current Census data |
-| C | Dates and ages over 89 | Date columns keep the year only, and so does a column of a year and a month with no day under any name (`2021-03`, `2021/03`, `2021-3`, `2021 Mar`, `202103`, `2021.03`); a date with no four-digit year, or text that is not a missing-value word such as "unknown", becomes `[DATE]`. A year 90 or more years before the reference year becomes `[90_OR_OLDER]` in every date column, whatever its name (`DoB`, `Geburtsdatum`, `出生日期`, `Event Date`, `Col5`), because as a birth year it reveals an age over 89, and so does such a year in unnamed columns of years. A month and a day written as a number with no separator (`0314`, `03142021`, `910314`, `3262017`), an Excel date serial (`44269.4375`, also under `Visit Day`, `Event Time` or `LOS`), and a day of the month, a month or a weekday written as a whole number under a column name for it in any language (`Admit Day`, `Discharge Month`, `MM`, `Mois`, `入院月`, `Weekday`) or in a short column beside its year (`Admit M`, `Admit D`), make a column `[REDACTED]`; so does a month, a day, a week or a day of the year in a column of its own under any name (`Mnth`, `DoM`, `Tg`, `SM`, `Gün`, `W`, `Sample Week`, `Semana`, `Col2`), found by its numbers beside a year or a date column (step 4), and a week or a day of the year by name (`Wk`, `Epi Wk`, `Admit Week`, `MMWR Week`, `Woche`, `周`, `DOY`); a date element in a column name (`Mar-19`, `03/14`, `Q1 20`, `W12 2020`) is refused, and a month name in a column name (`Weight March`, `Mar19`) is withheld. Age columns over 89 become `90+`, also under age names in other languages, with any qualifier and in compounds (`Edad`, `Alter bei Diagnose`, `Patientenalter`, `Idade`, `年龄`, `年纪`, `年齢`, `나이`, `연세`, `Возраст`, `العمر`, `বয়স`), and under `Years Old` or `Months Old` (ages in days, weeks, months or hours are converted first, ages in words such as "ninety-two" count, and text that is not an age becomes `[REDACTED]`); a whole number from 90 to 125 in any cell, under any column name that names no measurement, groups the column the same way whatever else it holds (`ETA`, `Value`, beside a decimal or `<1`), and so do numbers with a unit of time (`95 y`, `1140 mo`, and in other languages `94 ans`, `95 años`, `95岁`, `95세`); `Kor`, `Vanus`, `Amžius` and `Vecums` are age names; an age group above 89 becomes `90+`, and one that straddles 90 ("85-94") becomes `[REDACTED]`. Dates in kept text become the year, including a year and a month (`seen on 2021-03`) and a date with a month name in French, German, Spanish, Italian, Portuguese or Dutch and a four-digit year (`14 mars 2021`, `14. März 2021`); a day and a month with no year after a word such as seen, on or dated (`seen 14/3`, `on 03-14`, `seen 14.3.`) become `[DATE]`; a year after "born", "DOB" or "year of birth" of someone 90 or over becomes `[90_OR_OLDER]`; "92 years old", "92 y/o", "95 y" and "ninety-three yo" become "90+ years"; a full date 90 or more years ago becomes `[90_OR_OLDER]`; "a 92F", "pt is 91" and "in her 90s" become 90+, and "nonagenarian" `[90_OR_OLDER]` | Other dates that reveal an age over 89 (a death date next to an age); ages over 89 written as decimals under a neutral column name (`Value`, `Result`), or under a column name that names a measurement; a month, a day or a week in a column of its own that covers fewer than seven months, thirteen days or 27 weeks in a file with no year, a week numbered from 0 beside a year under a name that is not a word for a week, or one under a column name that names a measurement; a season or a half year beside a year in a column name (`Spring 2020`, `H1 2020`); in kept text, a day and a month with no year and no such word before it (`14/3`), a month name in another language with no year, and a year and a month that read as a season or school year (`2011-12` is left alone, because `2010-11` is usually a flu season; a column of months is still reduced as a whole) |
+| A | Names | Patient name columns, and columns named for the person (`participant`, `proband`, `first`, `fname`, `nm`, `姓名`, `이름`, and `subject`, `member` or `donor` holding words), become pseudonyms (`P0001`, the same person keeps the same one); names of relatives, household members, contacts (`Next Kin`, `Contact Person`, `Landlord`, `Lives With`), employers, schools, clinicians and other roles become `[REDACTED]`, and a relative's, contact's or the person's own name column cannot be kept unless every value is a category word or a number. Every other text column is kept only when every value is verified (step 5), so a name in any form is redacted by default whatever the column is called: with a qualifier (`Nakamura, Alice (wife)`, `Alice Nakamura - RN`), in lower case, as initials, a surname alone, or in a script without capital letters (Chinese, Japanese, Korean, Arabic, Hebrew, Hindi, Thai). Titled or labelled names in kept text (`Dr. X`, `Patient: X`, `Patient Name: X`, also `Dr. 박지훈` and `Patient: 林子涵`) become `[NAME]`. A name read from a first row of data as a column name (a surname alone, a titled name, a name in any script) is withheld from the plan, the report and the output (step 0). `--keep` is refused for a column whose name has a word the script does not know or names any person who is not clinical or care staff, in any language (`Pai`, `Mom`, `ICE`, `Twin`, `Witness`, `Paciente`, `Who`, `Case`, `Reporter`, `Author`, `Manager`, `Agent`, `Kind`, `Tía`, `Seen By`), and, since round 6, for a column whose name has such a word anywhere beside a part of a name or nothing else (`Patient Last`, `Mother First`, `MotherLast`, `Pat Info`, `In-law`) or is an abbreviation of a name (`PatNm`, `LNm`), and since round 7 for a name word spelled with digits (`Patient N4me`) and for who signed or is addressed (`Signed`, `Salutation`, `MI`, `To`, `From`); a name spelled out letter by letter in a first row read as column names is withheld, and a header cell with an invisible character refused; AKA, pseudonym, kana and pinyin columns are names (step 6) | Names with no title or label in a column the person kept with `--keep` (`kept_unverified_columns`), which is scrubbed for patterns only, including a clinical or care staff column kept on the person's word; a vocabulary word that is also a surname (White, Black) under a race column; a column name that carries a name in an ordinary shape |
+| B | Geography smaller than a state | Street, city, county, hometown, suburb, locality, district, precinct, census, coordinate, place-of-birth and `Lives In` columns (also `ciudad`, `municipio`, `ville`, `stadt`, `出生地`, ...) become `[REDACTED]`, and `region`, `home` and `place` columns unless the person keeps them. A town under any other column name is text the script cannot verify, redacted by default (`Visit Location`, `Service Area`, `Cohort`, `Col3`). State and country columns are kept, as Safe Harbor allows, when every value is a state, territory, province or country name or code; a county or a town in one makes the column text the script cannot verify. ZIP columns keep the first three digits, or `000` for the 17 prefixes of 20,000 people or fewer (HHS list, 2000 Census). Columns of mostly five-digit numbers, of four-digit ZIP codes that lost their leading zero, adjacent latitude and longitude columns, a latitude or a longitude on its own (one cell of four or more decimal places, or numbers in range under `Lat`, `Lon`, `Lng` or `Coord`), grid coordinates in metres (`552345.12`), and since round 6 decimals of two or more places within 180 that reach 10, negative decimals from -60 to -180 and a column of decimals within 90 beside a coordinate, under a column name that names no measurement (`Value`, `X`, `Loc X`, `Pos`, `Geo1`), are redacted or pseudonymized by shape unless the column name names a measurement; `--keep` is refused for a place that is not a place of care holding words (`Home Area`, `Lives`, `Catchment Area`, `Area`, `Place`, `Ort`), and for ZIP codes and other numbers of five or more digits under a name that names no measurement; postal code, coordinate and street address column names in other languages and scripts (`PLZ`, `CEP`, `Breitengrad`, `纬度`, `Adresse`, `Calle`, `住所`) are identifiers by name, and a column name carrying a ZIP code or a coordinate (`Weight 94110`, `Weight 37.7749`) is refused. Since round 7 every column of numbers under a column name that names no measurement is redacted until the person keeps it, so a coordinate of any precision under such a name, a one-decimal pair included, is not kept, and a coordinate written after its hemisphere letter (`N37.7749`) is no longer read as an ICD-10 code under a neutral name. Street addresses, PO boxes, ZIP+4, "City, ST", labelled coordinates, degrees with N/S/E/W and precise "lat, lon" pairs in kept text are replaced | A bare five-digit ZIP inside kept text; a ZIP column under a column name that names a measurement; a coordinate under a column name that names a measurement (`Ratio`, `Score`), or in a number column the person kept; towns in a column the person kept (a place of care, a location or a destination can be kept); the ZIP list against current Census data |
+| C | Dates and ages over 89 | Date columns keep the year only, and so does a column of a year and a month with no day under any name (`2021-03`, `2021/03`, `2021-3`, `2021 Mar`, `202103`, `2021.03`); a date with no four-digit year, or text that is not a missing-value word such as "unknown", becomes `[DATE]`. A year 90 or more years before the reference year becomes `[90_OR_OLDER]` in every date column, whatever its name (`DoB`, `Geburtsdatum`, `出生日期`, `Event Date`, `Col5`), because as a birth year it reveals an age over 89, and so does such a year in unnamed columns of years. A month and a day written as a number with no separator (`0314`, `03142021`, `910314`, `3262017`), an Excel date serial (`44269.4375`, also under `Visit Day`, `Event Time` or `LOS`), and a day of the month, a month or a weekday written as a whole number under a column name for it in any language (`Admit Day`, `Discharge Month`, `MM`, `Mois`, `入院月`, `Weekday`) or in a short column beside its year (`Admit M`, `Admit D`), make a column `[REDACTED]`; so does a month, a day, a week or a day of the year in a column of its own under any name (`Mnth`, `DoM`, `Tg`, `SM`, `Gün`, `W`, `Sample Week`, `Semana`, `Col2`), found by its numbers beside a year or a date column (step 4), and a week or a day of the year by name (`Wk`, `Epi Wk`, `Admit Week`, `MMWR Week`, `Woche`, `周`, `DOY`); a date element in a column name (`Mar-19`, `03/14`, `Q1 20`, `W12 2020`) is refused, and a month name in a column name (`Weight March`, `Mar19`) is withheld. Age columns over 89 become `90+`, also under age names in other languages, with any qualifier and in compounds (`Edad`, `Alter bei Diagnose`, `Patientenalter`, `Idade`, `年龄`, `年纪`, `年齢`, `나이`, `연세`, `Возраст`, `العمر`, `বয়স`), and under `Years Old` or `Months Old` (ages in days, weeks, months or hours are converted first, ages in words such as "ninety-two" count, and text that is not an age becomes `[REDACTED]`); a whole number from 90 to 125 in any cell, under any column name that names no measurement, groups the column the same way whatever else it holds (`ETA`, `Value`, beside a decimal or `<1`), and so do numbers with a unit of time (`95 y`, `1140 mo`, and in other languages `94 ans`, `95 años`, `95岁`, `95세`); `Kor`, `Vanus`, `Amžius` and `Vecums` are age names; an age group above 89 becomes `90+`, and one that straddles 90 ("85-94") becomes `[REDACTED]`. Dates in kept text become the year, including a year and a month (`seen on 2021-03`) and a date with a month name in French, German, Spanish, Italian, Portuguese or Dutch and a four-digit year (`14 mars 2021`, `14. März 2021`); a day and a month with no year after a word such as seen, on or dated (`seen 14/3`, `on 03-14`, `seen 14.3.`) become `[DATE]`; a year after "born", "DOB" or "year of birth" of someone 90 or over becomes `[90_OR_OLDER]`; since round 7 a date written as a number under any column name (a decimal year, `2018.07`, `2021.123`, `1926.164`; a Unix timestamp of 10 or 13 digits, `1629478800.373`, `-1204783199.85`; a Julian date of 7 digits, `2459215.5`) is a date, reduced to its year in a column of nothing else (a year 90 or more years ago becomes `[90_OR_OLDER]`) and redacted in a column that mixes them, and under a name that names no measurement any column of numbers, a decimal age over 89 included, is redacted until the person keeps it; "92 years old", "92 y/o", "95 y" and "ninety-three yo" become "90+ years"; a full date 90 or more years ago becomes `[90_OR_OLDER]`; "a 92F", "pt is 91" and "in her 90s" become 90+, and "nonagenarian" `[90_OR_OLDER]` | Other dates that reveal an age over 89 (a death date next to an age); ages over 89 under a column name that names a measurement, and in a number column the person kept; a date written as a number that is one value among a measurement's numbers (a cost of `1999.99`); a month, a day or a week in a column of its own that covers fewer than seven months, thirteen days or 27 weeks in a file with no year, a week numbered from 0 beside a year under a name that is not a word for a week, or one under a column name that names a measurement; a season or a half year beside a year in a column name (`Spring 2020`, `H1 2020`); in kept text, a day and a month with no year and no such word before it (`14/3`), a month name in another language with no year, and a year and a month that read as a season or school year (`2011-12` is left alone, because `2010-11` is usually a flu season; a column of months is still reduced as a whole) |
 | D | Telephone numbers | Phone columns, also in other languages (`Telefon`, `Teléfono`, `Celular`), become `[REDACTED]`; a phone number that Excel wrote with an exponent (`4.15555E+09`) is pseudonymized under a column name that names no measurement; numbers in kept text, including a cell that is only an international number (`+14155550134`), become `[PHONE]` | Local seven-digit numbers with no label |
 | E | Fax numbers | As telephone numbers | |
 | F | Email addresses | Redacted | |
 | G | Social security numbers | Redacted (and national ID numbers of the chosen locale pack) | |
-| H | Medical record numbers | Become pseudonyms (`ID0001`), so rows of one patient stay linked, whether the column is named for them or not: a whole number of four or more digits in any cell, in any written form and also with an exponent (`4.52783E+06`), makes a column under a column name that names no measurement pseudonymized (`Chart`, `Hosp No`, `Patid`, `病历号`, `Col6`, a `Value` column of a long export); a column named with a word for number or record in any language (`Pat No`, `Hospital No`, `Patientennummer`, `Prontuário`, `病历号`, `등록번호`) holding numbers of four or more digits or codes is a record number by name and cannot be kept, and short numbers under such a name (`Study ID` of 1 to 30) are pseudonymized; repeated numbers of seven or more digits are pseudonymized even under a measurement name, in any written form (`-4527832`, `4527832.5`, `4.527832E+06`), and so are long numbers under a measurement name whose last word names a claim, a policy, an invoice, a plan, a visit or a record (`Cost Claim`); labelled numbers in kept text (`MRN 1234`, `MR# 1234`, `ID 1234`, `#A-998`) become `[ID]`; a code grammar takes only its exact published shape, so a record number with a prefix (`RS1234567`, `NM_1234567`, `H8Q.600`) is not a code, and a LOINC-shaped number counts as a code only under a lab or test name; a column name holding a number of five or more digits, also in groups (`Patient 3767393`, `Patient 376 7393`, `Pt 37_67_393`), is refused; since round 6 health and patient numbers by abbreviation (`PHN`, `NHS`, `NIP`, `PRN`, `Patid`), a key or a reference of the patient (`Patient Ref`, `Patient Key`) and a name with a number sign (`Pat#`, `MR#`) are record numbers by name with four or more digits, repeated six-digit numbers under `Visits`, `Encounters` or `Admissions` are pseudonymized, and `--keep` is refused for numbers of five or more digits under any column name that names no measurement and no thing whose numbers are not a person's | A record number of three digits or fewer under a column name that names no record; a record number of four to six digits, or one that does not repeat, under a column name that names a measurement (`Steps`, `Total Cost`, `Count`), or one of four digits kept on the person's word under a neutral name; a record number written exactly as an rsID (`rs` in lower case and up to ten digits), an Ensembl identifier (`ENSG` and eleven digits) or a dotted ICD-10 code (`S21.1234`); a record number of four digits or fewer in a column name |
+| H | Medical record numbers | Become pseudonyms (`ID0001`), so rows of one patient stay linked, whether the column is named for them or not: a whole number of four or more digits in any cell, in any written form and also with an exponent (`4.52783E+06`), makes a column under a column name that names no measurement pseudonymized (`Chart`, `Hosp No`, `Patid`, `病历号`, `Col6`, a `Value` column of a long export); a column named with a word for number or record in any language (`Pat No`, `Hospital No`, `Patientennummer`, `Prontuário`, `病历号`, `등록번호`) holding numbers of four or more digits or codes is a record number by name and cannot be kept, and short numbers under such a name (`Study ID` of 1 to 30) are pseudonymized; repeated numbers of seven or more digits are pseudonymized even under a measurement name, in any written form (`-4527832`, `4527832.5`, `4.527832E+06`), and so are long numbers under a measurement name whose last word names a claim, a policy, an invoice, a plan, a visit or a record (`Cost Claim`); labelled numbers in kept text (`MRN 1234`, `MR# 1234`, `ID 1234`, `#A-998`) become `[ID]`; a code grammar takes only its exact published shape, so a record number with a prefix (`RS1234567`, `NM_1234567`, `H8Q.600`) is not a code, and a LOINC-shaped number counts as a code only under a lab or test name; a column name holding a number of five or more digits, also in groups (`Patient 3767393`, `Patient 376 7393`, `Pt 37_67_393`), is refused; since round 6 health and patient numbers by abbreviation (`PHN`, `NHS`, `NIP`, `PRN`, `Patid`), a key or a reference of the patient (`Patient Ref`, `Patient Key`) and a name with a number sign (`Pat#`, `MR#`) are record numbers by name with four or more digits, repeated six-digit numbers under `Visits`, `Encounters` or `Admissions` are pseudonymized, and `--keep` is refused for numbers of five or more digits under any column name that names no measurement and no thing whose numbers are not a person's; since round 7 short numbers under a code, a label, a token or a sequence of the person or the record (`Pt Code`, `Participant Label`) are pseudonymized, and any column of numbers under a column name that names no measurement is redacted until the person keeps it | A record number of three digits or fewer kept on the person's word under a column name that names no record; a record number of four to six digits, or one that does not repeat, under a column name that names a measurement (`Steps`, `Total Cost`, `Count`), or one of four digits kept on the person's word under a neutral name; a record number written exactly as an rsID (`rs` in lower case and up to ten digits), an Ensembl identifier (`ENSG` and eleven digits) or a dotted ICD-10 code (`S21.1234`); a record number of four digits or fewer in a column name |
 | I | Health plan beneficiary numbers | Member, policy, subscriber, Medicare and Medicaid columns redacted; Medicare MBI-shaped values in text replaced. A payer or type column (`insurance`, `insurance_type`, `medicare_status`) of category words such as Medicare or Commercial is not an identifier by name: Yes and No in it are kept, and other words are redacted as text the script cannot verify until the person keeps the column | |
 | J | Account numbers | Account, card and IBAN columns redacted; grouped card numbers and valid IBANs in text replaced | |
 | K | Certificate and licence numbers | Licence, certificate, DEA, NPI and passport columns redacted; labelled numbers in text replaced | |
@@ -531,7 +606,7 @@ cannot hold words that can be names (step 6).
 | O | IP addresses | Redacted, by column name or by values (IPv4 and IPv6) | |
 | P | Biometric identifiers | Fingerprint, voiceprint, retina, iris and face-template columns redacted; long hex or base64 blobs in text replaced | Biometrics stored in another form |
 | Q | Full-face photographs | Photo and image columns redacted; image file names and `data:image` values in text replaced | Images themselves (DICOM and photo files are out of scope) |
-| R | Any other unique identifying number or code | Unique numbers, and whole numbers of four or more digits under a column name that names no measurement, are pseudonymized; text codes that no closed grammar verifies are redacted until the person keeps them; in kept text, numbers of nine or more digits (also written `274,365,867`) and codes with four or more digits and a letter become `[ID]` (dbSNP identifiers in lower case, Ensembl identifiers of eleven digits, RefSeq identifiers, and whole values of a code grammar, are left alone; `RS1234567` is replaced) | Rare combinations of values (quasi-identifiers), small cells; a number column kept on the person's word |
+| R | Any other unique identifying number or code | Unique numbers, and whole numbers of four or more digits under a column name that names no measurement, are pseudonymized, and since round 7 every other column of numbers under such a name is redacted until the person keeps it; text codes that no closed grammar verifies are redacted until the person keeps them; in kept text, numbers of nine or more digits (also written `274,365,867`) and codes with four or more digits and a letter become `[ID]` (dbSNP identifiers in lower case, Ensembl identifiers of eleven digits, RefSeq identifiers, and whole values of a code grammar, are left alone; `RS1234567` is replaced) | Rare combinations of values (quasi-identifiers), small cells; a number column kept on the person's word |
 
 ## What the script does not do
 
@@ -548,7 +623,9 @@ cannot hold words that can be names (step 6).
   name is withheld as `#N (name withheld)` and written as `column_N` until the person confirms
   it. A surname that is also an ordinary column word (`Price`, `Ward`, `Long`) is shown when
   another column word stands beside it (`Price (USD)`); alone, of 1,161 common US surnames and
-  given names tested, only `Case`, `Day`, `Person` and `Weeks` are shown. A column word that
+  given names tested, only `Case`, `Day`, `Person` and `Weeks` are shown, and of given names that
+  are also column words `Gene` and `Field` (since round 7 `Bill` and `Charity` alone are withheld,
+  beside another column word they are shown). A column word that
   is an eponym of a score (`Charlson`, `Glasgow`, `Barthel`) is shown alone. A first row with an identifier
   pattern in any cell (an email, a phone or ID number, a date, a number of five or more digits
   also written in groups, a decimal of four or more places, a year 90 or more years ago, a month,
@@ -560,7 +637,10 @@ cannot hold words that can be names (step 6).
   a month and a day written as two numbers of 12 or less with no leading zero and no year, which
   are also fractions and ranges (`Grade 3/4`, `Score 1-10`, `Visit 3/4`). A
   wide table of five or more digits in a row of separators that is not a date (`Range 1-5 (2020)`,
-  `Dose 1 2 3 4 5`) is refused too, and the person renames those columns.
+  `Dose 1 2 3 4 5`) is refused too, and the person renames those columns. Since round 7 a header
+  cell holding a NUL, a control or a format character is refused and a word spelled out one letter
+  at a time with one separator is withheld; a name broken up another way a person still reads
+  (`Zor-ble-ton`, or digits for letters) is not found in a column name.
 - In a file with no header row, read without `--no-header`, the first row is lost from the
   output (its cells become withheld column names). The skill asks the person whether the first
   row holds column names before it runs.
@@ -568,7 +648,10 @@ cannot hold words that can be names (step 6).
   UTF-32 with one. Any other file (a Windows-1252 or Latin-1 export, Excel's plain "CSV" save)
   is refused with the remedy: save it as "CSV UTF-8", or rerun with `--encoding` (`cp1252`,
   `latin-1`, `utf-16-le`, `euc-kr`, ...). It does not guess an 8-bit encoding, because a wrong
-  guess turns names into other text silently. The output is always UTF-8.
+  guess turns names into other text silently. Since round 7 a file with a NUL byte in its first
+  4096 bytes and no byte order mark is refused as UTF-16 without a byte order mark (which is valid
+  UTF-8 with a NUL beside every letter), with the same remedy and the byte order the NULs suggest
+  (`--encoding utf-16-le` or `utf-16-be`). The output is always UTF-8.
 - It refuses a file that uses `;`, `|` or tabs in a `.csv` file as its separator unless
   `--delimiter` names it, because each row would be read as one text value; the output uses
   the same separator, and `verify` reads it from the report. A number written with a decimal
@@ -589,28 +672,30 @@ cannot hold words that can be names (step 6).
   numbers from 1 to 31 that is not only 1 and 2 in a file with a column of years (a coded race,
   a birth order, a Likert item), and short numbers under `Study ID`, `Case` or `Key` as study
   numbers. The plan lists them, and the person keeps them with `--keep` once they confirm. The
-  other way round, a record number of three digits or fewer under a column name that names no
-  record, or one of four to six digits, or of seven or more that does not repeat, under a column
-  name that names a measurement (`Steps`, `Total Cost`), is kept, and so is a date written as
-  three digits (`314`). Since round 5, in a file with a year or a date column, any column of
+  other way round, a record number of four to six digits, or of seven or more that does not repeat,
+  under a column name that names a measurement (`Steps`, `Total Cost`), is kept, and so is a date
+  written as three digits (`314`) under such a name; since round 7 a record number of three digits
+  or fewer under a column name that names no measurement is redacted by the name. Since round 5, in a file with a year or a date column, any column of
   whole numbers from 1 to 366 under a column name that names no measurement is read as a possible
   date element (a visit number, a room number, a coded category, ages under `Value`), and a
   protocol week under `Week` (0, 4, 12, 52) as a week; the person keeps them with `--keep`. A
-  month, a day or a week in a column of its own that covers fewer than seven months, thirteen
-  days or 27 weeks is kept in a file with no year (a small file, or one whose years are written
-  another way, `FY2015`), and so is one under a column name that names a measurement (`Score` of 1
-  to 12) or a stage, a grade or a class, a week numbered from 0 beside a year under a name that is
-  not a word for a week (`%U` weeks under `Col3`), and a day of the year with fewer than 100
-  distinct values in a file with no year.
-- Since round 6 a column of decimals of two or more places within 180 that reaches 10, under a
-  column name that names no measurement (`Value`, `Result`, `X`, `Col4`), is read as a possible
-  coordinate, so a long lab export's `Value` of weights or hemoglobins is redacted until the person
-  keeps it, and `--keep` refuses numbers of five or more digits under such a name, so the same
-  `Value` holding a platelet count of `250000` cannot be kept until the person renames it with a unit
-  in brackets (`Value (units)`) or a measurement word. The other way round, a latitude of one decimal
-  place on its own (`37.8`, about 11 km), a coordinate whose values all lie below 10 (near the equator
-  or the prime meridian) apart from its partner, and coordinates of any precision under a column name
-  that names a measurement (`Ratio`, `Score`) are kept. A protocol week under a word for a week
+  month, a day or a week in a column of its own under a column name that names a measurement
+  (`Score` of 1 to 12) or a stage, a grade or a class is kept; under any other name such a column
+  is redacted by its name since round 7, and the plan names it as a possible date element only when
+  its numbers fit the rules above (most months or days, or a file with a year).
+- Since round 7 every column of numbers under a column name that names no measurement is redacted
+  until the person keeps it, whatever its numbers are: a long lab export's `Value`, a `Visit Number`,
+  a `Cycle`, a sex, a race or a Likert item coded as a number (`Q7`), a `Children` count, years under
+  a neutral name (`Col1`), a gene symbol or a probe in a wide matrix, and a z-score under `Z`. A long
+  lab table (`Patient ID`, `Lab`, `Value`, `Unit`) completes once the person keeps `Value` (and
+  `Lab`, whose lab names are text the script cannot verify); `--keep` refuses numbers of five or more
+  digits under such a name, so a `Value` holding a platelet count of `250000` cannot be kept until the
+  person renames it with a unit in brackets (`Value (units)`) or a measurement word. The measurement
+  names are a list, so a measurement under a name the list does not know (`Comorbidities`, `Output`,
+  `Loss`) is redacted too, and the person keeps it or renames it (`Comorbidity Count`). The other way
+  round, a coordinate of any precision, an age over 89 and a record number that does not repeat
+  under a column name that names a measurement (`Ratio`, `Score`, `Steps`), and a date written as a
+  number that is one value among a measurement's numbers, are kept. A protocol week under a word for a week
   (`Visit Week` of 0, 4, 12, 52) is redacted in a file with a year and kept only on the person's word;
   to keep it as data the person recodes it as a duration before the run (`Weeks Since Baseline`) or
   removes the date and year columns.
@@ -645,7 +730,10 @@ cannot hold words that can be names (step 6).
   usually name a place of care (`Location`, `Visit Location`, `Discharge Destination`), a state-level
   region (`Region`, `Province`, `Prefecture`), an organisation that is not an employer, and a payer
   column (`Payer`, `Payor`): their values are not a closed list, so a town or a person's name in one
-  stays when the person keeps it. Kept on the person's word,
+  stays when the person keeps it, and so do a zone, a cluster, a sector, a station, a campus, an
+  injury or an exposure location, and where a patient was admitted or referred from or discharged to
+  (`Zone`, `Station`, `Campus`, `Exposure Location`, `Admitted From`, `Discharge To`); since round 7
+  `Origin`, `Block`, `Shelter`, `Building`, `Map` and a geographic location are refused. Kept on the person's word,
   such a column is scrubbed for patterns only and named in `kept_unverified_columns`, and a
   clinical staff column keeps the clinicians' names. Since round 4 `--keep` is refused for any
   other column whose name has a word the script does not know, so a person whose column names are

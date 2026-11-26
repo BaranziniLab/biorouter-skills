@@ -95,7 +95,8 @@ Ask for:
 If the script stops because the file is not UTF-8 (a plain "CSV" save from Excel is usually
 Windows-1252), ask the person to save it again as "CSV UTF-8", or to tell you the encoding,
 and rerun with `--encoding NAME` (for example `cp1252`, `latin-1`, `utf-16-le`, `euc-kr`). A
-UTF-16 file with a byte order mark is read as it is. The output is always UTF-8.
+UTF-16 file with a byte order mark is read as it is; one without a byte order mark (NUL bytes in its
+first bytes) is refused with the same remedy. The output is always UTF-8.
 
 If a file name itself contains a patient's name, ask the person to rename the file before
 you run anything, and refer to it by the new path.
@@ -110,7 +111,8 @@ python3 scripts/safe_harbor.py plan /path/to/export.csv
 
 It writes nothing and prints one line per column: the action and the reason. The script
 fails closed, for text and for numbers alike: it keeps a column only when it can verify every
-value in it. Show the person that table and explain the groups:
+value in it, and a column of numbers only when its name names a measurement. Show the person that
+table and explain the groups:
 
 - **Identifiers by name** are replaced and cannot be kept: names (`patient_name`, `fname`,
   `participant`, `proband`, `AKA`, `Pseudonym`, `Kana`, `Pinyin`, `Nama`, `İsim`, `姓名`, `이름`,
@@ -139,16 +141,24 @@ value in it. Show the person that table and explain the groups:
 - **Kept, verified.** Every value is a measurement, a code of a closed grammar in its exact
   published shape (ICD-9 or ICD-10-CM in capitals, ATC, HGVS, an rsID in lower case, Ensembl with
   eleven digits, RefSeq with six or nine, TNM, a stage, a grade, ECOG, a blood group, and LOINC
-  only under a LOINC, lab or test column name),
+  only under a LOINC, lab or test column name; a dotted code of N, S, E or W with three or four
+  digits after the dot, the shape of a coordinate after its hemisphere letter, only under a
+  diagnosis column name),
   a whole value of a closed vocabulary (sex and gender, yes and no, missing-value words, result
   flags such as H and L, laterality, response categories, smoking status; census race and
-  ethnicity only under a race or ethnicity column name, units only under a unit column name),
-  a date or a state or country under a state or country column. A measurement is a decimal (under
-  a column name that names no measurement, one that is not shaped like a coordinate), a whole
-  number of up to three digits, or a longer whole number under a column name that names a
-  measurement (a lab such as WBC, a vital sign, a count, a score, a dose, a unit, money or a
-  duration). Numbers are judged cell by cell: one record number, ZIP code, Excel serial, age
-  over 89 or precise coordinate among measurements is enough to change the column. Under a
+  ethnicity only under a race or ethnicity column name, units only under a unit column name; two
+  capital letters such as `CR` or `LT` only when all of a column's come from one of these lists,
+  since initials take the same shape),
+  a date or a state or country under a state or country column. Numbers fail closed by name, as
+  text does: a number is a measurement only under a column name that names a measurement (a lab
+  analyte such as WBC, Ferritin, Free T4 or Vitamin B12, a vital sign, a score or a scale such as
+  Pain Score, ECOG, NYHA, Gleason or a stage or a grade, a dose, a count, a duration, money, a
+  statistic such as P Value or Log2FC, or a unit in the name such as `(mg/dL)` or `%`), or with a
+  unit of measurement written beside it in its cell (`5.2 mg/dL`), and only when it also passes the
+  number checks of the next group; a column of years is kept under a name for a year (`Year`, `Dx
+  Yr`, `Jahr`). Numbers are judged cell by cell: one record number, ZIP code, Excel serial, date
+  written as a number, age over 89 or precise coordinate among measurements is enough to change the
+  column. Under a
   column name that names a person, a role, a relative, a contact or a place
   (`Referring Physician`, `Family History`, `Visit Location`), only the missing-value words
   count. Dates keep the year only, and a year 90 or more years before the reference year
@@ -159,6 +169,19 @@ value in it. Show the person that table and explain the groups:
   - text such as diagnoses, drugs, sites, arms or visits written as words (a name with a
     qualifier, in lower case, as initials, or in a script without capital letters cannot be
     told from a category word, so the script does not try);
+  - **numbers under any column name that names no measurement**, whatever their shape (`Value`,
+    `Result`, `Col3`, `X`, `Y`, `Index`, `Point`, `Pos`, `Geo1`, `Measure1`, `Entry`, `Seen`,
+    `Event`, `Period`, `Visit Number`, `Cycle`, a sex or a race coded as a number, years under a
+    name that is not a year): the plan says the script cannot verify that they are not
+    identifiers, dates or coordinates, because one-decimal coordinate pairs, decimal years and
+    record numbers have the shapes of measurements. They are redacted, and when a shape below
+    fits, the plan gives that reason instead;
+  - dates written as numbers under any column name: a decimal whose whole part is a year from 1850
+    to five years after the reference year (`2021.07`, a year and a week or a day, `1926.164`), a
+    Unix timestamp of 10 or 13 digits, with fractional seconds or negative (`1629478800.373`), and a
+    Julian date of 7 digits (`2459215.5`). A column of nothing else keeps only the year (a year 90
+    or more years ago becomes `[90_OR_OLDER]`); under a name that names a measurement such numbers
+    must be most of the column;
   - whole numbers of four or more digits, or with a leading zero, under a column name that
     names no measurement, in any cell of the column: record numbers that repeat across visits
     (in any written form: `4527832`, `00088221`, `6135517.0`, `4,527,832`), ZIP codes that lost
@@ -173,11 +196,14 @@ value in it. Show the person that table and explain the groups:
     bare time (`Visit Day`, `Days`, `LOS`, `Event Time`), where a number from 10000 up is not a
     duration; minutes, seconds and hours are left alone;
   - a whole number from 90 to 125 in any cell, under a column name that names no measurement,
-    whatever else the column holds (a decimal, `<1`, an outlier): possible ages, grouped as
-    `90+`; under a name that can mean age or old age (`ETA`, `Old`, `Year`, `Elderly`,
-    `Seniority`) a decimal from 90 to 125 counts too;
+    whatever else the column holds (a decimal, `<1`, an outlier): possible ages. Under a name that
+    can mean age or old age (`ETA`, `Old`, `Year`, `Elderly`, `Seniority`), where a decimal or
+    `>99` counts too, or with a unit of time in every cell (`95 y`), they are grouped as `90+`;
+    under any other name the whole column is redacted, since its other numbers are not verified;
   - whole numbers under a column name of a person's or a record's number (`Study ID`, `Pat No`,
-    `Chart`, `Case`, `Reference`, `Key`), however short: study or record numbers, pseudonymized;
+    `Chart`, `Case`, `Reference`, `Key`, and a code, a label, a token or a sequence of the person
+    or the record: `Pt Code`, `Participant Label`, `Subject Token`, `Patient Seq`), however short:
+    study or record numbers, pseudonymized;
   - whole numbers of seven or more digits that repeat, even under a measurement name (`Score`,
     `Count`, `Total`), and of six or more under a count of visits, encounters or admissions
     (`Visits`, `Encounters`, `Admissions`): record numbers, pseudonymized;
@@ -225,7 +251,11 @@ value in it. Show the person that table and explain the groups:
   notes (`Company`, `School`, `Home`, `Device`, `Image`, `Link`, `Notes`, `Comments`), or in a place
   that is not a place of care (`Home Area`, `Lives`, `Living`, `Community`, `Catchment Area`,
   `Service Area`, `Area`, `Locale`, `Territory`, `Geography`, `Place`, `Venue`, `Ort`) or a record
-  (`Cartella`, `Dossier`, `File`) when a value is a word; or that holds numbers of five or more
+  (`Cartella`, `Dossier`, `File`) when a value is a word, and since round 7 who signed or is
+  addressed, a middle initial and the source of a history (`Signed`, `Sign`, `Salutation`, `To`,
+  `From`, `MI`, `Hx Source`, `Resp`), a map, a geographic location, a shelter, a building, a block,
+  an origin or a school (`Geo Location`, `Map`, `Shelter`, `Building`, `Block`, `Origin`, `Education
+  Institution`), and a name word spelled with digits (`Patient N4me`); or that holds numbers of five or more
   digits, in any written form, under a column name that names no measurement and no thing whose
   numbers are not a person's (`Value`, `Col6`, `Code1`, `Registration`, `Token`, `Identification`,
   `VID`; `Steps`, `Total Cost`, `Visits`, `Gene ID`, `Position`, `Lot No` and `CPT` can be kept),
@@ -248,25 +278,31 @@ shaped like a name of a person or a place, say so in the question, by the column
 quoting a value. For example:
 
 > The script could not verify these columns, so it changed them: Diagnosis, Drug, Visit,
-> Visit Week, Col6, Value. The script says every value of Col6 is shaped like a name of a person
-> or a place, and Value may hold coordinates. Does each one hold only category values or
-> measurements, with no names, places, coordinates, dates or parts of a date (a month, a week or a
-> day), ages over 89, record or account numbers, contact details or other identifiers? I will keep
-> the ones you confirm.
+> Visit Week, Col6, Value, Result. The script says every value of Col6 is shaped like a name of a
+> person or a place, Value may hold coordinates, and Result holds numbers under a name that names
+> no measurement, which it cannot tell from record numbers, dates or coordinates. Does each one hold
+> only category values or measurements, with no names, places, coordinates, dates or parts of a date
+> (a month, a week or a day, or a date written as a number), ages over 89, record or account numbers,
+> contact details or other identifiers? I will keep the ones you confirm.
 
 Then add `--keep COLUMN` for each column the person confirmed, and `--redact COLUMN` for any
-column they want removed. A column can also be named `#N` (its position). For a column that
+column they want removed. A column can also be named `#N` (its position), and a run of columns
+by a range of positions (`--keep '#2-#501'`, for a wide matrix of measurements the person
+confirms as a whole). Do not ask to keep a column of numbers by guessing what it holds: name it,
+and say that its name names no measurement. For a column that
 cannot be kept under its name, ask only whether the name is wrong; if the person says it holds
 nothing but category values or measurements, they rename it in their own copy to a plain column
 name (`Diagnosis`, `Drug`, `Site`, `Visit`) and you run again on that copy.
 
 **Kept columns are scrubbed for patterns only.** A default run redacts every text column it
-cannot verify; a column the person keeps with `--keep` loses phone numbers, email and web
+cannot verify, and every column of numbers whose name names no measurement; a column the person
+keeps with `--keep` loses phone numbers, email and web
 addresses, labelled ID numbers, dates and the other identifier patterns, but a name, a place, a
 record number, a ZIP code, an age, a month, a week or a day of a date written as a number, or
 another identifier with no pattern stays in it (a clinician's column kept on the person's word
-keeps the clinicians' names, and a column of numbers of up to four digits, or of decimals, keeps
-them as written, record numbers and coordinates included). The run prints these columns again
+keeps the clinicians' names, and a column of numbers kept under a name such as `Value` keeps
+them as written, record numbers of up to four digits, coordinate pairs, decimal years and ages
+included). The run prints these columns again
 ("Kept on the person's word, scrubbed for patterns only") and the report lists them
 (`kept_unverified_columns`, text and number columns alike). Tell the person, every time, that they
 must spot-check each of these columns before the data leaves the institution.
@@ -288,8 +324,12 @@ closed code are not counted (`ENSG00000141510`, `rs12345678`, `chr1:12345678`), 
 `SEPT9`) is also the shape of a gene symbol, so it is withheld rather than refused. A public
 accession (`GSM1234567`, `SRR1234567`, `TCGA-02-0001`, `cg12345678`, `NCT01234567`) is refused
 like a record number unless the person confirms that column by its position with `--keep-name
-#N`. A first-row cell shaped like a person's or a sample's code (`S001`, `sub01`, `PT-0042`) is
-withheld. Any other name, such as a patient's
+#N` (or a range, `--keep-name '#2-#501'`, for a wide matrix of probes). A first-row cell shaped like
+a person's or a sample's code (`S001`, `sub01`, `PT-0042`) is withheld, and so is a word spelled
+out one letter at a time (`Z-o-r-b-l-e`, `S m i t h`). A header cell holding a NUL, a control
+character or an invisible formatting character (a zero-width space or joiner, a direction mark, a
+soft hyphen) is refused by its position, and the person retypes that name or saves the file again
+as "CSV UTF-8"; a line break or a tab in a column name reads as a space. Any other name, such as a patient's
 surname, a titled name (`Dr. Lee`) or a name in a script without capital letters read from a
 first row of data, is withheld (`#N (name withheld)`) and the output calls the column
 `column_N`. The plan says so. Then:
@@ -320,7 +360,7 @@ folder, then scans the output again. Exit codes:
 | Exit | Meaning | What to do |
 |---|---|---|
 | 0 | Done; the residual check found no identifier pattern or shape, and verified again every kept column the person did not name with `--keep` (a check, not proof) | Report the summary, the columns kept on the person's word, and the human spot-check requirement |
-| 2 | Refused (unknown column, a request to keep an identifier, free text or a column that cannot be kept under its name, a first row that looks like data or holds an identifier pattern, a long number or a date, two columns with the same name, a file separated by `;` or `\|` without `--delimiter`, a file that is not UTF-8, an unreadable file) | Pass on the message; fix the options (`--no-header` for a file without a header row, `--delimiter` for another separator, `--encoding` for a file that is not UTF-8), or ask the person to fix the file |
+| 2 | Refused (unknown column, a request to keep an identifier, free text or a column that cannot be kept under its name, a first row that looks like data or holds an identifier pattern, a long number, a date or an invisible character, two columns with the same name, a file separated by `;` or `\|` without `--delimiter`, a file that is not UTF-8 or is UTF-16 without a byte order mark, an unreadable file) | Pass on the message; fix the options (`--no-header` for a file without a header row, `--delimiter` for another separator, `--encoding` for a file that is not UTF-8), or ask the person to fix the file |
 | 3 | The residual check found identifiers; nothing was written | Rerun with `--redact` for the columns it names. A column named for the shape of its values (names or places, text it cannot verify, record numbers, ZIP codes, coordinates, old years, possible ages) may instead be kept with `--keep` once the person confirms it holds no identifiers, unless `--keep` refuses it under its name (numbers of five or more digits under a name that names no measurement, among others) |
 
 To check an output again later: `python3 scripts/safe_harbor.py verify <output file>`
@@ -366,8 +406,8 @@ When the person needs a paragraph for a manuscript or an IRB, fill this in from 
 > before [reference year] and ages over 89 were grouped as 90 or older; ZIP codes were
 > truncated to three digits (000 for prefixes of 20,000 or fewer people); other direct
 > identifiers and free text were removed. Other columns were kept only when every value was a
-> measurement, a code of a closed code system, a word of a closed category list or an allowed
-> state or country, or when [who] confirmed the column.
+> measurement under a column name that names one, a code of a closed code system, a word of a
+> closed category list or an allowed state or country, or when [who] confirmed the column.
 > [N] cells in [M] columns were changed. The output was checked again for identifier
 > patterns and reviewed by [who] before use.
 
@@ -389,11 +429,16 @@ replaces and what a person still has to check. In short, it does not:
   are redacted until the person keeps them. Its lists hold a few words that are also
   surnames (White and Black under a race column, Victoria or Georgia under a state column),
   which it keeps under such a column name;
+- keep by default a column of numbers whose name names no measurement, even when every value is
+  an ordinary measurement (`Value`, `Result`, `Visit Number`, `Cycle`, a sex coded as 1 and 2, a
+  Likert item `Q7`): it is redacted until the person keeps it. A long-format lab table (`Patient
+  ID`, `Lab`, `Value`, `Unit`) completes once the person keeps `Value` (and `Lab`, for the lab
+  names); a `Value` of five or more digits (a platelet count of `250000`) is kept only once the
+  person renames it with a unit or a measurement word (`Value (cells/uL)`);
 - tell a record number from a measurement under a column name that names a measurement unless
   it has seven or more digits and repeats, in any written form (a record number of four to six
-  digits, or one that does not repeat, under `Steps` or `Total Cost` is kept), or a record number
-  or a date of three digits or fewer (`314` for March 14) from a count under a column name that
-  names no record;
+  digits, or one that does not repeat, under `Steps` or `Total Cost` is kept), or a date written
+  as three digits (`314` for March 14) from a measurement under such a name;
 - tell a record number written exactly in the shape of a code from that code: an rsID (lower-case
   `rs` and up to ten digits), an Ensembl identifier (`ENSG` and eleven digits) or a dotted ICD-10
   code (a capital letter, two digits, a dot and up to four characters, as an accession number
@@ -403,17 +448,13 @@ replaces and what a person still has to check. In short, it does not:
 - recognise a day and a month with no year in kept text unless a word such as "seen",
   "on" or "dated" comes before it ("14/3" alone stays), or a month name in another
   language without a year;
-- recognise, on its own under a neutral name, a latitude of one decimal place (`37.8`; a longitude
-  of one place west of -60 is found), a coordinate whose values all lie below 10 (near the equator
-  or the prime meridian, unless beside its partner), or a coordinate of any precision under a column
-  name that names a measurement (`Ratio`, `Score`); or ages over 89 written as decimals (`95.5`)
-  under a neutral column name (`Value`, `Result`), or under a column name that names a measurement
-  (a `Score` of 95);
-- recognise a month, a day or a week in a column of its own that covers fewer than seven months,
-  thirteen days or 27 weeks in a file with no year (or whose years are written another way, such
-  as `FY2015`), a week numbered from 0 beside a year under a name that is not a word for a week,
-  a day of the year with fewer than 100 distinct values in a file with no year, or one under a
-  column name that names a measurement (`Score` of 1 to 12). The other way round, a protocol week
+- recognise, under a column name that names a measurement (`Ratio`, `Score`, `Steps`), a
+  coordinate of any precision, an age over 89 (a `Score` of 95), or a date written as a number that
+  is one value among measurements (a cost of `1999.99`): such a name says the numbers are
+  measurements. Under any other name these are redacted by the name, whatever their shape;
+- recognise a month, a day or a week in a column of its own under a column name that names a
+  measurement (`Score` of 1 to 12); under any other name such a column is redacted by its name,
+  and the plan names it as a possible date element when its numbers fit one. The other way round, a protocol week
   under a word for a week (`Visit Week` of 0, 4, 12, 52) is redacted in a file with a year, and
   `--keep` keeps it only on the person's word; if the person needs it, they can recode it as weeks
   since the first visit under a duration name (`Weeks Since Baseline`), or remove the date columns,
@@ -426,8 +467,9 @@ replaces and what a person still has to check. In short, it does not:
 - assess rare combinations of values, small cells or rare diagnoses (no k-anonymity check);
 - read sheets after the first, images, DICOM headers or attached files;
 - detect identifiers in ordinary column names or file names (a column name with a word it does
-  not know, or that looks like a value, is withheld and renamed; a first row with an
-  identifier pattern, a long number or a date is refused; a record number of four digits or
+  not know, or that looks like a value or a word spelled out letter by letter, is withheld and
+  renamed; a first row with an identifier pattern, a long number, a date or an invisible
+  character is refused; a record number of four digits or
   fewer in a column name, `Patient 4527`, is shown, and so are a season or a half year beside a
   year, `Spring 2020`, `H1 2020`, and a month and a day written as two numbers of 12 or less with
   no leading zero, which are also fractions and ranges, `Grade 3/4`, `Score 1-10`);
@@ -441,9 +483,11 @@ replaces and what a person still has to check. In short, it does not:
   the person, a place that is not a place of care, or a record, and for numbers of five or more
   digits under a name that names no measurement (see the plan above);
 - read a wide matrix whose columns are named with a prefix and digits (methylation probes,
-  variables `V1` to `V2000` when many of them look like codes): it refuses the first row, and the
-  person renames the columns with a word and a short number (`probe_1`) or confirms them with
-  `--keep-all-names` when the message allows it.
+  variables `V1` to `V2000` when many of them look like codes) without the person's word: it refuses
+  the first row. The person confirms public accessions by a range of positions (`--keep-name
+  '#2-#501'`) and keeps their numbers the same way (`--keep '#2-#501'`, since a probe or a gene
+  symbol names no measurement), renames other columns with a word and a short number (`probe_1`), or
+  confirms them with `--keep-all-names` when the message allows it.
 
 ## The researcher's interactive alternative
 
