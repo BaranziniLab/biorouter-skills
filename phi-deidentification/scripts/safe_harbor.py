@@ -417,8 +417,10 @@ PATTERNS: list[tuple[str, re.Pattern, object]] = [
     ("date", re.compile(r"(?<![\d/.-])(?:(?:0[1-9]|1[0-2])/(?:0[1-9]|[12]\d|3[01])|(?:0?[1-9]|1[0-2])/(?:1[3-9]|2\d|3[01]))(?![\d/.-])"), "[DATE]"),
     # Day and month in the other orders, after a word that says a date follows: "seen
     # 14/3" (a day over 12 first), "on 03-14" or "on 14-03", "seen 14.3." (German).
+    # Round 8: also with a hyphen or a dash and no leading zero when one number is over 12 ("seen 14-3").
     ("date", re.compile(r"(?i)\b(?P<label>" + DATE_CONTEXT + r")\s+(?P<v>(?:(?:1[3-9]|2\d|3[01])/(?:0?[1-9]|1[0-2])"
-                        r"|(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])|(?:1[3-9]|2\d|3[01])-(?:0[1-9]|1[0-2]))(?![\d/.-])"
+                        r"|(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])|(?:1[3-9]|2\d|3[01])[-\u2013](?:0?[1-9]|1[0-2])"
+                        r"|(?:0?[1-9]|1[0-2])[-\u2013](?:1[3-9]|2\d|3[01]))(?![\d/.\u2013-])"
                         r"|(?:0?[1-9]|[12]\d|3[01])\.(?:0?[1-9]|1[0-2])\.(?!\d))" + NOT_A_DATE_AFTER),
      _keep_label("[DATE]")),
     # Telephone and fax numbers.
@@ -471,6 +473,328 @@ PATTERNS: list[tuple[str, re.Pattern, object]] = [
     ("code", re.compile(r"(?<![\w-])[A-Za-z0-9]+(?:-[A-Za-z0-9]+)+(?![\w-])|(?<![\w-])(?=[A-Za-z]*\d)(?=\d*[A-Za-z])[A-Za-z0-9]{6,}(?![\w-])"), _code),
 ]
 
+# ================================================================ dates in any script (round 8)
+# Letters that keep no accent to drop under NFKD (ø, æ, ı, ł, đ, œ, þ, ð), read as the letters they resemble.
+LETTERS_WITHOUT_DECOMPOSITION = str.maketrans({"\u00f8": "o", "\u00d8": "O", "\u00e6": "ae", "\u00c6": "Ae",
+                                               "\u0131": "i", "\u0142": "l", "\u0141": "L", "\u0111": "d",
+                                               "\u0110": "D", "\u0153": "oe", "\u0152": "Oe",
+                                               "\u00fe": "th", "\u00f0": "d"})
+# One definition of a date, which cells and column names share. Round 8 found column names that held a
+# full date written in Chinese, Japanese, Korean, Vietnamese or Malay (2019年3月14日, 2019년 3월 14일,
+# 14 tháng 3 năm 2019, 14 Mac 2019, R1.5.1) copied verbatim to the output, because the column-name check
+# read 年, 月 and 日 as ordinary column words and the cell patterns above read only Latin month names
+# and ASCII digits. Rather than add those strings, the text is folded first (compatibility forms such as
+# full-width digits and ㋿, every script's decimal digits written as ASCII, accents and vowel marks of
+# Latin, Greek, Cyrillic, Arabic and Hebrew letters dropped), and one set of date grammars reads it:
+# year, month and day markers (年 月 日 号, 년 월 일), Japanese eras (令和1年5月1日, 令和元年, R1.5.1,
+# H31.4.30), Vietnamese tháng and năm, Chinese numerals (二〇一九年三月十四日), month names of 25
+# languages in nine scripts beside a day or a year (14 Mac 2019, 14 марта 2019, 14 มีนาคม 2562), and
+# numeric dates with a year of any calendar (2562-03-14, 1398/12/23, 2019. 3. 14.). The Scrubber
+# replaces each date of two or more elements in kept text by its Gregorian year (or [DATE] when the
+# calendar's year cannot be read as one), and the column-name check refuses a column name that holds one
+# and withholds a column name holding a month or a day alone (3月, 3월, tháng 3, 14日).
+_DATE_MARKS = re.compile("[\u0300-\u036f\u1ab0-\u1aff\u1dc0-\u1dff\u20d0-\u20ff\ufe20-\ufe2f"
+                         "\u0591-\u05c7\u064b-\u065f\u0670\u093c]")
+
+
+def _date_fold_char(c: str) -> str:
+    o = ord(c)
+    if 0xAC00 <= o <= 0xD7A3 or 0x3040 <= o <= 0x30FF:
+        return c  # Hangul syllables and kana keep their form (NFKD would split them)
+    out = []
+    for d in unicodedata.normalize("NFKD", c):
+        if unicodedata.category(d) == "Nd":
+            out.append(str(unicodedata.digit(d)))
+        elif not _DATE_MARKS.match(d):
+            out.append(d)
+    return "".join(out).translate(LETTERS_WITHOUT_DECOMPOSITION)
+
+
+def fold_for_dates(text: str) -> tuple[str, list[int] | None]:
+    """The text as the date grammars read it, and the position in `text` of each folded character
+    (None when nothing changed, for ASCII text)."""
+    if text.isascii():
+        return text, None
+    chars: list[str] = []
+    index: list[int] = []
+    for i, c in enumerate(text):
+        for ch in (c if c.isascii() else _date_fold_char(c)):
+            chars.append(ch)
+            index.append(i)
+    return "".join(chars), index
+
+
+# Month names, folded as above (accents and vowel marks dropped), one language a line, months in order
+# and the spellings of a month separated by "/". English and the languages the patterns above read are
+# here too, so a column name is read by one table.
+_MONTH_NAME_LINES = """
+january/jan|february/feb|march/mar|april/apr|may|june/jun|july/jul|august/aug|september/sept/sep|october/oct|november/nov|december/dec
+janvier/janv|fevrier/fevr/fev|mars|avril/avr|mai|juin|juillet/juil|aout|septembre|octobre|novembre|decembre
+januar/janner/jaenner|februar/feber|marz/maerz/mrz|april|mai|juni|juli|august|september|oktober/okt|november|dezember/dez
+enero/ene|febrero|marzo|abril/abr|mayo|junio|julio|agosto/ago|septiembre/setiembre/set|octubre|noviembre|diciembre/dic
+gennaio/gen|febbraio|marzo|aprile|maggio/mag|giugno/giu|luglio/lug|agosto|settembre|ottobre/ott|novembre|dicembre
+janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro/out|novembro|dezembro
+januari|februari|maart/mrt|april|mei|juni|juli|augustus|september|oktober|november|december
+januari|februari|mac|april|mei|jun|julai|ogos/ogo|september|oktober|november|disember/dis
+januari|februari|maret|april|mei|juni|juli|agustus/agu/ags/agt|september|oktober|november|desember/des
+enero|pebrero|marso|abril|mayo|hunyo|hulyo|agosto|setyembre|oktubre|nobyembre|disyembre
+ocak|subat|mart|nisan|mayis|haziran|temmuz|agustos|eylul|ekim|kasim|aralik
+styczen/stycznia/sty|luty/lutego/lut|marzec/marca|kwiecien/kwietnia/kwi|maj/maja|czerwiec/czerwca/cze|lipiec/lipca/lip|sierpien/sierpnia/sie|wrzesien/wrzesnia/wrz|pazdziernik/pazdziernika/paz|listopad/listopada/lis|grudzien/grudnia/gru
+leden/ledna|unor/unora|brezen/brezna|duben/dubna|kveten/kvetna|cerven/cervna|cervenec/cervence|srpen/srpna|zari|rijen/rijna|listopad/listopadu|prosinec/prosince
+januari/januar|februari/februar|mars/marts|april|maj|juni|juli|augusti/august|september|oktober|november|december/desember
+tammikuu/tammikuuta|helmikuu/helmikuuta|maaliskuu/maaliskuuta|huhtikuu/huhtikuuta|toukokuu/toukokuuta|kesakuu/kesakuuta|heinakuu/heinakuuta|elokuu/elokuuta|syyskuu/syyskuuta|lokakuu/lokakuuta|marraskuu/marraskuuta|joulukuu/joulukuuta
+januar|februar|marcius|aprilis|majus|junius|julius|augusztus|szeptember|oktober|november|december
+ianuarie|februarie|martie|aprilie|mai|iunie|iulie|august|septembrie|octombrie|noiembrie|decembrie
+январь/января/янв|февраль/февраля/фев|март/марта|апрель/апреля/апр|май/мая|июнь/июня/июн|июль/июля/июл|август/августа/авг|сентябрь/сентября/сен/сент|октябрь/октября/окт|ноябрь/ноября/ноя|декабрь/декабря/дек
+січень/січня|лютий/лютого|березень/березня|квітень/квітня|травень/травня|червень/червня|липень/липня|серпень/серпня|вересень/вересня|жовтень/жовтня|листопад/листопада|грудень/грудня
+ιανουαριος/ιανουαριου|φεβρουαριος/φεβρουαριου|μαρτιος/μαρτιου|απριλιος/απριλιου|μαιος/μαιου|ιουνιος/ιουνιου|ιουλιος/ιουλιου|αυγουστος/αυγουστου|σεπτεμβριος/σεπτεμβριου|οκτωβριος/οκτωβριου|νοεμβριος/νοεμβριου|δεκεμβριος/δεκεμβριου
+يناير|فبراير|مارس|ابريل|مايو|يونيو/يونيه|يوليو/يوليه|اغسطس|سبتمبر|اكتوبر|نوفمبر|ديسمبر
+كانون الثاني|شباط|اذار|نيسان|ايار|حزيران|تموز|اب|ايلول|تشرين الاول|تشرين الثاني|كانون الاول
+ژانویه|فوریه|مارس|اوریل|مه|ژوئن|ژوئیه|اوت|سپتامبر|اکتبر|نوامبر|دسامبر
+ינואר|פברואר|מרץ/מרס|אפריל|מאי|יוני|יולי|אוגוסט|ספטמבר|אוקטובר|נובמבר|דצמבר
+जनवरी|फरवरी|मार्च|अप्रैल/अप्रेल|मई|जून|जुलाई|अगस्त|सितंबर/सितम्बर|अक्टूबर/अक्तूबर|नवंबर/नवम्बर|दिसंबर/दिसम्बर
+""".strip().splitlines()
+# Thai months, whose years are Buddhist (2562 is 2019), and the Persian (Jalali) months, whose years are
+# not read as Gregorian ones.
+_THAI_MONTH_LINE = ("มกราคม/ม.ค.|กุมภาพันธ์/ก.พ.|มีนาคม/มี.ค.|เมษายน/เม.ย.|พฤษภาคม/พ.ค.|มิถุนายน/มิ.ย.|กรกฎาคม/ก.ค."
+                    "|สิงหาคม/ส.ค.|กันยายน/ก.ย.|ตุลาคม/ต.ค.|พฤศจิกายน/พ.ย.|ธันวาคม/ธ.ค.")
+_JALALI_MONTH_LINE = "فروردین|اردیبهشت|خرداد|تیر|مرداد/امرداد|شهریور|مهر|ابان|اذر|دی|بهمن|اسفند"
+
+
+def _month_names() -> dict[str, tuple[int, str]]:
+    """Each folded month name and its (month, calendar)."""
+    out: dict[str, tuple[int, str]] = {}
+    lines = [(line, "gregorian") for line in _MONTH_NAME_LINES] + [(_THAI_MONTH_LINE, "thai"),
+                                                                    (_JALALI_MONTH_LINE, "jalali")]
+    for line, calendar in lines:
+        for month, names in enumerate(line.split("|"), start=1):
+            for name in names.split("/"):
+                folded = fold_for_dates(name)[0].casefold()
+                if calendar == "gregorian" and any("\u0590" <= c <= "\u05ff" for c in folded):
+                    for prefix in ("", "ב", "ל", "ב-"):  # Hebrew writes "in" before a month: 14 במרץ 2019
+                        out.setdefault(prefix + folded, (month, calendar))
+                    continue
+                out.setdefault(folded, (month, calendar))
+    return out
+
+
+MONTH_NAMES = _month_names()
+# A name of three letters or fewer (mar, mai, des, set, out, мая, מאי) is also an ordinary word or an
+# abbreviation of one, and so is Mayo (a clinical score): it is a month only with both a day and a year
+# beside it.
+_WEAK_MONTH_NAMES = frozenset({"mayo"})
+_MONTH_NAME_ALT = "|".join(re.escape(n) for n in sorted(MONTH_NAMES, key=len, reverse=True))
+_CJK_NUMERAL = "[〇零一二三四五六七八九十廿卅]"
+_CJK_DIGIT_VALUES = {"〇": 0, "零": 0, "一": 1, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9}
+_ERAS = {"明治": (1867, 45), "大正": (1911, 15), "昭和": (1925, 64), "平成": (1988, 31), "令和": (2018, None),
+         "明": (1867, 45), "大": (1911, 15), "昭": (1925, 64), "平": (1988, 31), "令": (2018, None),
+         "M": (1867, 45), "T": (1911, 15), "S": (1925, 64), "H": (1988, 31), "R": (2018, None)}
+_VI_SPELLED_MONTHS = {"gieng": 1, "mot": 1, "hai": 2, "ba": 3, "tu": 4, "bon": 4, "nam": 5, "sau": 6, "bay": 7,
+                      "tam": 8, "chin": 9, "muoi": 10, "muoi mot": 11, "muoi hai": 12, "chap": 12}
+_VI_MONTH = r"(?:\d{1,2}|muoi\s+(?:mot|hai)|gieng|chap|mot|hai|ba|tu|bon|nam|sau|bay|tam|chin|muoi)"
+_NUM = r"(?:\d{1,4}|" + _CJK_NUMERAL + r"{1,4}|元)"
+_LETTER_BEFORE = r"(?<![^\W\d_])"
+_LETTER_AFTER = r"(?![^\W\d_])"
+# Each grammar names the elements it holds: y (a year), m (a month), d (a day), era, mon (a month name),
+# vm (a Vietnamese month) and cal (a calendar, for numeric years).
+_DATE_GRAMMARS = [
+    # Year, month and day markers: 2019年3月14日, 令和元年5月1日, 2019년 3월 14일, 二〇一九年三月十四日, 19年3月.
+    re.compile(r"(?:(?P<era>明治|大正|昭和|平成|令和)\s*)?(?P<y>" + _NUM + r")\s*[年년]\s*(?P<m>\d{1,2}|"
+               + _CJK_NUMERAL + r"{1,3})\s*[月월](?:\s*(?P<d>\d{1,2}|" + _CJK_NUMERAL + r"{1,3})\s*[日号號일])?"),
+    # A month and a day: 3月14日, 3월 14일, 三月十四日.
+    re.compile(r"(?<![\d年년])(?P<m>\d{1,2}|" + _CJK_NUMERAL + r"{1,3})\s*[月월]\s*(?P<d>\d{1,2}|" + _CJK_NUMERAL
+               + r"{1,3})\s*[日号號일]"),
+    # A Japanese era with separators: R1.5.1, H31/4/30, 令和1.5.1, 令和1-5, 平31.4.30 (a Latin era letter
+    # only with a dot or a slash and all three parts, since S1-2-3 also names a sample).
+    re.compile(r"(?<![A-Za-z0-9])(?P<era>[MTSHR])\s?(?P<y>\d{1,2})(?P<sep>[./])(?P<m>\d{1,2})(?P=sep)(?P<d>\d{1,2})"
+               r"(?![\d])"),
+    re.compile(r"(?P<era>明治|大正|昭和|平成|令和|[明大昭平令])\s*(?P<y>\d{1,2}|元)(?P<sep>[./-])(?P<m>\d{1,2})"
+               r"(?:(?P=sep)(?P<d>\d{1,2}))?(?!\d)"),
+    # Vietnamese: ngày 14 tháng 3 năm 2019, 14 tháng 3, 2019, tháng 3 năm 2019, tháng 3/2019, 14 thg 3.
+    re.compile(r"(?i)(?:(?<![^\W\d_])ngay\s+)?(?<!\d)(?P<d>\d{1,2})\s+(?:thang|thg)\s+(?P<vm>" + _VI_MONTH
+               + r")(?![^\W_])(?:\s*,?\s*(?:(?:nam|n)\s+)?(?P<y>\d{4})(?!\d)"
+               r"|(?!\s*(?:tuan|ngay|gio|phut|lan|vien|lieu|tuoi)\b))"),
+    re.compile(r"(?i)(?<!\d)(?<!\d\s)(?<![^\W\d_])(?:thang|thg)\s+(?P<vm>" + _VI_MONTH + r")\s*(?:[/-]|,?\s*nam)\s*"
+               r"(?P<y>\d{4})(?!\d)"),
+    # A month name beside a day, a year or both, in any of the languages above: 14 Mac 2019, 14hb Mac 2019,
+    # 14. März 2019, 14 марта 2019 г., 14 במרץ 2019, 14 มีนาคม 2562, Mac 2019, Agustus 14, 2019. A Latin name
+    # takes a separator before a number after it: SEPT9 and MARCH5 are gene symbols (withheld in a column name
+    # as a month name, as round 5 withholds them).
+    re.compile(r"(?i)(?<![\d.,/])(?P<d>\d{1,2})(?:\s*(?:\.|º|°|er|hb|-?(?:st|nd|rd|th)))?[\s\-/.]*"
+               r"(?:(?:de|di|du|van|of)\s+)?" + _LETTER_BEFORE + r"(?P<mon>" + _MONTH_NAME_ALT + r")" + _LETTER_AFTER
+               + r"\.?(?:[\s\-/.,]*(?:(?:de|del|di|of|พ\.ศ\.|ค\.ศ\.)\s*)?(?P<y>\d{4})(?!\d)" + TIME + ")?"),
+    re.compile(r"(?i)" + _LETTER_BEFORE + r"(?P<mon>" + _MONTH_NAME_ALT + r")" + _LETTER_AFTER
+               + r"(?:[\s\-/.,]+|(?<![A-Za-z]))(?:(?P<d>\d{1,2})(?!\d)(?:st|nd|rd|th)?[\s,\-/.]*)?"
+               r"(?:(?:de|del|di|of|พ\.ศ\.|ค\.ศ\.)\s*)?(?P<y>\d{4})(?!\d)" + TIME),
+    re.compile(r"(?i)" + _LETTER_BEFORE + r"(?P<mon>" + _MONTH_NAME_ALT + r")" + _LETTER_AFTER
+               + r"(?:[\s.]+|(?<![A-Za-z]))(?P<d>\d{1,2})(?:st|nd|rd|th)?(?![\d.,:/])"),
+    # Numeric dates of three parts whose year any calendar may write (2562-03-14, 1398/12/23, 14/03/2562,
+    # 3/14/2562), and the Korean dotted form with spaces (2019. 3. 14.). A month and a year alone are read
+    # only in Gregorian years, by the patterns above: 3.2019 and 1/1500 are also a decimal and a dilution.
+    re.compile(r"(?<![\d./-])(?P<y>\d{4})(?P<sep>[./-]\s?)(?P<m>\d{1,2})(?P=sep)(?P<d>\d{1,2})\.?" + TIME + r"(?![\d])"),
+    re.compile(r"(?<![\d./-])(?P<d>\d{1,2})(?P<sep>[./-])(?P<m>\d{1,2})(?P=sep)(?P<y>\d{4})" + TIME + r"(?![\d])"),
+]
+# A month or a day alone, which a column name may not hold either (round 8): 3月, 3월, tháng 3, 14日, 14일,
+# a month name of another language as a word of its own. A number of months or days (3个月, 3ヶ月,
+# 3개월, 3 tháng, 7日間, 14일째, 第14日) is a duration or a study day, not a date element.
+_DATE_PART_GRAMMARS = [
+    ("m", re.compile(r"(?<![\d年년第])(?P<m>\d{1,2}|" + _CJK_NUMERAL + r"{1,3})\s*[月월](?![龄齢齡]|[日号號일])")),
+    ("d", re.compile(r"(?<![\d月월第])(?P<d>\d{1,2}|" + _CJK_NUMERAL + r"{1,3})\s*[日일]"
+                     r"(?![目間间째간차후後后前전內内이龄齢齡量回次\d])")),
+    ("m", re.compile(r"(?i)(?<!\d)(?<!\d\s)(?<![^\W\d_])(?:thang|thg)\s+(?P<vm>" + _VI_MONTH + r")(?![^\W_])")),
+    ("m", re.compile(r"(?i)" + _LETTER_BEFORE + r"(?P<mon>" + _MONTH_NAME_ALT + r")" + _LETTER_AFTER)),
+]
+
+
+def _cjk_number(s: str) -> int | None:
+    """1 to 9999 written with digits, with Chinese numerals (三, 十四, 二十一, 廿一, 二〇一九) or 元 (the
+    first year of an era)."""
+    if s.isdigit():
+        return int(s)
+    if s == "元":
+        return 1
+    if s and all(c in _CJK_DIGIT_VALUES for c in s):
+        return int("".join(str(_CJK_DIGIT_VALUES[c]) for c in s)) if len(s) > 1 else _CJK_DIGIT_VALUES[s]
+    s = s.replace("廿", "二十").replace("卅", "三十")
+    m = re.fullmatch(r"([一二三四五六七八九])?十([一二三四五六七八九])?", s)
+    if m:
+        return (_CJK_DIGIT_VALUES[m.group(1)] if m.group(1) else 1) * 10 + (_CJK_DIGIT_VALUES[m.group(2)]
+                                                                             if m.group(2) else 0)
+    return None
+
+
+class DateHit:
+    """A date found in a text: its span in the original text, its elements and its Gregorian year (None when
+    it has no year, or a year of a calendar this script does not convert)."""
+
+    def __init__(self, start: int, end: int, text: str, elements: int, year: int | None):
+        self.start, self.end, self.text, self.elements, self.year = start, end, text, elements, year
+
+    def group(self, _index: int = 0) -> str:
+        return self.text
+
+
+def _hit_elements(m: re.Match, reference_year: int) -> tuple[int, int | None] | None:
+    """(number of elements, Gregorian year) of a grammar match that is a valid date, else None."""
+    g = m.groupdict()
+    month = day = year = None
+    calendar = "gregorian"
+    if g.get("mon"):
+        name = g["mon"].casefold()
+        if name not in MONTH_NAMES:
+            return None
+        month, calendar = MONTH_NAMES[name]
+    elif g.get("vm"):
+        vm = re.sub(r"\s+", " ", g["vm"].lower())
+        month = int(vm) if vm.isdigit() else _VI_SPELLED_MONTHS.get(vm)
+    elif g.get("m"):
+        month = _cjk_number(g["m"])
+    if g.get("d"):
+        day = _cjk_number(g["d"])
+    if g.get("sep") is not None and month is not None and day is not None and not 1 <= month <= 12 \
+            and 1 <= day <= 12:
+        month, day = day, month  # a numeric date in the other order (3/14/2562)
+    if month is None or not 1 <= month <= 12 or (day is not None and not 1 <= day <= 31):
+        return None
+    era = g.get("era")
+    raw_year = g.get("y")
+    if raw_year:
+        n = _cjk_number(raw_year)
+        if n is None:
+            return None
+        if era:
+            start, last = _ERAS[era]
+            if not 1 <= n <= (last if last is not None else reference_year - start):
+                return None
+            if len(era) == 1 and not era.isascii() and day is None:
+                return None  # 大, 平, ... alone are words: a single-character era needs a day
+            year = start + n
+        elif (raw_year.isdigit() and len(raw_year) not in (2, 4)) or (not raw_year.isdigit() and len(raw_year) != 4):
+            return None  # a number of years (3年3月), not a year
+        elif calendar == "thai" and 2343 <= n <= reference_year + 553:
+            year = n - 543  # a Buddhist year
+        elif calendar != "jalali" and len(raw_year) == 4 and 1800 <= n <= reference_year + 10:
+            year = n
+        elif len(raw_year) == 4 and not 1300 <= n <= 2999:
+            return None  # not a year of any calendar this script reads
+    elif era:
+        return None
+    if g.get("mon") and (len(g["mon"]) <= 3 or g["mon"].casefold() in _WEAK_MONTH_NAMES) and not (day and raw_year):
+        return None  # a short name is a month only with a day and a year beside it
+    return 1 + (day is not None) + bool(raw_year), year
+
+
+def find_dates(text: str, reference_year: int, parts: bool = False) -> list[DateHit]:
+    """The dates written in `text` (see above), longest first where two overlap. With `parts`, a month or a
+    day alone is returned too, as a hit of one element."""
+    s = str(text)
+    if not s or not any(c.isdigit() or "\u3007" <= c <= "\u9fff" or c in "元" for c in s) and not parts:
+        return []
+    folded, index = fold_for_dates(s)
+    found: list[tuple[int, int, int, int | None]] = []
+    for rx in _DATE_GRAMMARS:
+        for m in rx.finditer(folded):
+            got = _hit_elements(m, reference_year)
+            if got and got[0] >= 2:
+                found.append((m.start(), m.end(), got[0], got[1]))
+    if parts:
+        for kind, rx in _DATE_PART_GRAMMARS:
+            for m in rx.finditer(folded):
+                g = m.groupdict()
+                if g.get("mon"):
+                    name = g["mon"].casefold()
+                    if name not in MONTH_NAMES or len(name) <= 3 or name in _WEAK_MONTH_NAMES:
+                        continue
+                elif g.get("vm"):
+                    vm = re.sub(r"\s+", " ", g["vm"].lower())
+                    if not 1 <= (int(vm) if vm.isdigit() else _VI_SPELLED_MONTHS.get(vm, 0)) <= 12:
+                        continue
+                else:
+                    n = _cjk_number(g.get("m") or g.get("d") or "")
+                    if n is None or not 1 <= n <= (12 if kind == "m" else 31):
+                        continue
+                found.append((m.start(), m.end(), 1, None))
+    found.sort(key=lambda h: (h[0], -(h[1] - h[0]), -h[2]))
+    hits: list[DateHit] = []
+    end = -1
+    for a, b, elements, year in found:
+        if a < end:
+            continue
+        end = b
+        if index is None:
+            start, stop = a, b
+        else:
+            start, stop = index[a], index[b - 1] + 1
+            while stop < len(s) and not _date_fold_char(s[stop]):
+                stop += 1  # a mark the fold dropped belongs to the letter before it
+        hits.append(DateHit(start, stop, s[start:stop], elements, year))
+    return hits
+
+
+class DatesInAnyScript:
+    """The date grammars above as an entry of the Scrubber's patterns: it has the `sub` of a compiled pattern,
+    and replaces each date of two or more elements by its Gregorian year, capped like every other year, or
+    by [DATE] when it has none."""
+
+    def __init__(self, reference_year: int):
+        self.reference_year = reference_year
+
+    def sub(self, repl, text: str) -> str:
+        hits = find_dates(text, self.reference_year)
+        if not hits:
+            return text
+        out, last = [], 0
+        for h in hits:
+            out.append(text[last:h.start])
+            out.append(repl(h))
+            last = h.end
+        out.append(text[last:])
+        return "".join(out)
+
+    def replacement(self, hit: DateHit) -> str:
+        return cap_old_year(str(hit.year), self.reference_year) if hit.year else "[DATE]"
+
+
 def locale_patterns(locale: dict) -> list[tuple[str, re.Pattern, object]]:
     """National ID, IBAN, phone and postcode patterns of a deidentify.py locale pack."""
     out: list[tuple[str, re.Pattern, object]] = []
@@ -499,7 +823,12 @@ class Scrubber:
                     for kind, rx, repl in PATTERNS]
         # The year after "born" or "DOB" is judged once full dates have become years.
         at = next(i for i, (kind, _, _) in enumerate(patterns) if kind == "phone")
-        self.patterns = patterns[:at] + [birth_year_pattern(year)] + patterns[at:] + locale_patterns(locale)
+        # Round 8: dates in any script and calendar (see DatesInAnyScript) are read before the date patterns
+        # above, so a day before a month name ("1hb Mei 2019") is not left behind when they take the rest.
+        first_date = next(i for i, (kind, _, _) in enumerate(patterns) if kind == "date")
+        dates = DatesInAnyScript(year)
+        self.patterns = (patterns[:first_date] + [("date", dates, dates.replacement)] + patterns[first_date:at]
+                         + [birth_year_pattern(year)] + patterns[at:] + locale_patterns(locale))
 
     def scrub(self, text: str) -> tuple[str, list[str]]:
         """The text with every identifier pattern replaced, and the types replaced."""
@@ -549,10 +878,6 @@ class Scrubber:
 
 
 # ================================================================ columns
-LETTERS_WITHOUT_DECOMPOSITION = str.maketrans({"\u00f8": "o", "\u00d8": "O", "\u00e6": "ae", "\u00c6": "Ae",
-                                               "\u0131": "i", "\u0142": "l", "\u0141": "L", "\u0111": "d",
-                                               "\u0110": "D", "\u0153": "oe", "\u0152": "Oe",
-                                               "\u00fe": "th", "\u00f0": "d"})
 
 
 def column_tokens(header: str) -> list[str]:
@@ -3328,6 +3653,7 @@ NUMBER_ID_WORDS = frozenset("""
 id ids identifier identifiers uid uuid guid no nr nbr num nummer numero ref refs reference key keys
 code codes link linkage token tag tags file files folder dossier record records chart registry
 register registration reg accession barcode serial account acct mrn mbi seq sequence fallnummer
+label labels pseudo pseudonym pseudonyms pseudoid lot lots batch batches
 """.split())
 # Words that name what a row is about. As the last word of a column name they make it that thing's
 # number ("Glucose Case", "Count Patient", "Dose Encounter"), whatever measurement word comes before.
@@ -3357,8 +3683,13 @@ def measurement_header(header: str) -> bool:
     t = column_tokens(header)
     ts = set(t)
     raw = str(header)
-    count_phrase = _has(t, "number of", "no of", "num of", "count of", "n of", "amount of")
+    count_phrase = _has(t, "number of", "no of", "num of", "count of", "n of", "amount of") \
+        or bool(re.search(r"#\s*of\b", raw, re.I))
     if ts & NUMBER_ID_WORDS and not count_phrase:
+        return False
+    # Round 8: a number sign names a number of a thing ("Dose #", "Count#", "Lot #"), unless it says "# of" or
+    # stands alone in brackets as a unit ("Visits (#)").
+    if "#" in re.sub(r"[(\[]\s*#\s*[)\]]", "", raw) and not count_phrase:
         return False
     if "number" in ts and not count_phrase:
         return False
@@ -3590,14 +3921,19 @@ def number_rule(header: str, values: list[str], reference_year: int) -> tuple[st
     # digits is not a duration either ("Visit Day" 43005), unless the unit is minutes or seconds.
     # Round 7: under such a name every number of five digits before its point counts, whole or not, since
     # a duration of 10000 days, weeks or months is not one.
+    # Round 8: under such a name six or more digits are not a duration either: a date or a clock time written as
+    # a number (YYMMDD, HHMMSS, an HL7 time 143005.123, a Unix timestamp of nine digits).
     def excel(n: str) -> bool:
-        m = re.fullmatch(r"(\d{5})(?:\.\d+)?", n)
-        return bool(m) and (EXCEL_DATE_RANGE[0] <= int(m.group(1)) <= EXCEL_DATE_RANGE[1]
-                            or (time_only and not small_unit))
+        m = re.fullmatch(r"(\d{5,})(?:\.\d+)?", n)
+        if not m:
+            return False
+        if len(m.group(1)) > 5:
+            return time_only and not small_unit
+        return EXCEL_DATE_RANGE[0] <= int(m.group(1)) <= EXCEL_DATE_RANGE[1] or (time_only and not small_unit)
     serial = [n for _, n in nums if excel(n) and (_integer_digits(n) is None or (time_only and not small_unit))]
     if serial and (not measurement or (time_only and not small_unit)):
-        return (f"numbers shaped like Excel date and time serials in {len(serial)} of {total} cells "
-                "(possible dates)", "redact", "date", len(serial))
+        return (f"numbers shaped like Excel date and time serials, or dates and clock times written as numbers, in "
+                f"{len(serial)} of {total} cells (possible dates)", "redact", "date", len(serial))
     if not measurement:
         # Scientific notation: how Excel writes a long record, account or phone number in a CSV.
         exponent = [n for _, n in nums if re.search(r"[eE]", n)]
@@ -3629,10 +3965,25 @@ def number_rule(header: str, values: list[str], reference_year: int) -> tuple[st
     # name a repeated number of six digits is a record number too.
     least = 6 if set(column_tokens(header)) & ENCOUNTER_COUNT_WORDS else 7
     seven = [d for d in (_long_integer_part(n) for _, n in nums) if d and len(d.lstrip("0")) >= least]
-    if measurement and seven and len(seven) - len(set(seven)) > len(set(seven)):
+    # Round 8: also when the repeated record numbers are a few cells among measurements (a Glucose column with
+    # one record number in twenty cells), whatever their share: a number that long, not a round one, rarely
+    # comes out the same twice as a measurement.
+    counts: dict[str, int] = {}
+    for d in seven:
+        counts[d] = counts.get(d, 0) + 1
+    repeated = [d for d in seven if counts[d] > 1 and not re.search(r"000$", d)]
+    if measurement and seven and (len(seven) - len(set(seven)) > len(set(seven)) or repeated):
         return (f"whole numbers of {'six' if least == 6 else 'seven'} or more digits that repeat, in {len(seven)} of "
                 f"{total} cells (possible record numbers, though the column name names a measurement)",
                 "pseudonym_id", "id", len(seven))
+    # Round 8: a column that names a measurement only by a unit of length ("X (m)", "Y (m)", "Value (km)") holds
+    # grid coordinates in metres as often as lengths; numbers of five or more digits before the point are
+    # redacted there unless the name says what was measured (Distance, Length, Height, Elevation, Depth).
+    if measurement and _length_unit_only(header):
+        grid = [n for _, n in nums if len(n.lstrip("+-").split(".")[0].replace(",", "")) >= 5]
+        if grid:
+            return (f"numbers with five or more digits before the point in {len(grid)} of {total} cells under a column "
+                    "name that names only a unit of length (possible grid coordinates)", "redact", "geo", len(grid))
     if measurement:
         return None
     # Short study and record numbers under a column name of a person's or a record's number ("Study ID",
@@ -3706,6 +4057,24 @@ def number_rule(header: str, values: list[str], reference_year: int) -> tuple[st
     return None
 
 
+LENGTH_UNIT_WORDS = frozenset("m km mm cm ft feet foot metre metres meter meters mi mile miles yd yard yards".split())
+DISTANCE_WORDS = frozenset("""
+distance distances dist length lengths len height heights ht elevation altitude alt depth depths width diameter
+size circumference thickness radius perimeter travel travelled traveled stride span gap
+""".split())
+
+
+def _length_unit_only(header: str) -> bool:
+    """A column name that names a measurement only by a unit of length ("X (m)", "Value (km)"), with no word for
+    what was measured."""
+    t = column_tokens(header)
+    ts = set(t)
+    units = {fold(m.group(1)) for m in re.finditer(r"[(\[]\s*([^)\]]{1,20})\s*[)\]]", str(header))}
+    if not (units | ts) & LENGTH_UNIT_WORDS or ts & DISTANCE_WORDS:
+        return False
+    return not (ts & MEASUREMENT_WORDS) - LENGTH_UNIT_WORDS and not (units - LENGTH_UNIT_WORDS) & UNITS
+
+
 def _coordinate_shape(values: list[str]) -> dict | None:
     vals = _shape_values(values)
     if not vals or not all(re.fullmatch(r"[+-]?\d+(?:\.\d+)?", v) for v in vals):
@@ -3767,6 +4136,11 @@ def header_identifier_kinds(header: str, scrubber: Scrubber) -> list[str]:
     # A fiscal year ("FY2022 Cost", round 5) is a year; the year rules still read it.
     h = re.sub(r"(?i)(?<![a-z0-9])fy[\s_-]?((?:18|19|20)\d{2})(?!\d)", r"FY \1", h)
     kinds = scrubber.find(h) if h else []
+    # Round 8: the cell patterns also read the header as the date grammars fold it (full-width and other
+    # scripts' digits as ASCII), so a date is one definition for cells and column names.
+    folded = fold_for_dates(h)[0]
+    if folded != h and "date" in scrubber.find(folded):
+        kinds.append("date")
     return [k for k in kinds if k != "name" or re.search(r"[:=]", h)]
 
 
@@ -3917,7 +4291,106 @@ def header_date_kinds(header: str, reference_year: int) -> list[str]:
         w, y = (m.group("w"), m.group("y")) if m.group("w") else (m.group("w2"), m.group("y2"))
         if 1 <= int(w) <= 53 and (y.startswith("'") or 1880 <= int(y) <= reference_year + 10):
             found = True
+    # Round 8: a date in any script or calendar the cell patterns read (2019年3月14日, 2019년 3월 14일,
+    # 14 tháng 3 năm 2019, 14 Mac 2019, R1.5.1, 14 มีนาคม 2562), and a month and a day written as two numbers
+    # with a hyphen or a slash, one of them over 12 (31-12, 14-3, WBC 3-19), or with a leading zero.
+    if any(h.elements >= 2 for h in find_dates(HEADER_CODES.sub(" ", unicodedata.normalize("NFKC", str(header))),
+                                               reference_year)):
+        found = True
+    if _header_number_pairs(s, reference_year)[0] or _header_date_words(s, reference_year)[0]:
+        found = True
     return ["a date element finer than the year (a month, a day, a quarter or a week beside a number)"] if found else []
+
+
+# Round 8: a month and a day written into a column name as two numbers. A pair joined by a hyphen, a slash
+# or a dash in which one number is from 13 to 31 and the other from 1 to 12 (31-12, 12-31, 14-3, 9-19,
+# WBC 3-19), or with a leading zero (03-14), is refused like a date; a pair of two numbers of 12 or less
+# (3-4, 3/4), a decimal that reads as a day and a month (WBC 14.3, WBC 3.19) and four digits that read as one
+# (WBC 1231) are withheld, since fractions, ranges, thresholds and room numbers are written the same way.
+# The pair is read as a range or a value, and shown, beside a word that takes a range or a scale (Grade 3/4,
+# Score 1-10, Age 12-18, Weeks 4-12), after a comparator (Hb < 13.5) or before a unit (2.5 mg, 3-4 days); a
+# cancer antigen (CA 19-9, CA 15-3) is a lab name. Numbers glued to a letter are part of a word (L4-5, v1.2).
+_HEADER_PAIR = re.compile(r"(?<![^\W_])(?<![.,/\-\u2013])(?P<a>\d{1,2})(?P<sep>\s?[/\-\u2013]\s?|\.)(?P<b>\d{1,2})"
+                          r"(?P<dot>\.(?!\d))?(?![^\W_])(?![/\-\u2013.,]\d)")
+_HEADER_FOUR_DIGITS = re.compile(r"(?<![^\W_])(?<![.,/\-\u2013])(?P<n>\d{4})(?![^\W_])(?![.,/\-\u2013]\d)")
+_HEADER_COMPARATOR = re.compile(r"(?:[<>=~\u00b1\u2248\u2264\u2265]|>=|<=|=<|=>)\s*$")
+_CANCER_ANTIGEN = re.compile(r"(?i)(?<![^\W_])ca[\s_-]?\d{2,3}(?:[-.]\d{1,2})?(?![^\W\d_])")
+RANGE_WORDS = frozenset("""
+grade grades score scores stage stages scale scales ecog kps nyha gleason likert rank ranks level levels class
+classes tier tiers range ranges ratio ratios fraction age ages aged year years yr yrs month months mos week weeks
+wk wks day days hour hours hr hrs minute minutes mins cycle cycles line lines phase phases dose doses step
+steps item items question questions gestation gestational parity gravida apgar pain vas nrs percentile quartile
+tertile quintile decile
+""".split())
+
+
+def _unit_after(s: str, end: int) -> bool:
+    m = re.match(r"\s*(%|[^\W\d_]+(?:/[^\W\d_]+)?)", s[end:])
+    return bool(m) and (m.group(1) == "%" or fold(m.group(1)) in UNITS or fold(m.group(1)) in TIME_UNITS
+                        or fold(m.group(1)) in ("x", "times"))
+
+
+def _header_number_pairs(s: str, reference_year: int) -> tuple[bool, bool]:
+    """(refuse, withhold) for the numbers of a column name read as a month and a day (see above)."""
+    s = _CANCER_ANTIGEN.sub(" ", s)
+    ranged = bool(set(column_tokens(s)) & RANGE_WORDS)
+    refuse = withhold = False
+    for m in _HEADER_PAIR.finditer(s):
+        a, b, sep = m.group("a"), m.group("b"), m.group("sep").strip()
+        x, y = int(a), int(b)
+        if not x or not y or not _month_day(x, y):
+            continue
+        shown = ranged or bool(_HEADER_COMPARATOR.search(s[:m.start()])) or _unit_after(s, m.end())
+        zero = a.startswith("0") or b.startswith("0")
+        if sep == ".":
+            if m.group("dot") or a.startswith("0"):
+                refuse = True
+            elif not shown:
+                withhold = True
+        elif zero:
+            refuse = True
+        elif max(x, y) >= 13 and (sep == "/" or not shown):
+            refuse = True
+        elif not shown:
+            withhold = True
+    for m in _HEADER_FOUR_DIGITS.finditer(s):
+        d = m.group("n")
+        if 1880 <= int(d) <= reference_year + 10 or not (_month_day(int(d[:2]), int(d[2:])) and int(d[2:])):
+            continue
+        if d.startswith("0"):
+            refuse = True
+        elif not (ranged or _HEADER_COMPARATOR.search(s[:m.start()]) or _unit_after(s, m.end())):
+            withhold = True
+    return refuse, withhold
+
+
+_DAY_WORD_NUMBER = re.compile(r"(?i)(?<![^\W\d_])(?:" + "|".join(sorted(DAY_PART_WORDS, key=len, reverse=True))
+                              + r")\s*[#:.\-_]?\s*(?P<n>\d{1,2})(?!\d)")
+_MONTH_WORD_NUMBER = re.compile(r"(?i)(?<![^\W\d_])(?:" + "|".join(sorted(MONTH_PART_WORDS, key=len, reverse=True))
+                                + r")\s*[#:.\-_]?\s*(?P<n>\d{1,2})(?!\d)")
+
+
+def _header_date_words(s: str, reference_year: int) -> tuple[bool, bool]:
+    """(refuse, withhold) for a word for a month with a number and a year beside it (Month 3 2019, refused), or
+    with a word for a day and a number (Day 14 Month 3, Tag 14 Monat 3, withheld: a study's month and day
+    are written so too)."""
+    months = [int(m.group("n")) for m in _MONTH_WORD_NUMBER.finditer(s) if 1 <= int(m.group("n")) <= 12]
+    if not months:
+        return False, False
+    days = [int(m.group("n")) for m in _DAY_WORD_NUMBER.finditer(s) if 1 <= int(m.group("n")) <= 31]
+    year = any(1880 <= int(y) <= reference_year + 10 for y in re.findall(r"(?<!\d)(\d{4})(?!\d)", s))
+    return year, bool(days)
+
+
+def header_date_withheld(header: str, reference_year: int) -> bool:
+    """A column name holding a month or a day alone (3月, 3월, tháng 3, 14日, a month name of another language as
+    a word), two numbers that may be a month and a day (3-4, WBC 14.3, WBC 1231) or a word for a day and one for
+    a month with numbers (Day 14 Month 3): withheld, never printed or copied (round 8)."""
+    h = HEADER_CODES.sub(" ", unicodedata.normalize("NFKC", str(header)))
+    if any(hit.elements == 1 for hit in find_dates(h, reference_year, parts=True)):
+        return True
+    s = _header_ascii(h)
+    return _header_number_pairs(s, reference_year)[1] or _header_date_words(s, reference_year)[1]
 
 
 _HEADER_MONTH_WORD = re.compile(r"(?<![^\W\d_])(?:" + _HEADER_MONTHS + r")(?![^\W\d_])", re.I)
@@ -3964,11 +4437,31 @@ def header_looks_like_value(header: str, scrubber: Scrubber) -> bool:
                         or bool(SPELLED_OUT.search(h)))
 
 
+# Round 8: joiners and direction marks that a script without capital letters needs (ZWNJ in Persian spelling,
+# ZWJ in Indic scripts and emoji, a right-to-left mark ending an Arabic or Hebrew Excel cell).
+SCRIPT_JOINERS = frozenset("\u200c\u200d\u200e\u200f\u061c")
+
+
+def _cased_letters(header: str) -> bool:
+    return any(c.isalpha() and (c.isupper() or c.islower()) for c in str(header))
+
+
 def _invisible_character(header: str) -> bool:
     """A NUL, another control character or a format character (Unicode Cc or Cf: a zero-width space or
     joiner, a direction mark, a soft hyphen, a byte order mark) in a header cell, which can hide a name or a
-    number from the column-name checks (round 7). A tab, a line feed and a carriage return read as spaces."""
-    return any(unicodedata.category(c) in ("Cc", "Cf") and c not in "\t\n\r" for c in str(header))
+    number from the column-name checks (round 7). A tab, a line feed and a carriage return read as spaces.
+    Round 8: a zero-width joiner or non-joiner and a direction mark are part of the spelling in a header with no
+    letter of a script with capitals (Persian, Arabic, Hebrew, Indic scripts, emoji); the checks read such a
+    header without them (header_for_checks)."""
+    h = str(header)
+    allowed = SCRIPT_JOINERS if not _cased_letters(h) else frozenset()
+    return any(unicodedata.category(c) in ("Cc", "Cf") and c not in "\t\n\r" and c not in allowed for c in h)
+
+
+def header_for_checks(header: str) -> str:
+    """The header as the column-name checks read it: without the joiners and marks _invisible_character allows."""
+    h = str(header)
+    return h if _cased_letters(h) else "".join(c for c in h if c not in SCRIPT_JOINERS)
 
 
 # Words column names are made of. A column name of two or more capitalised words none of which is
@@ -4271,11 +4764,37 @@ def _header_words(header: str, surnames: bool) -> bool:
         # The original capitals split a word written in camel case ("DayOfMonth", "SpO2").
         return _camel_header_shown(h, surnames)
     letters = [w for w in words if w.isalpha() and len(w) > 1]
+    if surnames and _surname_beside_person(words):
+        return False
     return not surnames or other_script or not letters or any(not _surname_word(w) for w in letters)
 
 
 def _surname_word(w: str) -> bool:
     return w in SURNAME_WORDS or (len(w) > 3 and w.endswith("s") and w[:-1] in SURNAME_WORDS)
+
+
+# Round 8: a word for a person beside a word that can be a surname ("Patient White", "Dr Ward", "Mother Long",
+# "Patient Bill White") was shown, because one word was not a surname. A column name made of words for a person
+# and words that can be surnames, and one in which two words that can be names stand side by side ("Weight Bill
+# White"), are withheld. Words of measurements and ordinary column words do not count as names side by side
+# ("Min Max"), nor do the points of the compass.
+PERSON_TITLE_WORDS = frozenset("mr mrs ms mx miss mister prof professor sir dame dr drs doc rev".split())
+PERSON_BESIDE_SURNAME = (SELF_WORDS | frozenset(PERSON_HEADERS) | frozenset(RELATIVE_WORDS) | frozenset(RELATIVE_HEADERS)
+                         | CLINICAL_STAFF_WORDS | frozenset(CLINICIAN_WORDS) | PERSON_TITLE_WORDS)
+COMPASS_WORDS = frozenset("north south east west northeast northwest southeast southwest central".split())
+
+
+def _surname_beside_person(words: list[str]) -> bool:
+    letters = [w for w in words if w.isalpha() and len(w) > 1]
+    people = [w for w in letters if w in PERSON_BESIDE_SURNAME]
+    rest = [w for w in letters if w not in PERSON_BESIDE_SURNAME]
+    if people and rest and all(_surname_word(w) for w in rest):
+        return True
+
+    def name_word(w: str) -> bool:
+        return (w.isalpha() and _surname_word(w) and w not in GENERIC_HEADER_WORDS and w not in MEASUREMENT_WORDS
+                and w not in COMPASS_WORDS)
+    return any(name_word(a) and name_word(b) for a, b in zip(words, words[1:]))
 
 
 def _camel_header_shown(header: str, surnames: bool = True) -> bool:
@@ -4291,6 +4810,8 @@ def _camel_header_shown(header: str, surnames: bool = True) -> bool:
                 return False
             words.append(p)
     letters = [w for w in words if w.isalpha() and len(w) > 1]
+    if surnames and _surname_beside_person(words):
+        return False
     return not surnames or not letters or any(not _surname_word(w) for w in letters)
 
 
@@ -4327,7 +4848,9 @@ def check_header_row(headers: list[str], scrubber: Scrubber, confirmed: set[int]
             "invisible formatting character (a zero-width space or joiner, a direction mark, a soft hyphen), "
             "which can hide a name or a number from the column-name check. If the file was saved as UTF-16 "
             "or another encoding, save it again as 'CSV UTF-8' (in Excel: File, Save As, CSV UTF-8) or rerun "
-            "with --encoding; otherwise ask the person to retype those column names. No output was written.")
+            "with --encoding; otherwise ask the person to retype those column names, or rerun with --no-header, "
+            "which reads the first row as data and names the columns column_1, column_2, ... No output was written.")
+    headers = [header_for_checks(h) for h in headers]
     patterned = [i for i, h in enumerate(headers, start=1)
                  if (header_identifier_kinds(h, scrubber) or header_number_kinds(h, scrubber.reference_year))
                  and not (i in by_position and PUBLIC_ACCESSION.fullmatch(str(h).strip()))]
@@ -4355,7 +4878,8 @@ def check_header_row(headers: list[str], scrubber: Scrubber, confirmed: set[int]
             "rerun with --keep-all-names. A wide matrix whose columns are named with a prefix and digits "
             "(probes, variables V1 to V2000) is read this way too; the person can confirm its names with "
             "--keep-all-names or rename them with a word and a short number (probe_1, var_1).")
-    unknown = {i for i, h in enumerate(headers, start=1) if not header_shown(h) or header_code_shaped(h)}
+    unknown = {i for i, h in enumerate(headers, start=1) if not header_shown(h) or header_code_shaped(h)
+               or header_date_withheld(h, scrubber.reference_year)}
     return (looks | unknown) - set(confirmed)
 
 
@@ -4601,6 +5125,11 @@ def to_year(v: str, scrubber: Scrubber, reference_year: int | None = None) -> st
     years = set(_years_in(s))
     if len(years) == 1:
         return years.pop()
+    # A date of another script or calendar (round 8): its Gregorian year (R1.5.1, 14 มีนาคม 2562, 平成31年4月30日).
+    if not years:
+        found = {h.year for h in find_dates(s, reference_year or date.today().year) if h.year}
+        if len(found) == 1:
+            return str(found.pop())
     # A Unix timestamp or a Julian date written as a number (round 7): its year.
     if reference_year is not None and is_number(s):
         year = numeric_date_year(s, reference_year)
@@ -4985,10 +5514,11 @@ def cannot_be_kept(decisions: list[dict]) -> list[dict]:
 
 def load_input(path: Path, scrubber: Scrubber, encoding: str | None = None, locale_code: str = "us",
                no_header: bool = False, delimiter: str | None = None, keep_names: set[str] | None = None,
-               keep_all_names: bool = False):
+               keep_all_names: bool = False, number_duplicates: bool = False):
     if not path.is_file():
         raise UsageError(f"input file not found: {path}")
-    data, meta = read_table(path, encoding, locale_code, no_header=no_header, delimiter=delimiter)
+    data, meta = read_table(path, encoding, locale_code, no_header=no_header, delimiter=delimiter,
+                            number_duplicates=number_duplicates)
     headers = list(meta.get("headers") or [])
     if not headers:
         raise UsageError("the file has no header row")
@@ -5115,7 +5645,7 @@ def _xlsx_rows(path: Path) -> tuple[list[list[str]], int]:
 
 
 def read_table(path: Path, encoding: str | None = None, locale_code: str = "us", no_header: bool = False,
-               delimiter: str | None = None):
+               delimiter: str | None = None, number_duplicates: bool = False):
     """The rows of a CSV, TSV or Excel file as dicts keyed by column name, and metadata. The first
     row is the header row unless `no_header`, when the columns are named column_1, column_2, ...
     and every row is data. A blank header cell is named column_N too. Every message names
@@ -5156,10 +5686,19 @@ def read_table(path: Path, encoding: str | None = None, locale_code: str = "us",
         body = numbered[1:]
     seen: dict[str, int] = {}
     for i, h in enumerate(headers, start=1):
-        if h in seen:
+        if h in seen and number_duplicates:
+            # Round 8: a repeated name is given its position (Glucose_7), as an Excel export often repeats one.
+            new = f"{h}_{i}"
+            while new in seen or new in headers:
+                new += "_"
+            headers[i - 1] = h = new
+        elif h in seen:
             raise UsageError(f"columns #{seen[h]} and #{i} have the same name, so they cannot be told apart. "
                              "If the first row is data (the file has no header row), rerun with --no-header; "
-                             "otherwise ask the person to give each column a unique name.")
+                             "if the person confirms that the first row holds column names, rerun with "
+                             "--number-duplicates, which gives each repeated name its position (column #7 of a "
+                             "repeated name is written with _7 after it); otherwise ask the person to give each "
+                             "column a unique name.")
         seen[h] = i
     data = []
     for line, row in body:
@@ -5194,7 +5733,7 @@ def cmd_plan(args) -> int:
     scrubber = Scrubber(locale, args.reference_year)
     data, meta, headers, withheld = load_input(Path(args.input_file), scrubber, args.encoding,
                                                locale.get("code", "us"), args.no_header, args.delimiter,
-                                               set(args.keep_name), args.keep_all_names)
+                                               set(args.keep_name), args.keep_all_names, args.number_duplicates)
     decisions = decide_columns(data, headers, locale, scrubber, set(args.keep), set(args.redact),
                                args.reference_year)
     print("Safe Harbor plan (no cell values are printed)")
@@ -5215,7 +5754,7 @@ def cmd_run(args) -> int:
     out_dir = Path(args.output_dir).resolve()
     data, meta, headers, withheld = load_input(input_path, scrubber, args.encoding, locale.get("code", "us"),
                                                args.no_header, args.delimiter, set(args.keep_name),
-                                               args.keep_all_names)
+                                               args.keep_all_names, args.number_duplicates)
     decisions = decide_columns(data, headers, locale, scrubber, set(args.keep), set(args.redact),
                                args.reference_year)
 
@@ -5425,9 +5964,10 @@ def cmd_verify(args) -> int:
     decisions, used = report_decisions(path, headers, args.report)
     # The names in a file this tool wrote are column_N or names it showed or the person confirmed;
     # any other file's names are shown only when they are ordinary column words.
-    withheld = set() if used else {i for i, h in enumerate(headers, start=1)
+    withheld = set() if used else {i for i, h in ((i, header_for_checks(h)) for i, h in enumerate(headers, start=1))
                                    if header_looks_like_value(h, scrubber) or not header_shown(h)
-                                   or header_code_shaped(h) or _invisible_character(h)}
+                                   or header_code_shaped(h) or _invisible_character(h)
+                                   or header_date_withheld(h, scrubber.reference_year)}
     findings = residual_findings(data, headers, decisions, scrubber, args.reference_year)
     print("Residual identifier check (no cell values are printed)")
     print(f"  file: {path.name}  rows: {len(data)}  columns: {len(headers)}")
@@ -5485,6 +6025,9 @@ def build_parser() -> argparse.ArgumentParser:
         sp.add_argument("--keep-all-names", action="store_true",
                         help="the person confirmed that the first row holds column names and that none of "
                              "them carries an identifier: show and copy every one")
+        sp.add_argument("--number-duplicates", action="store_true",
+                        help="give a column whose name repeats an earlier column's name its position after it "
+                             "(Glucose_7), instead of refusing the file")
         if name == "run":
             sp.add_argument("-o", "--output-dir", required=True,
                             help="folder for the de-identified file and the report")

@@ -691,14 +691,18 @@ class CategoryWordsDoNotHideNames(unittest.TestCase):
         for w in self.raw_words():
             self.assertNotIn(w, text, "raw name in the output")
             self.assertNotIn(w, shown, "raw name printed or reported")
+        # Round 8: a column name of a person word and a word that can be a surname (Ward Nurse) is withheld and
+        # written as column_N, so the columns are read by their output names.
+        names = output_names(json.loads(report.read_text(encoding="utf-8")), header)
         for col in self.ROLE_HEADERS:
-            self.assertEqual({r[col] for r in out}, {"[REDACTED]"}, col)
+            self.assertEqual({r[names[col]] for r in out}, {"[REDACTED]"}, col)
         self.assertEqual([r["sex"] for r in out], [row[-1] for row in rows])
         # The residual check finds the same names in a file that has no report.
         bad = run("verify", str(raw), "--reference-year", REFERENCE_YEAR)
         self.assertEqual(bad.returncode, 3, bad.stdout + bad.stderr)
-        for col in self.ROLE_HEADERS:
-            self.assertIn(f"{col}: text values shaped like names", bad.stdout)
+        for i, col in enumerate(header[:-1], start=1):
+            label = col if names[col] == col else f"#{i} (name withheld)"
+            self.assertIn(f"{label}: text values shaped like names", bad.stdout)
         for w in self.raw_words():
             self.assertNotIn(w, bad.stdout + bad.stderr)
 
@@ -4581,6 +4585,446 @@ Platelets|Tumor Size (mm)|Gestational Weeks|Charlson|NIHSS|Hematocrit|Albumin|Fe
         written = json.dumps(out)
         for pid in pids:
             self.assertNotIn(pid, written)
+
+
+
+SCRUB_PROBE = r"""
+import json, sys
+sys.path.insert(0, sys.argv[1])
+import safe_harbor as s, deidentify as u
+sc = s.Scrubber(u.load_locale("us"), 2026)
+print(json.dumps([sc.scrub(t) for t in json.load(open(sys.argv[2], encoding="utf-8"))], ensure_ascii=False))
+"""
+
+
+def scrub_probe(tmp: Path, texts: list) -> list:
+    path = tmp / "probe_scrub.json"
+    path.write_text(json.dumps(texts, ensure_ascii=False), encoding="utf-8")
+    p = subprocess.run([sys.executable, "-I", "-B", "-c", SCRUB_PROBE, str(SCRIPT.parent), str(path)],
+                       capture_output=True, text=True, env=dict(os.environ, PYTHONDONTWRITEBYTECODE="1"),
+                       timeout=300)
+    if p.returncode != 0:
+        raise AssertionError(p.stderr[-2000:])
+    return json.loads(p.stdout)
+
+
+# Round 8: dates written in many scripts and calendars, generated for the tests from month names written here
+# (not read from the script), so the tests prove the grammar rather than a list of strings.
+_CJK_DIGITS = "〇一二三四五六七八九"
+_MONTHS_BY_LANGUAGE = {
+    "ms": "Januari Februari Mac April Mei Jun Julai Ogos September Oktober November Disember",
+    "id": "Januari Februari Maret April Mei Juni Juli Agustus September Oktober November Desember",
+    "ru": "января февраля марта апреля мая июня июля августа сентября октября ноября декабря",
+    "uk": "січня лютого березня квітня травня червня липня серпня вересня жовтня листопада грудня",
+    "el": "Ιανουαρίου Φεβρουαρίου Μαρτίου Απριλίου Μαΐου Ιουνίου Ιουλίου Αυγούστου Σεπτεμβρίου Οκτωβρίου "
+          "Νοεμβρίου Δεκεμβρίου",
+    "ar": "يناير فبراير مارس أبريل مايو يونيو يوليو أغسطس سبتمبر أكتوبر نوفمبر ديسمبر",
+    "lev": "كانون_الثاني شباط آذار نيسان أيار حزيران تموز آب أيلول تشرين_الأول تشرين_الثاني كانون_الأول",
+    "he": "בינואר בפברואר במרץ באפריל במאי ביוני ביולי באוגוסט בספטמבר באוקטובר בנובמבר בדצמבר",
+    "hi": "जनवरी फ़रवरी मार्च अप्रैल मई जून जुलाई अगस्त सितंबर अक्टूबर नवंबर दिसंबर",
+    "tr": "Ocak Şubat Mart Nisan Mayıs Haziran Temmuz Ağustos Eylül Ekim Kasım Aralık",
+    "pl": "stycznia lutego marca kwietnia maja czerwca lipca sierpnia września października listopada grudnia",
+    "de": "Januar Februar März April Mai Juni Juli August September Oktober November Dezember",
+    "fr": "janvier février mars avril mai juin juillet août septembre octobre novembre décembre",
+    "es": "enero febrero marzo abril mayo junio julio agosto septiembre octubre noviembre diciembre",
+    "pt": "janeiro fevereiro março abril maio junho julho agosto setembro outubro novembro dezembro",
+    "it": "gennaio febbraio marzo aprile maggio giugno luglio agosto settembre ottobre novembre dicembre",
+    "nl": "januari februari maart april mei juni juli augustus september oktober november december",
+    "fi": "tammikuuta helmikuuta maaliskuuta huhtikuuta toukokuuta kesäkuuta heinäkuuta elokuuta syyskuuta "
+          "lokakuuta marraskuuta joulukuuta",
+    "th": "มกราคม กุมภาพันธ์ มีนาคม เมษายน พฤษภาคม มิถุนายน กรกฎาคม สิงหาคม กันยายน ตุลาคม พฤศจิกายน ธันวาคม",
+    "th_abbr": "ม.ค. ก.พ. มี.ค. เม.ย. พ.ค. มิ.ย. ก.ค. ส.ค. ก.ย. ต.ค. พ.ย. ธ.ค.",
+}
+_MONTHS = {k: [w.replace("_", " ") for w in v.split()] for k, v in _MONTHS_BY_LANGUAGE.items()}
+_VI_MONTHS = ["Giêng", "Hai", "Ba", "Tư", "Năm", "Sáu", "Bảy", "Tám", "Chín", "Mười", "Mười Một", "Chạp"]
+
+
+def _cjk_year(y: int) -> str:
+    return "".join(_CJK_DIGITS[int(c)] for c in str(y))
+
+
+def _cjk_small(n: int) -> str:
+    if n < 10:
+        return _CJK_DIGITS[n]
+    t, u = divmod(n, 10)
+    return ("" if t == 1 else _CJK_DIGITS[t]) + "十" + (_CJK_DIGITS[u] if u else "")
+
+
+def _in_digits(s: str, zero: int) -> str:
+    return "".join(chr(zero + int(c)) if "0" <= c <= "9" else c for c in s)
+
+
+def dates_with_a_year(y: int, m: int, d: int) -> list[str]:
+    """A month with a year, and with a day, written in many scripts and calendars."""
+    f = [f"{y}年{m}月{d}日", f"{y}年{m:02d}月{d:02d}日", f"{y} 年 {m} 月 {d} 日",
+         _in_digits(f"{y}年{m}月{d}日", 0xFF10), f"{y}年{m}月", f"{y}年{m}月{d}号", f"{y % 100:02d}年{m}月{d}日",
+         _cjk_year(y) + "年" + _cjk_small(m) + "月" + _cjk_small(d) + "日",
+         f"{y}년 {m}월 {d}일", f"{y}년{m}월{d}일", f"{y}년 {m}월", f"{y}. {m}. {d}.",
+         f"ngày {d} tháng {m} năm {y}", f"{d} tháng {m} năm {y}", f"tháng {m} năm {y}", f"tháng {m}/{y}",
+         f"Ngày {d:02d} Tháng {m:02d} Năm {y}", f"ngay {d} thang {m} nam {y}", f"{d} thg {m}, {y}",
+         f"Tháng {_VI_MONTHS[m - 1]} năm {y}", f"{d}/{m}/{y + 543}", f"{y + 543}-{m:02d}-{d:02d}",
+         _in_digits(f"{d}/{m}/{y}", 0x0660), _in_digits(f"{y}/{m}/{d}", 0x06F0), _in_digits(f"{d}.{m}.{y}", 0x0966),
+         _in_digits(f"{d}/{m}/{y + 543}", 0x0E50), _in_digits(f"{y}-{m:02d}-{d:02d}", 0xFF10),
+         f"{d}hb {_MONTHS['ms'][m - 1]} {y}", f"{d}. {_MONTHS['de'][m - 1]} {y}",
+         f"{d} de {_MONTHS['es'][m - 1]} de {y}", f"{d} {_MONTHS['ru'][m - 1]} {y} г.",
+         f"{d} {_MONTHS['th'][m - 1]} {y + 543}", f"{d} {_MONTHS['th_abbr'][m - 1]} {y + 543}",
+         f"{_MONTHS['th'][m - 1]} {y + 543}", f"{d} {_MONTHS['th'][m - 1]} พ.ศ. {y + 543}"]
+    if y >= 2019:
+        n = y - 2018
+        f += [f"令和{n}年{m}月{d}日", f"R{n}.{m}.{d}", f"R{n:02d}/{m:02d}/{d:02d}", f"㋿{n}.{m}.{d}"]
+        if n == 1:
+            f.append(f"令和元年{m}月{d}日")
+    if 1989 <= y <= 2019:
+        n = y - 1988
+        f += [f"平成{n}年{m}月{d}日", f"H{n}.{m}.{d}", f"H{n}/{m}/{d}", f"㍻{n}年{m}月{d}日",
+              "平成" + _cjk_small(n) + "年" + _cjk_small(m) + "月" + _cjk_small(d) + "日"]
+    for lang in ("ms", "id", "ru", "uk", "el", "ar", "lev", "he", "hi", "tr", "pl", "de", "fr", "es", "pt", "it",
+                 "nl", "fi"):
+        mon = _MONTHS[lang][m - 1]
+        f.append(f"{d} {mon} {y}")
+        if lang in ("ar", "lev"):
+            f.append(_in_digits(f"{d} {mon} {y}", 0x0660))
+        if len(mon) > 3:
+            f.append(f"{mon} {y}")
+    return f
+
+
+def dates_without_a_year(m: int, d: int) -> list[str]:
+    """A month and a day with no year."""
+    f = [f"{m}月{d}日", f"{m}月{d}号", f"{m} 月 {d} 日", _cjk_small(m) + "月" + _cjk_small(d) + "日", f"{m}월 {d}일",
+         f"{d} tháng {m}", f"{m:02d}-{d:02d}", f"{m:02d}{d:02d}", f"{d:02d}.{m:02d}.", f"{d}.{m}."]
+    if d > 12:  # read as a day by its number over 12
+        f += [f"{m}/{d}", f"{d}/{m}", f"{d}-{m}", f"{m}-{d}", f"{m} - {d}", f"{d}–{m}"]
+    return f
+
+
+def a_month_or_a_day_alone(m: int, d: int) -> list[str]:
+    f = [f"{m}月", f"{m}월", f"tháng {m}", f"{d}日", f"{d}일", _cjk_small(m) + "月", f"Day {d} Month {m}",
+         f"Tag {d} Monat {m}", f"Jour {d} Mois {m}", f"Dia {d} Mes {m}"]
+    f += [_MONTHS[lang][m - 1] for lang in ("ms", "id", "ru", "de", "tr", "pl", "fi", "nl", "th")
+          if len(_MONTHS[lang][m - 1]) > 4]
+    if d <= 12 and m != d:
+        f += [f"{m}-{d}", f"{m}/{d}"]
+    if d > 12:
+        f += [f"{d}.{m}", f"{m}.{d}"] + ([f"{m}{d}"] if m >= 10 else [])
+    return f
+
+
+_DATE_CONTEXTS = ["{x}", "WBC {x}", "{x} Glucose", "体重 {x}", "Visit {x}", "Weight ({x})", "{x}_HbA1c", "Lab: {x}",
+                  "Hb {x} (g/dL)", "检查 {x}"]
+_ORDINARY_HEADERS = ["Sex", "WBC", "Glucose", "Age", "Weight", "Height", "Sodium", "Potassium", "BMI", "Stage",
+                     "Diagnosis", "Drug", "Arm", "Visit", "Race", "State", "Country", "Notes", "Score", "Dose"]
+
+
+class DatesInColumnNamesInAnyScriptOfRoundEight(unittest.TestCase):
+    """Round 8 of the fail-closed review (2026-11-25, 1.0.1): a column name holding a full date written in
+    Chinese, Japanese, Korean, Vietnamese or Malay (2019年3月14日, 2019년 3월 14일, 14 tháng 3 năm 2019, 14 Mac
+    2019, R1.5.1) was copied to the output, because the column-name check read 年, 月 and 日 as column words and
+    the date patterns read only Latin month names and ASCII digits. One set of date grammars now reads cells and
+    column names alike, after folding compatibility forms and every script's digits. The tests generate the
+    dates from month names, numerals and calendars written here, in many contexts. Every date is invented."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="safe_harbor_test_"))
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    @staticmethod
+    def some_dates(seed: int, n: int = 6) -> list[tuple[int, int, int]]:
+        import random
+        rng = random.Random(seed)
+        out = [(2019, 3, 14), (2019, 5, 1), (2021, 12, 31), (2008, 11, 5)]
+        while len(out) < n + 4:
+            out.append((rng.choice([1998, 2003, 2008, 2012, 2016, 2019, 2020, 2021, 2023]), rng.randint(1, 12),
+                        rng.randint(1, 28)))
+        return out
+
+    def judge(self, names: list[str]) -> dict[str, object]:
+        rows = [_ORDINARY_HEADERS + [h] for h in names]
+        return {h: ("refused" if r == "refused" else "withheld" if len(_ORDINARY_HEADERS) + 1 in r else "shown")
+                for h, r in zip(names, header_probe(self.tmp, rows))}
+
+    # High: a full date, a month and a year, or a month and a day in a column name, in any script or calendar the
+    # cells are read in, is refused like an identifier pattern; four digits with no leading zero that read as a
+    # month and a day (1231) are withheld, since a room or a code is written so too.
+    def test_dates_in_column_names_in_any_script_are_refused(self):
+        import random
+        rng = random.Random(81)
+        names, four = [], set()
+        for y, m, d in self.some_dates(80):
+            for x in dates_with_a_year(y, m, d) + dates_without_a_year(m, d):
+                variants = [c.format(x=x) for c in rng.sample(_DATE_CONTEXTS, 3)]
+                names += variants
+                if re.fullmatch(r"[1-9]\d{3}", x):
+                    four.update(variants)
+        self.assertGreater(len(names), 2500)
+        judged = self.judge(names)
+        self.assertEqual([h for h, r in judged.items() if r == "shown"], [], "a date in a column name was shown")
+        self.assertEqual([h for h, r in judged.items() if r != "refused" and h not in four], [],
+                         "a date in a column name was not refused")
+        # The headers of the finding, end to end: the run is refused and prints no column name.
+        finding = ["2019年3月14日", "WBC 2019年3月14日", "体重 3月14日", "体重 2019年3月", "2019年12月31日", "2019年1月",
+                   "3月14日", "2019년 3월 14일", "3월 14일", "2019년 3월", "14 tháng 3 năm 2019", "14 Mac 2019",
+                   "R1.5.1", "3 月 14 日"]
+        for h in finding:
+            raw = write_csv(self.tmp / "wide.csv", _ORDINARY_HEADERS + [h], [[str(i)] * 21 for i in range(30)])
+            p = run("run", str(raw), "-o", str(self.tmp / "out"), "--reference-year", REFERENCE_YEAR)
+            self.assertEqual(p.returncode, 2, (h, p.stdout + p.stderr))
+            self.assertIn("looks like data or carries identifiers", p.stderr)
+            self.assertNotIn(h, p.stdout + p.stderr)
+            self.assertFalse((self.tmp / "out" / "wide_deidentified.csv").exists())
+
+    # Low: a month or a day alone (3月, 3월, tháng 3, 14日, a month name of another language as a word), a word
+    # for a day and one for a month with numbers (Day 14 Month 3), two numbers of 12 or less joined by a hyphen or
+    # a slash, and a decimal that reads as a day and a month are withheld: never printed, written as column_N.
+    def test_a_month_or_a_day_alone_in_a_column_name_is_withheld(self):
+        import random
+        rng = random.Random(82)
+        names = []
+        for y, m, d in self.some_dates(82):
+            for x in a_month_or_a_day_alone(m, d):
+                names += [c.format(x=x) for c in rng.sample(_DATE_CONTEXTS, 2)]
+        self.assertGreater(len(names), 300)
+        judged = self.judge(names)
+        self.assertEqual([h for h, r in judged.items() if r == "shown"], [], "a date element in a column name was shown")
+        header = ["Patient ID", "3月", "tháng 3", "Day 14 Month 3", "WBC 14.3", "WBC 3-4", "Glucose"]
+        rows = [[str(4100000 + i), str(80 + i), str(90 + i), str(i % 5), f"{6 + i % 4}.{i % 10}", str(i % 9), str(70 + i)]
+                for i in range(40)]
+        raw = write_csv(self.tmp / "parts.csv", header, rows)
+        plan = run("plan", str(raw))
+        self.assertEqual(plan.returncode, 0, plan.stdout + plan.stderr)
+        for h in header[1:6]:
+            self.assertNotIn(h, plan.stdout)
+        p = run("run", str(raw), "-o", str(self.tmp / "out"), "--reference-year", REFERENCE_YEAR)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        report = json.loads((self.tmp / "out" / "deidentification_report.json").read_text(encoding="utf-8"))
+        names = output_names(report, header)
+        self.assertEqual([names[h] for h in header[1:6]], [f"column_{i}" for i in range(2, 7)])
+        self.assertEqual(names["Glucose"], "Glucose")
+
+    # Over-redaction check: ordinary column names with numbers and dates of a year alone stay shown.
+    def test_ordinary_column_names_with_numbers_stay_shown(self):
+        shown = """2019年|2019년|Visit 2019|Day 14|Month 3|Weeks 1-4|Grade 3/4|Score 1-10|Age 12-18|Age 18-65|BMI 18.5-24.9|
+Hb < 13.5|Dose 2.5 mg|HbA1c (%)|eGFR 60|Year of Diagnosis|体重|Stage|COVID-19|IL-6|CA 19-9|CA 15-3|PHQ-9|L4-5|
+Glucose 70-100|K 3.5-5.0|Cycle 1 Day 1|C1D1|Week 12|Jour 14|Día 14|Creatinine 1.0|Grade 2.1|Weeks 4-12|Q1|2nd Line|
+FY2022 Cost|Hb 13-17|Temp 36.5-37.5|Age 5-12|Ratio 3/4|Day 3-4|Weeks 3-19|Score 0-10|ECOG 0-1|Dose 1-2 mg|
+Duration 3-4 days|SF-36|EQ-5D|T2-T4|Visit 1|Week 2|Year 1|Hb > 12.5|Pain 3-4|Level 2-3|Stage 3/4|Glucose (mg/dL)|
+Age 90+|Grade 3/4 AE|Week 12 Score|Weight (kg)|Sodium|Patient ID|Visit Date|Year""".replace("\n", "").split("|")
+        judged = self.judge(shown)
+        self.assertEqual({h: r for h, r in judged.items() if r != "shown"}, {}, "an ordinary column name was hidden")
+
+    # The cells and the column names share one definition: in a column the person keeps, every date of the sweep
+    # with a year keeps only its Gregorian year (Buddhist and Japanese-era years converted), or [DATE] when its
+    # calendar's year is not read as one, and a month and a day with no year become [DATE].
+    def test_dates_in_kept_text_in_any_script_keep_only_the_year(self):
+        texts, expected = [], []
+        for y, m, d in self.some_dates(83):
+            for x in dates_with_a_year(y, m, d):
+                texts.append(f"Seen {x} in clinic")
+                expected.append(str(y))
+            for x in [f"{m}月{d}日", f"{m}월 {d}일", f"{d} tháng {m}", _cjk_small(m) + "月" + _cjk_small(d) + "日"]:
+                texts.append(f"Seen {x} in clinic")
+                expected.append("[DATE]")
+        self.assertGreater(len(texts), 700)
+        results = scrub_probe(self.tmp, texts)
+        missed = [t for t, (out, kinds) in zip(texts, results) if "date" not in kinds or out == t]
+        self.assertEqual(missed, [], "a date in kept text was kept")
+        for t, want, (out, _) in zip(texts, expected, results):
+            self.assertTrue(out.startswith("Seen ") and out.endswith(" in clinic"), (t, out))
+            # What is left of the date is its year, or a placeholder, and no other number (a word of the date may stay,
+            # as "tháng" when the cell patterns took "3/2019" first).
+            middle = re.sub(r"\[[A-Z0-9_]+\]", "", out[len("Seen "):-len(" in clinic")])
+            self.assertLessEqual(set(re.findall(r"\d+", middle)), {want}, (t, out))
+            self.assertNotIn(t[len("Seen "):-len(" in clinic")], out)
+        # Years of a Buddhist or a Japanese era are converted; years of a calendar the script does not convert are not
+        # kept as a year.
+        converted = scrub_probe(self.tmp, ["14 มีนาคม 2562", "令和元年5月1日", "H31.4.30", "平成三十一年四月三十日",
+                                           "١٤ آذار ٢٠١٩", "1398/12/23", "14/03/2562"])
+        self.assertEqual([o for o, _ in converted], ["2019", "2019", "2019", "2019", "2019", "[DATE]", "[DATE]"])
+        # End to end: a column of such dates under any name keeps only the years in a default run (every value is a
+        # date), and a kept text column of notes that mention them keeps only the years too.
+        header = ["Patient ID", "Visit", "Follow Up", "Glucose"]
+        dated = ["2019年3月14日", "14 tháng 3 năm 2019", "R1.5.1", "14 Mac 2019", "平成31年4月30日", "14 มีนาคม 2562"]
+        short = ["2019年3月14日", "R1.5.1", "14 Mac 2019", "平成31年4月30日", "2019년 3월 14일", "14 มีนาคม 2562"]
+        rows = [[str(4200000 + i), dated[i % 6], f"Seen {short[(i + 1) % 6]}", str(80 + i)] for i in range(42)]
+        raw = write_csv(self.tmp / "kept.csv", header, rows)
+        p = run("run", str(raw), "-o", str(self.tmp / "out"), "--reference-year", REFERENCE_YEAR)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        out = read_rows(self.tmp / "out" / "kept_deidentified.csv")
+        self.assertEqual({r["Visit"] for r in out}, {"2019"})
+        self.assertEqual({r["Follow Up"] for r in out}, {"[REDACTED]"})
+        p = run("run", str(raw), "-o", str(self.tmp / "out"), "--reference-year", REFERENCE_YEAR, "--keep", "Follow Up")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        out = read_rows(self.tmp / "out" / "kept_deidentified.csv")
+        self.assertEqual({r["Follow Up"] for r in out}, {"Seen 2019"})
+
+    # Low: a word for a person beside a word that can be a surname ("Patient White", "Dr Ward"), and two words that
+    # can be names side by side ("Weight Bill White"), are withheld; a person word beside a column word is shown.
+    def test_a_person_word_beside_a_surname_in_a_column_name_is_withheld(self):
+        people = ["Patient", "Pt", "Dr", "Doctor", "Nurse", "Mother", "Father", "Subject", "Mrs", "Prof", "Spouse",
+                  "Surgeon", "Participant", "Guardian", "Physician"]
+        surnames = ["White", "Cook", "Ward", "Price", "Long", "Foster", "Young", "Black", "Hall", "King", "Bell",
+                    "Rose", "Mills", "Grant"]
+        names = [f"{p} {s}" for p in people for s in surnames] + [f"{s} {p}" for p in people[:5] for s in surnames]
+        names += [f"{p} Bill White" for p in people[:4]] + ["Weight Bill White", "Glucose Rose Hall", "WBC Grace Cook"]
+        judged = self.judge(names)
+        self.assertEqual([h for h, r in judged.items() if r == "shown"], [], "a surname beside a person word was shown")
+        ordinary = ["Patient Status", "Patient Age", "Doctor Visit", "Nurse Station", "Mother Height", "Subject Weight",
+                    "Patient Head Circumference", "Temp Min Max", "Reference Low", "Race White", "Physician Specialty",
+                    "Wells Score", "White Matter Volume", "Patient ID"]
+        self.assertEqual({h: r for h, r in self.judge(ordinary).items() if r != "shown"}, {})
+
+    # Low: grid coordinates in metres under a column name that names only a unit of length ("X (m)") were kept.
+    def test_grid_coordinates_under_a_bare_unit_of_length_are_redacted(self):
+        import random
+        rng = random.Random(84)
+        east = [f"{rng.uniform(500000, 600000):.2f}" for _ in range(60)]
+        north = [str(rng.randint(4100000, 4200000)) for _ in range(60)]
+        grid = ["X (m)", "Y (m)", "Value (m)", "Pos (km)", "X [m]", "Coord (ft)", "Loc (m)", "E (m)", "N (m)"]
+        for values in (east, north):
+            decided = probe(self.tmp, "decide", [(h, values) for h in grid])
+            self.assertEqual([(h, a) for h, a, _ in decided if a == "keep"], [], "grid coordinates kept")
+        lengths = [f"{rng.uniform(10000, 99999):.1f}" for _ in range(60)]
+        named = ["Distance (m)", "Height (m)", "Elevation (m)", "Depth (m)", "Length (km)", "Altitude (ft)"]
+        self.assertEqual([a for _, a, _ in probe(self.tmp, "decide", [(h, lengths) for h in named])], ["keep"] * 6)
+
+    # Low: a measurement name beside a word for a label, a pseudonym, a lot or a batch, or a number sign, names a
+    # number of a thing; under a name of time, six or more digits are a date or a clock time written as a number.
+    def test_label_lot_and_number_sign_beside_a_measurement_name_are_identifiers(self):
+        import random
+        rng = random.Random(85)
+        for digits in (4, 5, 6):
+            pool = [str(rng.randrange(10 ** (digits - 1), 10 ** digits)) for _ in range(12)]
+            values = [rng.choice(pool) for _ in range(60)]
+            names = [f"{m} {w}" for m in ("WBC", "Score", "Count", "Dose", "Glucose") for w in
+                     ("Label", "Pseudo", "Pseudonym", "Lot", "Batch", "#", "Lot No")] + ["Count#", "Dose#"]
+            decided = probe(self.tmp, "decide", [(h, values) for h in names])
+            self.assertEqual([(h, a) for h, a, _ in decided if a == "keep"], [], digits)
+        counts = [str(rng.randint(1, 40)) for _ in range(60)]
+        self.assertEqual([a for _, a, _ in probe(self.tmp, "decide", [(h, counts) for h in
+                                                                       ("# of Visits", "Visits (#)", "Count")])],
+                         ["keep"] * 3)
+        clock = [f"{rng.randint(0, 23):02d}{rng.randint(0, 59):02d}{rng.randint(0, 59):02d}" for _ in range(40)]
+        hl7 = [f"{rng.randint(10, 23)}{rng.randint(10, 59)}{rng.randint(10, 59)}.{rng.randint(100, 999)}" for _ in range(40)]
+        unix9 = [f"{rng.randint(100000000, 999999999)}.{rng.randint(10, 99)}" for _ in range(40)]
+        for values in (clock, hl7, unix9):
+            decided = probe(self.tmp, "decide", [(h, values) for h in ("Time", "Duration", "Days", "Interval",
+                                                                       "Event Time", "Visit Day")])
+            self.assertEqual([(h, a) for h, a, _ in decided if a == "keep"], [])
+
+    # Low: record numbers that repeat in a few cells of a measurement column were kept below a share; viral loads
+    # and read counts that do not repeat, or repeat as a round assay limit, are kept.
+    def test_repeated_record_numbers_among_measurements_are_found_whatever_their_share(self):
+        import random
+        rng = random.Random(86)
+        for share in (2, 3, 5, 8):
+            values = [str(rng.randint(60, 140)) for _ in range(100 - share)]
+            values += [rng.choice(["4527832", "5521003", "6617221"]) for _ in range(share)]
+            values += [values[-1]]
+            rng.shuffle(values)
+            decided = probe(self.tmp, "decide", [(h, values) for h in ("Glucose", "WBC", "Count", "Score", "Dose")])
+            self.assertEqual([(h, a) for h, a, _ in decided if a == "keep"], [], share)
+        loads = [str(rng.randint(1000000, 9000000)) for _ in range(60)] + ["10000000"] * 6
+        reads = [str(rng.randint(10 ** 7, 9 * 10 ** 7)) for _ in range(60)]
+        self.assertEqual([a for _, a, _ in probe(self.tmp, "decide", [("Viral Load (copies/mL)", loads),
+                                                                       ("Total Reads", reads)])], ["keep", "keep"])
+
+    # Low: a zero-width joiner or non-joiner, or a direction mark, in a column name of a script without capital
+    # letters (Persian spelling, an Arabic export, an Indic conjunct, an emoji) no longer stops the run; in a name
+    # with capital letters it is refused as before, and the message names --no-header.
+    def test_joiners_in_a_script_without_capitals_are_allowed(self):
+        allowed = ["نام\u200cخانوادگی", "شماره\u200cپرونده", "تاریخ\u200cتولد", "الجنس\u200f", "\u200fالوزن",
+                   "קוד\u200f", "क्\u200dष", "👨\u200d👩\u200d👧", "\u061cالعمر"]
+        judged = self.judge(allowed)
+        self.assertEqual([h for h, r in judged.items() if r == "refused"], [])
+        refused = ["Ok\u200cafor", "Smi\u200bth", "Hb\u200f", "W\u200dBC", "Glu\u00adcose", "Na\u2060me"]
+        self.assertEqual(set(self.judge(refused).values()), {"refused"})
+        raw = write_csv(self.tmp / "joiner.csv", ["Sex", "Smi\u200bth"], [["F", "1"]] * 5)
+        p = run("plan", str(raw))
+        self.assertEqual(p.returncode, 2)
+        self.assertIn("--no-header", p.stderr)
+        raw = write_csv(self.tmp / "persian.csv", ["Sex", "شماره\u200cپرونده", "Glucose"],
+                        [["F", str(4300000 + i), str(90 + i)] for i in range(20)])
+        p = run("run", str(raw), "-o", str(self.tmp / "out"), "--reference-year", REFERENCE_YEAR)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        out = read_rows(self.tmp / "out" / "persian_deidentified.csv")
+        self.assertEqual(list(out[0]), ["Sex", "column_2", "Glucose"])
+        self.assertNotIn("4300000", json.dumps(out))
+
+    # Low: two columns with the same name stopped the run with no option the agent could use; --number-duplicates
+    # gives the later one its position.
+    def test_repeated_column_names_can_be_numbered(self):
+        header = ["Patient ID", "Glucose", "Sex", "Glucose", "Glucose"]
+        rows = [[str(4400000 + i), str(80 + i), "F", str(90 + i), str(100 + i)] for i in range(30)]
+        raw = write_csv(self.tmp / "dups.csv", header, rows)
+        p = run("plan", str(raw))
+        self.assertEqual(p.returncode, 2)
+        self.assertIn("--number-duplicates", p.stderr)
+        p = run("run", str(raw), "-o", str(self.tmp / "out"), "--reference-year", REFERENCE_YEAR, "--number-duplicates")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        out = read_rows(self.tmp / "out" / "dups_deidentified.csv")
+        self.assertEqual(list(out[0]), ["Patient ID", "Glucose", "Sex", "Glucose_4", "Glucose_5"])
+        self.assertEqual([r["Glucose_4"] for r in out], [row[3] for row in rows])
+        p = run("verify", str(self.tmp / "out" / "dups_deidentified.csv"), "--reference-year", REFERENCE_YEAR)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+
+    # The regression table of round 8: an ordinary invented 30-column clinical table whose column names carry
+    # numbers, units, a year and words in other scripts. A default run keeps the columns it can verify, redacts the
+    # text and the numbers it cannot, shows every column name, and completes with exit 0 once the person keeps the
+    # columns they confirm.
+    def test_ordinary_clinical_table_regression_after_round_eight(self):
+        header = ["Patient ID", "Age", "Sex", "Race", "State", "Country", "Diagnosis", "ICD10", "Drug", "Dose (mg)",
+                  "Site", "Arm", "Visit", "Visit Date", "Glucose (mg/dL)", "HbA1c (%)", "Hb 13-17", "CA 19-9",
+                  "Systolic BP", "体重 (kg)", "BMI", "Pain Score", "ECOG 0-1", "Grade 3/4 AE", "Stage", "Gene",
+                  "Ensembl ID", "Week 12 Score", "2019年 Cohort", "Notes"]
+        dx = [("Type 2 diabetes", "E11.9"), ("Hypertension", "I10"), ("Asthma", "J45.909"), ("Heart failure", "I50.9")]
+        genes = [("TP53", "ENSG00000141510"), ("EGFR", "ENSG00000146648"), ("KRAS", "ENSG00000133703")]
+        pids = [str(4500000 + 41 * k) for k in range(40)]
+        rows = []
+        for i in range(160):
+            d, code = dx[i % 4]
+            g, ens = genes[i % 3]
+            rows.append([pids[i % 40], str(25 + (i * 7) % 60), "F" if i % 2 else "M",
+                         ["White", "Asian", "Black or African American"][i % 3], ["CA", "NY", "TX"][i % 3],
+                         ["United States", "Canada"][i % 2], d, code, ["Metformin", "Lisinopril"][i % 2],
+                         str([500, 1000, 10][i % 3]), ["Lung", "Breast", "Colon"][i % 3], ["Placebo", "Active"][i % 2],
+                         ["Baseline", "Week 4", "Week 12"][i % 3], f"2021-{1 + i % 12:02d}-{1 + i % 28:02d}",
+                         str(80 + (i * 13) % 120), f"{5.2 + (i % 30) / 10:.1f}", f"{12 + (i % 6) * 0.5:.1f}",
+                         str(10 + (i * 3) % 50), str(100 + (i * 3) % 60), f"{55 + (i % 30) * 0.8:.1f}",
+                         f"{19 + (i % 15) * 0.7:.1f}", str(i % 11), str(i % 2), ["Yes", "No"][i % 2],
+                         ["Stage I", "Stage II", "Stage IV"][i % 3], g, ens, str(i % 10), ["Yes", "No"][(i + 1) % 2],
+                         "Follow-up in clinic as planned, tolerating treatment well with no new complaints today."])
+        raw = write_csv(self.tmp / "clinical30_r8.csv", header, rows)
+        p, out, report = self._run(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual(output_names(report, header), {h: h for h in header})
+        actions = {d["column"]: d["action"] for d in report["decisions"]}
+        kept = {"Sex", "Race", "State", "Country", "ICD10", "Dose (mg)", "Glucose (mg/dL)", "HbA1c (%)", "Hb 13-17",
+                "CA 19-9", "Systolic BP", "体重 (kg)", "BMI", "Pain Score", "ECOG 0-1", "Grade 3/4 AE", "Stage",
+                "Ensembl ID", "Week 12 Score", "2019年 Cohort"}
+        unverified = {"Diagnosis", "Drug", "Site", "Arm", "Visit", "Gene"}
+        self.assertEqual({c for c, a in actions.items() if a == "keep"}, kept)
+        self.assertEqual({d["column"] for d in report["columns_needing_decision"]}, unverified)
+        self.assertEqual((actions["Patient ID"], actions["Visit Date"], actions["Notes"]), ("pseudonym_id", "year", "redact"))
+        p, out, report = self._run(raw, *[a for c in sorted(unverified) for a in ("--keep", c)])
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        for i, col in enumerate(header):
+            if col in kept | unverified:
+                self.assertEqual([r[col] for r in out], [row[i] for row in rows], col)
+        written = json.dumps(out)
+        for pid in pids:
+            self.assertNotIn(pid, written)
+
+    def _run(self, path: Path, *extra: str):
+        out_dir = self.tmp / "out"
+        if out_dir.exists():
+            shutil.rmtree(out_dir)
+        p = run("run", str(path), "-o", str(out_dir), "--reference-year", REFERENCE_YEAR, *extra)
+        out = out_dir / f"{path.stem}_deidentified{path.suffix}"
+        report = out_dir / "deidentification_report.json"
+        return (p, read_rows(out) if out.exists() else [],
+                json.loads(report.read_text(encoding="utf-8")) if report.exists() else {})
 
 
 class NoNetwork(unittest.TestCase):
