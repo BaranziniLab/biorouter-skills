@@ -127,8 +127,11 @@ value in it. Show the person that table and explain the groups:
   `Personnummer`, `Codice Fiscale`), health cards and claims (`OHIP`, `Health Card`, `Policy No`,
   `Claim No`, `Invoice`), record numbers (`mrn`, `Aktenzeichen`, `Prontuário`, `Expediente`), a
   column named with a word for number or record (`Pat No`, `Hospital No`, `Chart`,
-  `Patientennummer`, `Numéro de dossier`, `病历号`, `患者番号`, `등록번호`, `Номер карты`) whose values
-  have four or more digits or are codes with digits, and,
+  `Patientennummer`, `Numéro de dossier`, `病历号`, `患者番号`, `등록번호`, `Номер карты`), for a health
+  or patient number (`PHN`, `NHS`, `NHI`, `NIP`, `PRN`, `PID`, `Patid`), for a key, a reference or a
+  token of the patient (`Patient Ref`, `Pat Key`, `Pt Token`) or with a number sign after a word
+  (`Pat#`, `MR#`, `Visit #`; `# of Visits` is a count) whose values have four or more digits or are
+  codes with digits, and,
   when a value is a word that is not a category word, a column named for the person
   (`Subject`, `Member`, `Donor`), a social network (`Twitter`, `Instagram`) or a type or status
   of an identifier (`Phone Type`, `Email Status`, `Zip Type`; a payer column such as
@@ -140,9 +143,10 @@ value in it. Show the person that table and explain the groups:
   a whole value of a closed vocabulary (sex and gender, yes and no, missing-value words, result
   flags such as H and L, laterality, response categories, smoking status; census race and
   ethnicity only under a race or ethnicity column name, units only under a unit column name),
-  a date or a state or country under a state or country column. A measurement is a decimal, a
-  whole number of up to three digits, or a longer whole number under a column name that names
-  a measurement (a lab such as WBC, a vital sign, a count, a score, a dose, a unit, money or a
+  a date or a state or country under a state or country column. A measurement is a decimal (under
+  a column name that names no measurement, one that is not shaped like a coordinate), a whole
+  number of up to three digits, or a longer whole number under a column name that names a
+  measurement (a lab such as WBC, a vital sign, a count, a score, a dose, a unit, money or a
   duration). Numbers are judged cell by cell: one record number, ZIP code, Excel serial, age
   over 89 or precise coordinate among measurements is enough to change the column. Under a
   column name that names a person, a role, a relative, a contact or a place
@@ -175,7 +179,8 @@ value in it. Show the person that table and explain the groups:
   - whole numbers under a column name of a person's or a record's number (`Study ID`, `Pat No`,
     `Chart`, `Case`, `Reference`, `Key`), however short: study or record numbers, pseudonymized;
   - whole numbers of seven or more digits that repeat, even under a measurement name (`Score`,
-    `Count`, `Total`): record numbers, pseudonymized;
+    `Count`, `Total`), and of six or more under a count of visits, encounters or admissions
+    (`Visits`, `Encounters`, `Admissions`): record numbers, pseudonymized;
   - a month, a day, a week or a day of the year of a date written in a column of its own,
     **whatever the column is called** (`Mnth`, `DoM`, `Tg`, `SM`, `Ay`, `Gün`, `W`, `Wk`,
     `Period`, `Sample Week`, `Semana`, `Col2`, `Q7`). In a file with a year (a column of years, or
@@ -194,7 +199,14 @@ value in it. Show the person that table and explain the groups:
   - a latitude or a longitude on its own, apart from its partner or under any name, judged cell
     by cell: one decimal of four or more places from 1 to 180 under a column name that names no
     measurement is enough, so a column that mixes precise and rounded coordinates is redacted
-    (and numbers in range under `Lat`, `Lon`, `Lng`, `Long` beside a place word, or `Coord`);
+    (and numbers in range under `Lat`, `Lon`, `Lng`, `Long` beside a place word, or `Coord`); and,
+    under a column name that names no measurement (`Value`, `X`, `Y`, `Loc X`, `Pos`, `Point`,
+    `Geo1`, `Index`, `Result`, `Col4`), a column of numbers within 180 with two or more decimal
+    places in three quarters of its cells or more and one value of 10 or more, a column most of
+    whose numbers are negative decimals from -60 to -180 (a longitude in the Americas, also with
+    one place), and a column of decimals within 90 beside a column found to be a coordinate. Two
+    places locate a point to about a kilometre and three to about a hundred metres, both finer
+    than a state;
   - columns with identifier patterns in some cells, unique numbers, numbers shaped like ZIP
     codes, coordinates or old birth years, and column names that usually hold a place or a
     person's identifier (`Region`, `Home`, `Subject` of numbers).
@@ -205,9 +217,20 @@ value in it. Show the person that table and explain the groups:
   clinical or care staff (the person, a relative, a contact, and every other role: `Mom`, `Twin`,
   `ICE`, `Witness`, `Customer`, `Who`, `Case`, `Index Case`, `Reporter`, `Author`, `Signer`,
   `Agent`, `Manager`, `Director`, `Officer`, `Rep`, `Kind`, `Tía`, `Deceased`, `Seen By`,
-  `Referring`, `Department Head`, `Subject` of words); or that ends in an employer, a school, a
-  home, an address, a telephone, a web address, a device, an image or notes (`Company`, `School`,
-  `Home`, `Device`, `Image`, `Link`, `Notes`, `Comments`). Only clinical and care staff can be
+  `Referring`, `Department Head`, `Subject` of words); whose name has such a word anywhere and, in
+  its other words, a name or a part of one, or nothing else (`Patient Last`, `Mother First`,
+  `Spouse Last`, `Kin Last`, `Caregiver Full`, `MotherLast`, `pat_last`, `Pat Info`, `Kin Ref`,
+  `In-law`); that is an abbreviation of a name (`PatNm`, `PNm`, `FNm`, `LNm`, `Donor_Nm`); that ends
+  in an employer, a school, a home, an address, a telephone, a web address, a device, an image or
+  notes (`Company`, `School`, `Home`, `Device`, `Image`, `Link`, `Notes`, `Comments`), or in a place
+  that is not a place of care (`Home Area`, `Lives`, `Living`, `Community`, `Catchment Area`,
+  `Service Area`, `Area`, `Locale`, `Territory`, `Geography`, `Place`, `Venue`, `Ort`) or a record
+  (`Cartella`, `Dossier`, `File`) when a value is a word; or that holds numbers of five or more
+  digits, in any written form, under a column name that names no measurement and no thing whose
+  numbers are not a person's (`Value`, `Col6`, `Code1`, `Registration`, `Token`, `Identification`,
+  `VID`; `Steps`, `Total Cost`, `Visits`, `Gene ID`, `Position`, `Lot No` and `CPT` can be kept),
+  because a person who confirms that a column holds no record numbers cannot be relied on to know
+  that a name such as `NHS` or `PHN` is one. Only clinical and care staff can be
   kept on the person's word: physicians, doctors, nurses, surgeons, clinicians, providers,
   attendings, residents, fellows, interns, pharmacists, therapists, technicians, technologists and
   midwives, their common abbreviations (`Dr`, `MD`, `RN`, `NP`, `PCP`, `Tech`), the same words in
@@ -220,12 +243,16 @@ value in it. Show the person that table and explain the groups:
 
 Then ask the person about the columns that need a decision **by column name only**. Do not
 describe, sample or guess what they hold, and do not offer `--keep` for a column the plan lists
-as one that cannot be kept under its name. For example:
+as one that cannot be kept under its name. When the plan says that every value of a column is
+shaped like a name of a person or a place, say so in the question, by the column's name, without
+quoting a value. For example:
 
 > The script could not verify these columns, so it changed them: Diagnosis, Drug, Visit,
-> Visit Week, Col6. Does each one hold only category values or measurements, with no names,
-> places, dates or parts of a date (a month, a week or a day), ages over 89, record or account
-> numbers, contact details or other identifiers? I will keep the ones you confirm.
+> Visit Week, Col6, Value. The script says every value of Col6 is shaped like a name of a person
+> or a place, and Value may hold coordinates. Does each one hold only category values or
+> measurements, with no names, places, coordinates, dates or parts of a date (a month, a week or a
+> day), ages over 89, record or account numbers, contact details or other identifiers? I will keep
+> the ones you confirm.
 
 Then add `--keep COLUMN` for each column the person confirmed, and `--redact COLUMN` for any
 column they want removed. A column can also be named `#N` (its position). For a column that
@@ -238,10 +265,11 @@ cannot verify; a column the person keeps with `--keep` loses phone numbers, emai
 addresses, labelled ID numbers, dates and the other identifier patterns, but a name, a place, a
 record number, a ZIP code, an age, a month, a week or a day of a date written as a number, or
 another identifier with no pattern stays in it (a clinician's column kept on the person's word
-keeps the clinicians' names). The run prints these columns again ("Kept on the person's word,
-scrubbed for patterns only") and the report lists them (`kept_unverified_columns`, text and
-number columns alike). Tell the person, every time, that they must spot-check each of these
-columns before the data leaves the institution.
+keeps the clinicians' names, and a column of numbers of up to four digits, or of decimals, keeps
+them as written, record numbers and coordinates included). The run prints these columns again
+("Kept on the person's word, scrubbed for patterns only") and the report lists them
+(`kept_unverified_columns`, text and number columns alike). Tell the person, every time, that they
+must spot-check each of these columns before the data leaves the institution.
 
 **Column names fail closed too.** A column name is shown in the plan and the report and copied
 to the output only when every word in it is an ordinary column word the script knows (the words
@@ -293,7 +321,7 @@ folder, then scans the output again. Exit codes:
 |---|---|---|
 | 0 | Done; the residual check found no identifier pattern or shape, and verified again every kept column the person did not name with `--keep` (a check, not proof) | Report the summary, the columns kept on the person's word, and the human spot-check requirement |
 | 2 | Refused (unknown column, a request to keep an identifier, free text or a column that cannot be kept under its name, a first row that looks like data or holds an identifier pattern, a long number or a date, two columns with the same name, a file separated by `;` or `\|` without `--delimiter`, a file that is not UTF-8, an unreadable file) | Pass on the message; fix the options (`--no-header` for a file without a header row, `--delimiter` for another separator, `--encoding` for a file that is not UTF-8), or ask the person to fix the file |
-| 3 | The residual check found identifiers; nothing was written | Rerun with `--redact` for the columns it names. A column named for the shape of its values (names or places, text it cannot verify, record numbers, ZIP codes, coordinates, old years, possible ages) may instead be kept with `--keep` once the person confirms it holds no identifiers |
+| 3 | The residual check found identifiers; nothing was written | Rerun with `--redact` for the columns it names. A column named for the shape of its values (names or places, text it cannot verify, record numbers, ZIP codes, coordinates, old years, possible ages) may instead be kept with `--keep` once the person confirms it holds no identifiers, unless `--keep` refuses it under its name (numbers of five or more digits under a name that names no measurement, among others) |
 
 To check an output again later: `python3 scripts/safe_harbor.py verify <output file>`
 (it reads the report beside the file when there is one; without the report it cannot know
@@ -375,14 +403,21 @@ replaces and what a person still has to check. In short, it does not:
 - recognise a day and a month with no year in kept text unless a word such as "seen",
   "on" or "dated" comes before it ("14/3" alone stays), or a month name in another
   language without a year;
-- recognise a coordinate of three decimal places or fewer on its own under a neutral name, or
-  ages over 89 written as decimals (`95.5`) under a neutral column name (`Value`, `Result`), or
-  under a column name that names a measurement (a `Score` of 95);
+- recognise, on its own under a neutral name, a latitude of one decimal place (`37.8`; a longitude
+  of one place west of -60 is found), a coordinate whose values all lie below 10 (near the equator
+  or the prime meridian, unless beside its partner), or a coordinate of any precision under a column
+  name that names a measurement (`Ratio`, `Score`); or ages over 89 written as decimals (`95.5`)
+  under a neutral column name (`Value`, `Result`), or under a column name that names a measurement
+  (a `Score` of 95);
 - recognise a month, a day or a week in a column of its own that covers fewer than seven months,
   thirteen days or 27 weeks in a file with no year (or whose years are written another way, such
   as `FY2015`), a week numbered from 0 beside a year under a name that is not a word for a week,
   a day of the year with fewer than 100 distinct values in a file with no year, or one under a
-  column name that names a measurement (`Score` of 1 to 12);
+  column name that names a measurement (`Score` of 1 to 12). The other way round, a protocol week
+  under a word for a week (`Visit Week` of 0, 4, 12, 52) is redacted in a file with a year, and
+  `--keep` keeps it only on the person's word; if the person needs it, they can recode it as weeks
+  since the first visit under a duration name (`Weeks Since Baseline`), or remove the date columns,
+  before the run;
 - tell a surname from a vocabulary word in a column whose every value is that one word
   (`Si`, `Quit`, `Final`, `MR` for a minor response), or a surname that is also an ordinary
   column word from a column name when another column word stands beside it;
@@ -397,11 +432,18 @@ replaces and what a person still has to check. In short, it does not:
   year, `Spring 2020`, `H1 2020`, and a month and a day written as two numbers of 12 or less with
   no leading zero, which are also fractions and ranges, `Grade 3/4`, `Score 1-10`);
 - refuse `--keep` on a column named for clinical or care staff (`Physician`, `Provider`,
-  `Nurse`, `Pharmacist`, `Technician`) or for a place of care (`Hospital`, `Clinic`, `Site`,
-  `Ward`, `Unit`): such a column is text it cannot verify, and kept on the person's word it is
-  scrubbed for patterns only, so the clinicians' names stay. `--keep` is refused for a column named
-  for any other person, an employer, a school, a home, a relative or the person (see the plan
-  above).
+  `Nurse`, `Pharmacist`, `Technician`), for a place of care (`Hospital`, `Clinic`, `Site`,
+  `Ward`, `Unit`), for a location or a destination (`Visit Location`, `Discharge Destination`, which
+  usually name a place of care), for a state-level region (`Region`, `Province`), or for a payer
+  (`Payer`, `Payor`): such a column is text it cannot verify, and kept on the person's word it is
+  scrubbed for patterns only, so the clinicians' names, and any town or name in it, stay. `--keep`
+  is refused for a column named for any other person, an employer, a school, a home, a relative,
+  the person, a place that is not a place of care, or a record, and for numbers of five or more
+  digits under a name that names no measurement (see the plan above);
+- read a wide matrix whose columns are named with a prefix and digits (methylation probes,
+  variables `V1` to `V2000` when many of them look like codes): it refuses the first row, and the
+  person renames the columns with a word and a short number (`probe_1`) or confirms them with
+  `--keep-all-names` when the message allows it.
 
 ## The researcher's interactive alternative
 

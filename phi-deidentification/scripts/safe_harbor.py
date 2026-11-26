@@ -28,8 +28,9 @@ references/safe-harbor-mode.md. In short: identifier columns found by name
 are replaced (names and record numbers by pseudonyms, dates by their year,
 ZIP codes by their first three digits or 000, ages over 89 by "90+", the rest
 by [REDACTED]). Every other column fails closed: it is kept only when every
-value is verified as a measurement (a decimal, a whole number of up to three
-digits, or a longer one under a column name that names a measurement), a code of
+value is verified as a measurement (a decimal that is not shaped like a
+coordinate, a whole number of up to three digits, or a longer one under a column
+name that names a measurement), a code of
 a closed grammar, a word of a closed vocabulary (sex, yes and no, ...), a date or
 an allowed state or country. Any other text, and numbers it cannot tell from
 record numbers, dates, ZIP codes or ages, are changed until the person keeps them
@@ -1467,7 +1468,13 @@ cislo szam numara broj
 record records chart charts dossier dossiers akte akten expediente prontuario cartella historia folio ficha
 registry register registro
 nir nss cpr pps rg nie rfc sus
+phn nhs nhi ohip nip prn pid patid ptid patno ptno patref ptref patkey ptkey
 """.split())
+# Round 6: a key, a reference or a token of the patient is the patient's number ("Patient Ref", "Pat Key",
+# "Pt Token"), and so is a name with a number sign after a word ("Pat#", "Patient #", "MR#"; "# of Visits"
+# and "# Visits" are counts).
+RECORD_NUMBER_OWNERS = frozenset("patient patients pat pats pt pts pnt ptnt paciente pacientes patiente paziente".split())
+RECORD_NUMBER_REFERENCES = frozenset("key keys ref refs reference references token tokens".split())
 RECORD_NUMBER_SCRIPTS = ("番号", "号", "號", "번호", "номер", "رقم", "מספר", "संख्या", "क्रमांक", "หมายเลข",
                          "αριθμός", "αριθμος")
 # Things whose numbers are not a person's or a record's: genes, probes, code systems, batches, plates.
@@ -1510,7 +1517,9 @@ def number_word_header(header: str) -> bool:
         return False
     return bool(ts & RECORD_NUMBER_WORDS or any(len(x) > 6 and x.endswith(("nummer", "numero", "number", "numer"))
                                                 for x in t)
-                or any(w in raw for w in RECORD_NUMBER_SCRIPTS))
+                or any(w in raw for w in RECORD_NUMBER_SCRIPTS)
+                or (ts & RECORD_NUMBER_OWNERS and ts & RECORD_NUMBER_REFERENCES)
+                or re.search(r"[^\W\d_]\s*#", raw) is not None)
 
 
 def _record_shaped(v: str) -> bool:
@@ -1601,7 +1610,8 @@ aidante angehorige angehoerige verwandte verwandter familiar familiares contacto
 acompanante accompagnateur accompagnatrice begleiter begleiterin pacjent pasient potilas pacient hasta
 pasien party parties bystander bystanders caller callers lawyer lawyers attorney attorneys solicitor notary
 paralegal pastor priest rabbi imam clergy minister reverend man men woman women boy boys girl girls lady
-gentleman sender receiver homemaker soldier veteran
+gentleman sender receiver homemaker soldier veteran inlaw inlaws stepson stepdaughter stepchild stepchildren
+stepbrother stepsister halfbrother halfsister godchild dependant dependants
 """.split())
 KEEP_REFUSED_THINGS = frozenset("""
 home homes residence residences domicile house employer employers company companies workplace firm business
@@ -1725,7 +1735,113 @@ def _clinical_staff(t: list[str], head: str) -> bool:
             or (len(t) > 1 and (t[-2], head) in CLINICAL_STAFF_PAIRS))
 
 
-def keep_refusal(header: str, values: list[str]) -> str | None:
+# Round 6: --keep refused only when the LAST word of a column name named a person, so a column whose
+# person word came first and whose last word named a part of a name was kept on the person's word
+# (Patient Last, Mother First, Spouse Last, Kin Last, Caregiver First, Pat Info, MotherLast, pat_last), and
+# so were abbreviations of a name (PatNm, PNm, FNm, LNm, Donor_Nm) and In-law: 604 spellings in one sweep.
+# Refusal is now decided on the set of the name's words: a word for someone who is not clinical or care
+# staff ANYWHERE in the name refuses --keep when a value can be a person's name and either another word
+# names a name or a part of one (First, Last, Sur, Nm, Initials, ...), or every other word says nothing
+# of what the column holds (Info, Text, Ref, Label, Desc, Detail, Key, ...). A word that says what the
+# column holds about that person (Patient Status, Mother Diagnosis, Family History, Contact Method)
+# leaves it to the person's word, as before. An abbreviation of a name (Nm, Nme, Nam, PNm, FNm, LNm)
+# refuses --keep whenever a value is a word, unless the name names a thing (Drug Nm) and no person.
+KEEP_PERSON_ANYWHERE = (KEEP_REFUSED_PEOPLE | RELATIVE_NAME_WORDS | frozenset(PERSON_HEADERS)
+                        | frozenset(RELATIVE_HEADERS) | SELF_WORDS | frozenset("""
+pat pats pnt pnts ptnt ptnts pac pts inlaw inlaws stepson stepdaughter stepchild stepchildren stepbrother
+stepsister halfbrother halfsister godchild dependant dependants
+""".split()) | KEEP_PERSON_WORDS) - frozenset("""
+charge admin admins kind controls party parties relation relations related relationship driver
+""".split())
+NAME_PART_WORDS = frozenset("""
+first last given middle maiden sur surname surnames forename forenames firstname lastname fullname givenname
+familyname name names nam nme nm nombre nombres apellido apellidos nom prenom vorname nachname cognome
+initial initials nick nickname nicknames alias called full
+""".split())
+NAME_ABBREVIATIONS = frozenset("""
+nm nme nam pnm fnm lnm gnm snm mnm ptnm patnm pnam fnam lnam gnam snam fnme lnme ptnme fname lname gname
+sname mname pname
+""".split())
+# Words that say nothing of what a column holds about someone: a label, a reference, a description.
+KEEP_EMPTY_WORDS = KEEP_TRAILING_WORDS | frozenset("""
+label labels ref refs reference references desc descr description descriptions detail details info
+information text txt display title titles string str id ids ident identity identification key keys who
+record records s of the a an and or de du des del la le el di da do der die das von van y e et und
+""".split())
+
+
+def _keep_people_anywhere(t: list[str]) -> tuple[set[str], set[int]]:
+    """The words of a column name, anywhere in it, that name someone who is not clinical or care staff
+    (round 6), with adjacent words joined ("In-law", "Step Son"), and the positions of the tokens they
+    cover. "Resident" names a care home's resident as often as a physician, so beside a word for a name
+    or a word that says nothing else (Info, Text) it counts as a person ("Resident Last", "Resident Info")."""
+    found, covered = set(), set()
+    names = bool(set(t) & (NAME_PART_WORDS | NAME_ABBREVIATIONS))
+    empty = bool(set(t) & (KEEP_EMPTY_WORDS - {"s", "of", "the", "a", "an", "and", "or"}))
+    for i, x in enumerate(t):
+        for w, span in ((((t[i - 1] + x) if i else ""), {i - 1, i}), (x, {i})):
+            if not w:
+                continue
+            staff = _clinical_staff(t[:i + 1], w) and not ((names or empty) and w in ("resident", "residents"))
+            if (w in KEEP_PERSON_ANYWHERE or w in PERSON_ROLE_WORDS
+                    or (w.endswith("s") and w[:-1] in PERSON_ROLE_WORDS)) and not staff:
+                found.add(w)
+                covered |= span
+                break
+    return found, covered
+
+
+def _keep_long_number(v: str) -> bool:
+    """A value that is a whole number of five or more digits in any written form ("4527832", "00088221",
+    "-4527832", "4527832.", "4527832.0", "4.52783E+06"), or a number with seven or more digits before its
+    point ("4527832.5"): a possible record, account or health number (round 6)."""
+    n = number_like(v)
+    if n is None or n != _plain(v).replace(",", ""):
+        return False
+    m = re.fullmatch(r"[+-]?(\d+)(\.\d*)?", n)
+    if m:
+        frac = (m.group(2) or ".").strip(".").strip("0")
+        return len(m.group(1)) >= (7 if frac else 5)
+    # An exponent keeps a record number's digits only with five or more of them ("4.52783E+06", "1.23553E+05");
+    # a measurement of two or three ("1.37E+06" copies/mL) is not one.
+    mantissa = re.split(r"[eE]", n)[0].lstrip("+-").replace(".", "").strip("0")
+    try:
+        return len(mantissa) >= 5 and 1e4 <= abs(float(n)) < 1e16
+    except ValueError:
+        return False
+
+
+# Round 6: the numbers of a thing that is not a person or a record, which --keep may keep however long:
+# genes, probes, code systems, batches, plates, sites, genomic positions and literature identifiers.
+KEEP_NUMBER_THINGS = (RECORD_NUMBER_EXEMPT - frozenset("""
+item items question questions form forms variable variables field fields column columns version page pages
+""".split())) | frozenset("""
+start end stop begin offset locus loci bp basepair basepairs coordinate pmid pubmed pmcid doi taxon taxid
+ncbi geneid hgnc mim cosmic clinvar dbsnp procedure procedures proc hcpcs drg
+""".split())
+# (A generic word, Field, Item, Variable or Column, says nothing of whose number it is.)
+# Round 6: places that are not places of care. --keep refused only a home, an address and the identifier
+# words of step 1, and the review kept towns under Home Area, Lives, Living, Community, Catchment Area,
+# Service Area, Area, Locale, Territory, Geography, Location, Place, Venue and Ort. An area, a community, a
+# place or where someone lives holds a place smaller than a state as often as not, so --keep refuses it when
+# a value can be a place's name. Places of care (Hospital, Clinic, Site, Ward, Unit, Department), a location
+# or a destination, which usually name one (Visit Location, Discharge Destination), and state-level areas
+# (Region, Province, Prefecture) can still be kept on the person's word.
+KEEP_REFUSED_PLACES = frozenset("""
+area areas locale locales territory territories catchment catchments community communities lives living
+resides residing residence residences residential domicile geography geographic geographical geo place places
+venue venues where lugar lugares lieu lieux luogo luoghi ort orte ortschaft gemeinde comune localidad localite
+localita neighborhood neighbourhood neighborhoods neighbourhoods barrio quartier vicinity hamlet
+""".split())
+# Round 6: words for a record, a chart or a file. A value that can be a person's name under one of them is
+# the label the record is filed under (Cartella, Chart, Dossier), so --keep refuses it.
+KEEP_REFUSED_RECORDS = frozenset("""
+record records chart charts dossier dossiers akte akten expediente expedientes prontuario cartella cartelle
+historia folio ficha fichas registry registro registros file files folder folders
+""".split())
+
+
+def keep_refusal(header: str, values: list[str], scrubber: "Scrubber | None" = None) -> str | None:
     """Why --keep cannot keep a column the script could not verify, or None: judged by its name, and for a
     column named for someone, by whether a value is a word (numbers and codes such as S-014 can be kept, as
     under a relative's name; person_name_rule). Names kinds only, never the column name or a value."""
@@ -1734,26 +1850,64 @@ def keep_refusal(header: str, values: list[str]) -> str | None:
                 "does not mean a person, a relative, a contact, an address, a record number or another "
                 "identifier (in another language, say)")
     t = [x for x in column_tokens(header) if not x.isdigit() and not re.fullmatch(r"\d+(?:st|nd|rd|th)", x)]
+    every = list(t)
     while len(t) > 1 and (t[-1] == "s" or t[-1] in KEEP_TRAILING_WORDS):
         t.pop()  # a possessive ("Mother's"), or a word that says nothing of whose ("Twin Info")
     raw = " ".join(re.split(r"[\s_\-/,;:()\[\].]+", unicodedata.normalize("NFKC", str(header)).casefold())).strip()
-    if any(raw.endswith(w) for w in KEEP_REFUSED_SCRIPTS) and any(_person_value(v) for v in _shape_values(values)):
+    vals = _shape_values(values)
+    words = any(_person_value(v) for v in vals)
+    if any(raw.endswith(w) for w in KEEP_REFUSED_SCRIPTS) and words:
         return "its name names the person, or notes or remarks, and a value is a word"
+    # Round 6: numbers of five or more digits are kept on the person's word only under a column name that
+    # names a measurement or the number of a thing (Gene ID, Lot No, Position): under any other name they
+    # can be record, account or health numbers (PHN, NHS, NIP, Patid, Registration, Token, Code1, Value),
+    # and the person confirming that a column holds no record numbers cannot be relied on to know that
+    # the name is one.
+    people, covered = _keep_people_anywhere(every)
+    # A number the scrub replaces in a kept column anyway (a telephone number, nine or more digits) is not
+    # one the person's word has to cover.
+    if any(_keep_long_number(v) and not (scrubber and scrubber.find(v)) for v in vals) \
+            and not measurement_header(header) \
+            and not (set(every) & KEEP_NUMBER_THINGS and not people):
+        return ("its values are numbers of five or more digits and its name names no measurement, so they can "
+                "be record, account or health plan numbers (a measurement name such as Count, Steps, Cost or "
+                "WBC, or a unit in brackets, says they are not)")
     if not t:
         return None
     head, whole = t[-1], " ".join(t)
     person = _keep_person_head(t)
-    words = any(_person_value(v) for v in _shape_values(values))
     if ((person and not _clinical_staff(t, person)) or set(raw.split()) & set(KEEP_PERSON_WORDS_SCRIPTS)) and words:
         return ("its name names someone other than clinical or care staff (only a physician, a nurse, a surgeon, "
                 "a clinician, a provider, a pharmacist, a therapist, a technician, a midwife and similar roles can "
                 "be kept on the person's word; not the person, a relative, a contact, a reporter, an author, a "
                 "manager, an agent or anyone else)")
-    if head in KEEP_REFUSED_THINGS or whole in KEEP_REFUSED_WHOLE or set(t) & {
+    ts = set(every)
+    others = [x for i, x in enumerate(every) if i not in covered and x not in NAME_PART_WORDS
+              and x not in KEEP_EMPTY_WORDS and x not in NAME_ABBREVIATIONS and len(x) > 1]
+    if words and people and (ts & NAME_PART_WORDS or ts & NAME_ABBREVIATIONS or not others):
+        return ("its name names someone other than clinical or care staff and, in its other words, a name or a "
+                "part of one, or nothing else (Patient Last, Mother First, Kin Info, PatNm): such a column holds "
+                "that person's name")
+    if words and ts & NAME_ABBREVIATIONS and (any(len(x) == 1 for x in every) or not ts & set(NOT_A_PERSON_NAME)):
+        return "its name is an abbreviation of a name (Nm, PNm, FNm, LNm), and a value is a word"
+    if words and not others and (ts & NAME_PART_WORDS or (any(len(x) == 1 and x.isalpha() for x in every)
+                                                          and ts & KEEP_EMPTY_WORDS)) \
+            and not ts & set(NOT_A_PERSON_NAME):
+        return ("its name names a name or a part of one, or a letter (P Info, M Text), and nothing else, and a "
+                "value is a word")
+    if head in KEEP_REFUSED_THINGS or whole in KEEP_REFUSED_WHOLE or ts & {
             "alias", "aka", "nickname", "pseudonym", "moniker", "kana", "furigana", "pinyin", "romaji",
             "romanized", "romanised", "address", "addresses", "email", "courriel", "correo", "hostname"}:
         return ("its name names an employer, a school, a home, an address, a telephone, an email or web "
                 "address, a device, an image, another name for the person, or notes, which hold free text")
+    if words and (head in KEEP_REFUSED_PLACES or ts & {"lives", "living", "resides", "residing", "residence",
+                                                        "residential", "domicile", "wohnort", "where"}
+                  or ("home" in ts and ts & KEEP_REFUSED_PLACES)):
+        return ("its name names a place that is not a place of care (an area, a community, a place, where the "
+                "person lives), which can be a place smaller than a state, and a value is a word; a place of care "
+                "(Hospital, Clinic, Site, Ward, Unit), a location or a state-level region can be kept")
+    if words and head in KEEP_REFUSED_RECORDS:
+        return "its name names a record, a chart or a file, and a value is a word (the name it is filed under)"
     return None
 
 
@@ -1772,7 +1926,8 @@ def locale_name_rule(header: str, locale: dict) -> tuple[str, str, str] | None:
 
 
 def is_number(v: str) -> bool:
-    return bool(NUMBER.fullmatch(v.strip()))
+    v = v.strip()
+    return len(v) <= 60 and bool(NUMBER.fullmatch(v))
 
 
 def _shape_values(values: list[str]) -> list[str]:
@@ -2450,6 +2605,8 @@ def number_like(value: str) -> str | None:
     """The number in a value that is a number, with an optional comparator and unit, or a
     blood pressure; None for anything else."""
     s = _plain(value)
+    if len(s) > 60:
+        return None  # round 6: a run of thousands of digits is not a measurement, and int() refuses it
     m = NUMBER_WITH_UNIT.fullmatch(s)
     if m and (not m.group("u") or fold(m.group("u")) in UNITS):
         return m.group("n").replace(",", "")
@@ -2690,7 +2847,11 @@ def unverified_finding(check: dict, ctx: ColumnContext) -> str:
     if ctx.person_or_place:
         parts.append("the column name names a person, a role, a relative, a contact or a place, "
                      "so only missing-value words count as category words")
-    if check["names"]:
+    if check["names"] and check["names"] == n and n >= 2:
+        # Round 6: a column every unverified value of which is shaped like a name or a place is said to be one.
+        parts.append(f"all {n} of them are shaped like names of people or places, so the column probably holds "
+                     "names or places; keep it only if the person is sure it does not")
+    elif check["names"]:
         parts.append(f"{check['names']} of them {'is' if check['names'] == 1 else 'are'} shaped like "
                      "names or places")
     if check["caseless"]:
@@ -3212,6 +3373,11 @@ def _age_years_of_value(v: str, decimals: bool = False) -> float | None:
     return None
 
 
+ENCOUNTER_COUNT_WORDS = frozenset("""
+visits encounters admissions readmissions episodes stays occurrences appointments appts consults
+""".split())
+
+
 def number_rule(header: str, values: list[str], reference_year: int) -> tuple[str, str, str, int] | None:
     """(finding, action, phi type, cells) for a column whose numbers the script cannot verify as
     measurements (see the section comment). `values` are the column's cells that are not blank
@@ -3270,10 +3436,14 @@ def number_rule(header: str, values: list[str], reference_year: int) -> tuple[st
                 "account numbers, ZIP codes or dates written as numbers)", "pseudonym_id", "id", len(long_))
     # Record numbers of seven or more digits that repeat under a measurement name (round 4): a count or
     # an amount that long is rarely the same twice, a record number repeats across a patient's visits.
-    seven = [d for d in (_long_integer_part(n) for _, n in nums) if d and len(d.lstrip("0")) >= 7]
+    # Round 6: a count of a patient's visits, encounters or admissions is never six digits, so under such a
+    # name a repeated number of six digits is a record number too.
+    least = 6 if set(column_tokens(header)) & ENCOUNTER_COUNT_WORDS else 7
+    seven = [d for d in (_long_integer_part(n) for _, n in nums) if d and len(d.lstrip("0")) >= least]
     if measurement and seven and len(seven) - len(set(seven)) > len(set(seven)):
-        return (f"whole numbers of seven or more digits that repeat, in {len(seven)} of {total} cells (possible "
-                "record numbers, though the column name names a measurement)", "pseudonym_id", "id", len(seven))
+        return (f"whole numbers of {'six' if least == 6 else 'seven'} or more digits that repeat, in {len(seven)} of "
+                f"{total} cells (possible record numbers, though the column name names a measurement)",
+                "pseudonym_id", "id", len(seven))
     if measurement:
         return None
     # Short study and record numbers under a column name of a person's or a record's number ("Study ID",
@@ -3305,6 +3475,25 @@ def number_rule(header: str, values: list[str], reference_year: int) -> tuple[st
     if precise:
         return (f"decimal numbers of four or more places within the range of a latitude or a longitude in "
                 f"{len(precise)} of {total} cells (a possible coordinate)", "redact", "geo", len(precise))
+    # Round 6: a latitude or a longitude of two or three places (1.1 km and 110 m, finer than a state) was
+    # kept as a measurement under a neutral or axis-like name (Value, X, Y, Loc X, Pos, Point, Geo1, Col4,
+    # Index, Result). Under a column name that names no measurement, a column of numbers within 180 with
+    # two or more places in three quarters of its cells or more (a coordinate written with two or three
+    # places loses a trailing zero in a tenth of them) and one value of 10 or more is a possible coordinate,
+    # and so is a column most of whose numbers are negative decimals from -60 to -180 (a longitude in the
+    # Americas, also with one place). The person keeps such a column with --keep once they confirm it.
+    # (A value written with its unit, "37.77 mg", is a measurement.)
+    plain = [(n, float(n)) for v, n in nums if re.fullmatch(r"[+-]?\d{1,3}(?:\.\d+)?", n) and _plain(v) == n]
+    if len(plain) == total:
+        two = [n for n, _ in plain if len(n.partition(".")[2]) >= 2]
+        if all(abs(x) <= 180 for _, x in plain) and 4 * len(two) >= 3 * total and max(abs(x) for _, x in plain) >= 10:
+            return (f"decimal numbers of two or more places within the range of a latitude or a longitude in "
+                    f"{len(two)} of {total} cells, under a column name that names no measurement (a possible "
+                    "coordinate)", "redact", "geo", len(two))
+        west = [n for n, x in plain if "." in n and -180 <= x <= -60]
+        if 2 * len(west) > total:
+            return (f"negative decimal numbers from -60 to -180 in {len(west)} of {total} cells, under a column name "
+                    "that names no measurement (a possible longitude)", "redact", "geo", len(west))
     return None
 
 
@@ -3327,11 +3516,23 @@ def _coordinate_shape(values: list[str]) -> dict | None:
             "max": max(abs(x) for x in nums), "cells": n}
 
 
-def coordinate_pairs(columns: list[tuple[int, list[str]]]) -> dict[int, int]:
+def _latitude_partner(values: list[str]) -> bool:
+    """Numbers within 90, most of them with a decimal point and one of 10 or more: the latitude beside a
+    longitude (round 6)."""
+    vals = [v for v in _shape_values(values) if fold(v) not in MISSING_PHRASES]
+    if not vals or not all(re.fullmatch(r"[+-]?\d{1,2}(?:\.\d+)?", v) for v in vals):
+        return False
+    xs = [float(v) for v in vals]
+    return all(abs(x) <= 90 for x in xs) and max(abs(x) for x in xs) >= 10 \
+        and 2 * sum(1 for v in vals if "." in v) > len(vals)
+
+
+def coordinate_pairs(columns: list[tuple[int, list[str]]], plain: set[int] = frozenset()) -> dict[int, int]:
     """Column positions (and cell counts) of adjacent columns shaped like latitude and
     longitude: decimal numbers within +-90 next to decimal numbers within +-180, both
     with three or more decimal places, or with two when the second column reaches past
-    +-90 with one sign (west or east of the 90th meridian). One of the two must reach
+    +-90 with one sign (west or east of the 90th meridian), or, since round 6, when neither
+    column name names a measurement (`plain`, positions). One of the two must reach
     10 or more, which every populated place outside the Gulf of Guinea does and which
     scores such as z-scores, propensities and weights rarely do."""
     shapes = {i: _coordinate_shape(vals) for i, vals in columns}
@@ -3342,7 +3543,8 @@ def coordinate_pairs(columns: list[tuple[int, list[str]]]) -> dict[int, int]:
             continue
         for lat, lon in ((a, b), (b, a)):
             if lat["lat"] and (lat["precise"] and lon["precise"]
-                               or lon["beyond_90"] and lon["one_sign"]):
+                               or lon["beyond_90"] and lon["one_sign"]
+                               or i in plain and j in plain):
                 found[i], found[j] = a["cells"], b["cells"]
                 break
     return found
@@ -3899,14 +4101,20 @@ def check_header_row(headers: list[str], scrubber: Scrubber, confirmed: set[int]
             "number, a date, a number of five or more digits, a decimal of four or more places, a year 90 "
             "or more years ago, ...). If the file has no header row, rerun with --no-header; if the "
             "column names themselves carry identifiers (a per-patient table whose columns are named after "
-            "record numbers), ask the person to rename those columns. Then run again.")
+            "record numbers), ask the person to rename those columns. A wide matrix whose columns are named "
+            "with a prefix and digits (methylation probes, variables V1 to V2000, samples) is refused "
+            "the same way, because such names have the shape of a record or a patient's code: ask the person "
+            "to rename them with a word and a short number (probe_1, var_1) and keep a lookup of the original "
+            "names outside the data. Then run again.")
     looks = {i for i, h in enumerate(headers, start=1) if header_looks_like_value(h, scrubber)}
     if len(looks - set(confirmed)) >= max(2, (len(headers) + 2) // 3):
         raise UsageError(
             f"the first row looks like data rather than column names ({len(looks)} of "
             f"{len(headers)} header cells look like values or names). If the file has no header row, "
             "rerun with --no-header; if the person confirms that the first row holds column names, "
-            "rerun with --keep-all-names.")
+            "rerun with --keep-all-names. A wide matrix whose columns are named with a prefix and digits "
+            "(probes, variables V1 to V2000) is read this way too; the person can confirm its names with "
+            "--keep-all-names or rename them with a word and a short number (probe_1, var_1).")
     unknown = {i for i, h in enumerate(headers, start=1) if not header_shown(h) or header_code_shaped(h)}
     return (looks | unknown) - set(confirmed)
 
@@ -4040,12 +4248,22 @@ def decide_columns(data: list[dict], headers: list[str], locale: dict, scrubber:
     unvouched = [(d["index"], [str(row.get(d["column"], "") or "") for row in data])
                  for d in decisions if (d["kind"] == "none" and d["action"] == "keep")
                  or (d["kind"] == "unverified" and d["phi_type"] == "geo")]
-    pairs = coordinate_pairs(unvouched)
+    pairs = coordinate_pairs(unvouched, {d["index"] for d in decisions if not measurement_header(str(d["column"]))})
     for d in decisions:
         if d["index"] in pairs:
             d.update(kind="uncertain", action="redact", phi_type="geo", verified=False,
                      finding="values: decimal numbers shaped like latitude and longitude "
                              "(with the column next to it)")
+    # Round 6: beside a column found to be a coordinate, a column of decimals within 90 under a name that
+    # names no measurement is its partner, also with one place (a longitude of -122.4 beside 37.8).
+    geo = {d["index"] for d in decisions if d.get("phi_type") == "geo"}
+    for d in decisions:
+        if d["kind"] == "none" and d["action"] == "keep" and ({d["index"] - 1, d["index"] + 1} & geo) \
+                and not measurement_header(str(d["column"])) \
+                and _latitude_partner([str(row.get(d["column"], "") or "") for row in data]):
+            d.update(kind="uncertain", action="redact", phi_type="geo", verified=False,
+                     finding="values: decimal numbers within the range of a latitude beside a column of "
+                             "coordinates (a possible coordinate)")
     # A month and a day written in their own columns beside the year.
     parts = date_sibling_positions([(d["index"], d["column"], [str(row.get(d["column"], "") or "") for row in data])
                                     for d in decisions], reference_year)
@@ -4066,7 +4284,7 @@ def decide_columns(data: list[dict], headers: list[str], locale: dict, scrubber:
                      finding=f"values: {parts[d['index']]}")
     for d in decisions:
         d["keep_refusal"] = None if d["kind"] in ("none", "allowed", "identifier") or d["free_text"] \
-            else keep_refusal(str(d["column"]), [str(row.get(d["column"], "") or "") for row in data])
+            else keep_refusal(str(d["column"]), [str(row.get(d["column"], "") or "") for row in data], scrubber)
         if d["keep_refusal"]:
             d["finding"] = d["finding"].replace("; keep with --keep COLUMN once the person confirms it",
                                                 "; it cannot be kept under this column name")
@@ -4340,7 +4558,7 @@ def residual_findings(rows: list[dict], headers: list[str], decisions: list[dict
             shapes[i] = (check["numeric"][0], sum(1 for v in vals if number_like(v)))
         elif numbers:
             shapes[i] = (numbers[0], numbers[3])
-    pairs = coordinate_pairs(shape_checked)
+    pairs = coordinate_pairs(shape_checked, {i for i, _ in shape_checked if not measurement_header(headers[i - 1])})
     for i, col in enumerate(headers, start=1):
         action = actions[i]
         counts: dict[str, int] = {}
@@ -4430,8 +4648,10 @@ def print_plan(decisions: list[dict], withheld: set[int], changed: dict | None =
     if unkeepable:
         print("\n  Changed and cannot be kept under their names (a word in the name is not a column word the")
         print("  script knows, or the name names a person who is not clinical or care staff, such as the")
-        print("  person, a relative, a contact, a reporter or a manager, or an employer, a home, an address,")
-        print("  a device, an image or notes): " + names(unkeepable))
+        print("  person, a relative, a contact, a reporter or a manager, alone or beside a part of a name,")
+        print("  or an employer, a home, an address, a device, an image, notes, a place that is not a place")
+        print("  of care or a record, or the values are numbers of five or more digits under a name that")
+        print("  names no measurement): " + names(unkeepable))
         print("  Do not offer --keep for these. They stay redacted or pseudonymized; if the person says a name")
         print("  is wrong and the column holds only category values or measurements, they rename it and rerun.")
     free = [d for d in decisions if d["free_text"] and d["action"] != "keep"]
@@ -4952,7 +5172,8 @@ def build_parser() -> argparse.ArgumentParser:
         common(sp)
         sp.add_argument("--keep", action="append", default=[], metavar="COLUMN",
                         help="keep a column the scanner could not vouch for (name or #N); "
-                             "identifier patterns inside it are still replaced")
+                             "identifier patterns inside it are still replaced. Refused for a column "
+                             "that cannot be kept under its name (the plan lists them)")
         sp.add_argument("--redact", action="append", default=[], metavar="COLUMN",
                         help="replace every value of a column with [REDACTED] (name or #N)")
         sp.add_argument("--no-header", action="store_true",
