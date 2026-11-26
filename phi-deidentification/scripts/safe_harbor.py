@@ -15,11 +15,13 @@ decisions and placeholders only: never a cell value of the input, so the chat
 that started it never sees the raw data.
 
     python3 safe_harbor.py plan   INPUT [--locale us] [--keep COL] [--redact COL]
-                                  [--encoding NAME]
+                                  [--encoding NAME] [--delimiter CHAR] [--no-header]
+                                  [--keep-name #N] [--keep-all-names]
     python3 safe_harbor.py run    INPUT --output-dir DIR [--locale us] [--keep COL]
                                   [--redact COL] [--reference-year YYYY]
-                                  [--mapping-out FILE] [--encoding NAME]
-    python3 safe_harbor.py verify FILE [--locale us] [--reference-year YYYY]
+                                  [--mapping-out FILE] [--encoding NAME] [--delimiter CHAR]
+                                  [--no-header] [--keep-name #N] [--keep-all-names]
+    python3 safe_harbor.py verify FILE [--locale us] [--reference-year YYYY] [--delimiter CHAR]
 
 What it does, per the 18 identifiers of 45 CFR 164.514(b)(2), is listed in
 references/safe-harbor-mode.md. In short: identifier columns found by name
@@ -31,9 +33,13 @@ digits, or a longer one under a column name that names a measurement), a code of
 a closed grammar, a word of a closed vocabulary (sex, yes and no, ...), a date or
 an allowed state or country. Any other text, and numbers it cannot tell from
 record numbers, dates, ZIP codes or ages, are changed until the person keeps them
-with --keep; free text can never be kept. Every kept cell is scrubbed of
-identifier patterns, and the output is scanned again before it is kept. A file
-that is not UTF-8 is refused unless --encoding names its encoding.
+with --keep; free text can never be kept. Numbers are judged cell by cell. Column
+names fail closed as well: a name with a word the script does not know as a column
+word (a patient's name read from a first row of data) is withheld and written as
+column_N until the person confirms it, and --no-header reads a file without a header
+row. Every kept cell is scrubbed of identifier patterns, and the output is scanned
+again before it is kept. A file that is not UTF-8 is refused unless --encoding names
+its encoding.
 
 Exit codes: 0 done and the output passed the residual check; 2 refused (bad
 arguments, a file it cannot read, a header row that looks like data); 3 the
@@ -648,10 +654,12 @@ def _is_age_token(token: str) -> bool:
 # ("Edad al diagnostico", "Idade (anos)", "Alter bei Diagnose", "Ålder vid diagnos", "Věk
 # (roky)"). "Alter" and "alder" are English words too, but hardly in a column name. Words for
 # age that have a common other meaning ("Kor" in Hungarian; "Eta" in Italian, which is also an
-# arrival time) are not here: their numbers are judged by number_rule like any column's.
+# arrival time) is not here: its numbers are judged by number_rule like any column's. "Kor"
+# (Hungarian) was left out for the same reason until round 3, when decimal ages under it passed.
 AGE_WORDS_OTHER_LANGUAGES = frozenset({"edad", "idade", "leeftijd", "wiek", "umur", "usia", "tuoi",
                                        "eletkor", "varsta", "lebensalter", "levensjaar", "alter", "alder",
-                                       "yas", "vek", "ika", "starost", "edat", "edats"})
+                                       "yas", "vek", "ika", "starost", "edat", "edats", "kor", "vanus",
+                                       "amzius", "vecums", "yasi", "yasinda", "ageing", "aging"})
 # German and Scandinavian compounds of the word ("Patientenalter", "Aufnahmealter", "Alters",
 # "Altersgruppe", "Aldersgruppe").
 NOT_AGE_COMPOUNDS = frozenset({"falter", "halter", "psalter", "salter", "walter", "alderman", "alderney",
@@ -941,6 +949,11 @@ def name_in_other_script(header: str) -> tuple[str, str, str] | None:
     return None
 
 
+COORDINATE_WORDS_OTHER_SCRIPTS = ("широта", "долгота", "纬度", "经度", "緯度", "經度", "経度", "위도", "경도",
+                                  "خط العرض", "خط الطول", "קו רוחב", "קו אורך", "अक्षांश", "देशांतर",
+                                  "ละติจูด", "ลองจิจูด", "γεωγραφικό πλάτος", "γεωγραφικό μήκος")
+
+
 def name_rule(header: str) -> tuple[str, str, str] | None:
     """(finding, action, phi type) for a column whose name marks a Safe Harbor identifier.
 
@@ -949,6 +962,8 @@ def name_rule(header: str) -> tuple[str, str, str] | None:
     identifiers on their own, and a column of IP addresses is still found by its values.
     """
     t = column_tokens(header)
+    if any(w in unicodedata.normalize("NFKC", str(header)).casefold() for w in COORDINATE_WORDS_OTHER_SCRIPTS):
+        return ("geography smaller than a state", "redact", "address")
     if age_in_other_language(header, t):
         return ("age", "age", "age")
     script_rule = birth_in_other_script(header, t) or name_in_other_script(header)
@@ -1026,7 +1041,9 @@ def name_rule(header: str) -> tuple[str, str, str] | None:
     if _has(t, "fax", "facsimile"):
         return ("fax number", "redact", "phone")
     if (_has(t, "phone", "telephone", "phonenumber", "homephone", "cellphone", "mobilephone",
-             "workphone", "contact number", "pager", "mobile number", "cell number")
+             "workphone", "contact number", "pager", "mobile number", "cell number", "telefon", "telefono",
+             "telefone", "telefoon", "telefonnummer", "telefonnr", "celular", "movil", "cellulare",
+             "puhelin", "handynummer", "mobilnummer", "telefonu")
             or whole in ("tel", "mobile", "cell", "cell no", "mobile no", "tel no")):
         return ("telephone number", "redact", "phone")
     if _has(t, "email", "e mail", "email address", "emailaddress"):
@@ -1069,13 +1086,16 @@ def name_rule(header: str) -> tuple[str, str, str] | None:
 
     # 2: geography smaller than a state.
     if _has(t, "zip", "zipcode", "zip code", "postal code", "postalcode", "postcode", "zip5",
-            "zip plus", "postal"):
+            "zip plus", "postal", "plz", "cep", "postleitzahl", "codigo postal", "code postal",
+            "codice postale", "postnummer", "postinumero", "kod pocztowy", "postcodigo"):
         return ("ZIP code", "zip3", "zip")
     if _has(t, "address", "addr", "street", "address line", "streetaddress", "homeaddress",
             "city", "town", "village", "municipality", "county", "parish", "borough",
             "precinct", "neighborhood", "neighbourhood", "census tract", "census block",
             "block group", "fips", "geocode", "geohash", "latitude", "longitude",
-            "coordinates", "gps", "place of residence", "home location", "hometown",
+            "coordinates", "coordinate", "gps", "easting", "northing", "utm", "geolocation", "latlong",
+            "latlon", "latlng", "geolat", "geolon", "geolng", "breitengrad", "langengrad", "latitud",
+            "longitud", "latitudine", "longitudine", "latitudes", "longitudes", "place of residence", "home location", "hometown",
             "home town", "locality", "suburb", "district", "subdistrict", "township",
             "hamlet", *CITY_WORDS_OTHER_LANGUAGES) \
             or whole in ("lat", "lon", "lng", "long", "residence", "pob", "pob city", "pob town") \
@@ -1200,8 +1220,11 @@ def column_name_rule(header: str, values: list[str], scrubber: "Scrubber") -> tu
     # "Insurance", "Primary Insurance", "Medicare": a payer, unless the name says number.
     payer = rule[2] == "health_plan" and bool(set(t) & PAYER_WORDS or _has(t, "health plan")) \
         and not set(t) & NUMBER_WORDS
+    # Every value must be a known category word ("Mobile", "Active", "Urban"): a single unknown
+    # word under a type or status column of a phone, an email, a ZIP code or a name can be the
+    # person's name. Only payers (Medicare, a regional insurer) are not a closed list.
     if (payer or qualified_header(header)) and \
-            category_values(values, scrubber, strict=rule[2] in ("name", "address", "id")):
+            category_values(values, scrubber, strict=rule[2] != "health_plan"):
         return None
     return rule
 
@@ -1257,14 +1280,64 @@ def _category_or_count(v: str) -> bool:
     return bool(words) and all(_vocabulary_word(w) for w in words)
 
 
+# Whole column names of name_hint_rule that name the person ("Subject", "Member", "Donor"): with a
+# word in them that is not a category word, the column holds the person's name and cannot be kept.
+PERSON_HINT_HEADERS = frozenset({"subject", "subjects", "member", "insured", "donor", "recipient", "resident",
+                                 "policyholder"})
+SOCIAL_NETWORKS = frozenset("""
+twitter instagram facebook fb tiktok snapchat linkedin wechat weixin whatsapp telegram skype reddit youtube
+mastodon weibo discord threads bluesky pinterest tumblr kakaotalk viber
+""".split())
+# Abbreviations for a coordinate, read as one only when every value is a number in range.
+COORDINATE_ABBREVIATIONS = frozenset({"lat", "lon", "lng", "lats", "lons", "coord", "coords", "latdeg",
+                                      "londeg", "lngdeg"})
+COORDINATE_COMPANIONS = frozenset({"home", "patient", "pt", "geo", "gps", "residence", "address", "addr",
+                                   "site", "location", "loc", "event", "x", "y", "dd", "deg", "degrees"})
+
+
+def _word_value(v: str) -> bool:
+    """A value of letters with no digit that is not made of category words: a name's shape."""
+    return bool(re.search(r"[^\W\d_]", v)) and not re.search(r"\d", v) and not _category_or_count(v)
+
+
+def coordinate_name_rule(header: str, values: list[str]) -> tuple[str, str, str, int] | None:
+    """(finding, action, phi type, cells) for a column named with an abbreviation for a coordinate
+    ("Home Lat", "Geo_Lon", "Lat (deg)", "Patient Long", "x_coord") whose values are all numbers
+    within 180, or numbers of five or more digits before the point (metres of a grid such as UTM).
+    An abbreviation has other meanings ("Lat" for a latency or a lateral view), so the person can
+    keep such a column; the whole words (latitude, longitude, easting) are identifiers by name."""
+    t = column_tokens(header)
+    ts = set(t)
+    named = bool(ts & COORDINATE_ABBREVIATIONS) or ("long" in ts and ts & COORDINATE_COMPANIONS) or (
+        ts & {"x", "y", "e", "n"} and ts & {"utm", "grid", "coord", "coords", "coordinate"})
+    if not named:
+        return None
+    nums = [number_like(v) for v in _shape_values(values)]
+    if not nums or any(n is None or re.search(r"[eE]", n) for n in nums):
+        return None
+    xs = [float(n) for n in nums]
+    if all(abs(x) <= 180 for x in xs) or all(len(n.lstrip("+-").split(".")[0]) >= 5 for n in nums):
+        return ("numbers in the range of a coordinate under a column name with an abbreviation for latitude "
+                "or longitude (a possible coordinate)", "redact", "geo", len(nums))
+    return None
+
+
 def person_name_rule(header: str, values: list[str]) -> tuple[str, str, str] | None:
     """(finding, action, phi type) for a column named for the person's own first, last or given
     name, or for a relative, a household member or a contact, unless every value is a category
-    word or a number. Unlike name_hint_rule, the column cannot be kept."""
+    word or a number; and for a column named for the person ("Subject", "Donor") or for a social
+    network ("Twitter") with a value that is a word and not a category word. Unlike
+    name_hint_rule, the column cannot be kept."""
     t = [x for x in column_tokens(header) if not x.isdigit()]
     if not t:
         return None
     vals = _shape_values(values)
+    if vals and " ".join(t) in PERSON_HINT_HEADERS and any(_word_value(v) for v in vals):
+        return ("a person's name (the column name names the person, and a value is a word)", "pseudonym_name",
+                "name")
+    if vals and (set(t) & SOCIAL_NETWORKS or "".join(t) in SOCIAL_NETWORKS) \
+            and not all(_category_or_count(v) for v in vals):
+        return ("a social media account", "redact", "url")
     if not vals or all(_category_or_count(v) for v in vals):
         return None
     if " ".join(t) in OWN_NAME_HEADERS:
@@ -1462,7 +1535,7 @@ signalling domain binding membrane nuclear mitochondrial ribosomal coding noncod
 mrna mirna lncrna gene genes oncogene suppressor wild mutant variant variants deletion
 insertion duplication amplification missense nonsense frameshift splice synonymous
 pathogenic uncertain significance likely exon intron allele homozygous heterozygous
-hemizygous germline somatic copy gain luminal basal enriched claudin
+hemizygous germline somatic copy gain luminal basal enriched claudin checking savings
 """.split()) | frozenset("""
 escherichia klebsiella clostridioides candida aspergillus salmonella shigella listeria neisseria
 haemophilus legionella proteus serratia morganella providencia bacteroides moraxella bordetella
@@ -2217,6 +2290,99 @@ def _compact_date(v: str, reference_year: int) -> bool:
     return month_day(a, b) or month_day(b, a)
 
 
+# Words for a day of the month, a month or a weekday, singular (the plurals "days" and "months" are
+# durations). A whole number from 1 to 31 under one of these is a date element other than the
+# year, which Safe Harbor removes: with the year beside it, it rebuilds the date.
+DAY_PART_WORDS = frozenset("""
+day dayofmonth dia tag jour giorno dag dzien hari ngay paiva
+""".split())
+MONTH_PART_WORDS = frozenset("""
+month mon mth mes mois monat mese maand manad miesiac bulan thang kuukausi honap mesic
+""".split())
+WEEKDAY_WORDS = frozenset("weekday dow wochentag weekdag veckodag ukedag".split())
+DAY_PART_SCRIPTS = ("日", "일", "день", "يوم", "اليوم", "יום", "दिन", "วัน", "ημέρα")
+MONTH_PART_SCRIPTS = ("月", "월", "месяц", "شهر", "الشهر", "חודש", "महीना", "เดือน", "μήνας")
+# Beside these, "dd" and "mm" are a day and a month rather than a code or millimetres.
+DATE_PART_CONTEXT = DATE_TIME_CONTEXT | frozenset("""
+date dt yyyy yy birth dob onset event admit adm dx surgery visit death discharge
+""".split())
+# The last word of a column of a date written in three columns beside its year ("Admit M").
+SHORT_DATE_PARTS = {"m": "month", "mo": "month", "mm": "month", "mon": "month", "mth": "month",
+                    "mn": "month", "month": "month", "d": "day", "dy": "day", "dd": "day", "day": "day"}
+YEAR_PART_WORDS = YEAR_TOKENS | {"yy", "jahr", "ano", "annee", "anno", "aar", "ar", "year"}
+
+
+def _whole_numbers(values: list[str]) -> list[int] | None:
+    vals = [v for v in _shape_values(values) if fold(v) not in MISSING_PHRASES]
+    out = []
+    for v in vals:
+        n = number_like(v)
+        d = _integer_digits(n) if n is not None and n == _plain(v) else None
+        if d is None:
+            return None
+        out.append(int(d))
+    return out or None
+
+
+def date_part_rule(header: str, values: list[str]) -> tuple[str, str, str, int] | None:
+    """(finding, action, phi type, cells) for whole numbers that are a day of the month (1 to 31),
+    a month (1 to 12) or a weekday (0 to 7) under a column name that says so, in any language and
+    with any qualifier ("Admit Day", "Discharge Month", "Day of Month", "MM", "Mois", "Tag",
+    "入院月", "Weekday"). A column name that also names a measurement ("Month 6 Pain Score") or a
+    duration in the plural ("Days", "Months") is left to the number rules."""
+    nums = _whole_numbers(values)
+    if not nums:
+        return None
+    t = column_tokens(header)
+    ts = set(t)
+    raw = unicodedata.normalize("NFKC", str(header)).casefold()
+    if (ts & MEASUREMENT_WORDS) - TIME_WORDS - DAY_PART_WORDS - MONTH_PART_WORDS - {"mm"} \
+            or "%" in raw or _has(t, "number of", "no of", "count of", "n of"):
+        return None
+    context = len(t) == 1 or bool(ts & DATE_PART_CONTEXT)
+    week = bool(ts & WEEKDAY_WORDS) or _has(t, "day of week", "day of the week", "dayofweek")
+    day = bool(ts & DAY_PART_WORDS) or ("dd" in ts and context) or any(w in raw for w in DAY_PART_SCRIPTS)
+    month = bool(ts & MONTH_PART_WORDS) or ("mm" in ts and context) or any(w in raw for w in MONTH_PART_SCRIPTS)
+    if week and all(0 <= n <= 7 for n in nums):
+        what = "a weekday (0 to 7)"
+    elif day and not week and all(1 <= n <= 31 for n in nums):
+        what = "a day of the month (1 to 31)"
+    elif month and not week and all(1 <= n <= 12 for n in nums):
+        what = "a month (1 to 12)"
+    else:
+        return None
+    return (f"whole numbers under a column name that names {what}: a date element other than the year",
+            "redact", "date", len(nums))
+
+
+def date_sibling_positions(columns: list[tuple[int, str, list[str]]], reference_year: int) -> dict[int, str]:
+    """Positions of columns that hold a month (1 to 12) or a day (1 to 31) of a date written in three
+    columns beside its year, named by a short word and sharing the year's name ("Admit Year", "Admit
+    M", "Admit D"; "Y", "M", "D"; "yyyy", "mm", "dd"; "Dx Yr", "Dx Mo", "Dx Dy")."""
+    toks = {i: column_tokens(h) for i, h, _ in columns}
+    vals = {i: v for i, _, v in columns}
+
+    def year_column(i: int) -> bool:
+        nums = _whole_numbers(vals[i])
+        return bool(nums) and all(1880 <= n <= reference_year + 10 for n in nums)
+    years = [i for i, _, _ in columns if year_column(i) and set(toks[i]) & YEAR_PART_WORDS]
+    found: dict[int, str] = {}
+    for y in years:
+        for i in (y - 2, y - 1, y + 1, y + 2):
+            if i not in toks or i in years:
+                continue
+            shared = set(toks[i]) & set(toks[y])
+            rest = [t for t in toks[i] if t not in shared]
+            year_rest = [t for t in toks[y] if t not in shared]
+            if len(rest) != 1 or rest[0] not in SHORT_DATE_PARTS or not set(year_rest) <= YEAR_PART_WORDS:
+                continue
+            nums = _whole_numbers(vals[i])
+            limit = 12 if SHORT_DATE_PARTS[rest[0]] == "month" else 31
+            if nums and all(1 <= n <= limit for n in nums):
+                found[i] = SHORT_DATE_PARTS[rest[0]]
+    return found
+
+
 def value_shape_rule(header: str, values: list[str], reference_year: int) -> tuple[str, str, str, int] | None:
     """(finding, action, phi type, cells) for an all-number column whose values have
     the shape of an identifier its name does not announce: years old enough to be the
@@ -2290,6 +2456,7 @@ inr ptt aptt bnp ntprobnp probnp procalcitonin psa cea afp ige igg igm iga amyla
 lipase urate uric ammonia ketones ketone ph pco po osmolality egfr gfr crcl cd viral vl hiv rna dna
 fev fvc pef dlco ef lvef iq mmse moca phq gad nihss apache sofa qsofa news meld apgar kps ecog
 karnofsky barthel charlson elixhauser frailty asa braden morse glasgow apfel caprini wells
+propensity iptw ipw zscore zscores tscore probability prob likelihood logit odds residual residuals
 """.split())
 # Words that make a number column a list of identifiers whatever else it says ("Lab No", "Sample
 # ID", "Visit Number"); "number of" is a count.
@@ -2298,6 +2465,23 @@ id ids identifier identifiers uid uuid guid no nr nbr num nummer numero ref refs
 code codes link linkage token tag tags file files folder dossier record records chart registry
 register registration reg accession barcode serial account acct mrn mbi seq sequence fallnummer
 """.split())
+# Words that name what a row is about. As the last word of a column name they make it that thing's
+# number ("Glucose Case", "Count Patient", "Dose Encounter"), whatever measurement word comes before.
+HEAD_ID_WORDS = frozenset("""
+case cases episode specimen sample patient pt subject participant encounter chart person client
+member donor recipient kit box slot
+""".split())
+# "Days Since Encounter", "Cost per Case": a preposition before the last word makes it a measurement
+# of that thing, not its number.
+HEAD_ID_PREPOSITIONS = frozenset("since from to after before per of at by until between for in".split())
+# Units of time short enough that a number of five digits is still a plausible duration.
+SMALL_TIME_WORDS = frozenset("""
+hour hours hr hrs h minute minutes min mins second seconds sec secs s ms msec millisecond milliseconds
+""".split())
+# Words of a column name that say its numbers are durations or times.
+TIME_WORDS = frozenset("""
+time times day days week weeks wk wks month months duration los interval delay elapsed latency lag
+""".split()) | SMALL_TIME_WORDS
 
 
 def measurement_header(header: str) -> bool:
@@ -2313,6 +2497,8 @@ def measurement_header(header: str) -> bool:
         return False
     if "number" in ts and not count_phrase:
         return False
+    if len(t) > 1 and t[-1] in HEAD_ID_WORDS and t[-2] not in HEAD_ID_PREPOSITIONS and not count_phrase:
+        return False
     compact = re.sub(r"[^a-z0-9]", "", raw.lower())
     return bool(count_phrase or ts & MEASUREMENT_WORDS or "%" in raw or _unit_in_brackets(raw)
                 or any(w in compact for w in ("spo2", "sao2", "fio2", "pao2", "paco2", "etco2", "o2sat",
@@ -2321,6 +2507,23 @@ def measurement_header(header: str) -> bool:
 
 TIME_UNITS = _phrases("""y|yr|yrs|year|years|mo|mos|month|months|wk|wks|week|weeks|d|day|days|h|hr|hrs|
 hour|hours|min|mins|minute|minutes|s|sec|second|seconds|ms|msec""")
+
+
+def time_only_header(header: str) -> tuple[bool, bool]:
+    """(True, small) for a column name that names a measurement only by a word of time ("Time",
+    "Event Time", "Visit Day", "Days", "Duration", "LOS"), with `small` True when that word is a
+    unit short enough for a five-digit duration (minutes, seconds, hours)."""
+    t = column_tokens(header)
+    ts = set(t)
+    raw = str(header)
+    if not measurement_header(header) or "%" in raw or _unit_in_brackets(raw):
+        return False, False
+    if _has(t, "length of stay", "length of hospital stay", "length of icu stay"):
+        ts = (ts - {"length", "stay"}) | {"los"}
+    if not ts & TIME_WORDS or (ts & MEASUREMENT_WORDS) - TIME_WORDS:
+        return False, False
+    units = {fold(m.group(1)) for m in re.finditer(r"[(\[]\s*([^)\]]{1,20})\s*[)\]]", raw)}
+    return True, bool(ts & SMALL_TIME_WORDS or units & SMALL_TIME_WORDS)
 
 
 def _unit_in_brackets(raw: str) -> bool:
@@ -2379,8 +2582,9 @@ def _age_years_of_value(v: str) -> float | None:
 def number_rule(header: str, values: list[str], reference_year: int) -> tuple[str, str, str, int] | None:
     """(finding, action, phi type, cells) for a column whose numbers the script cannot verify as
     measurements (see the section comment). `values` are the column's cells that are not blank
-    or missing-value words; only those that read as numbers are judged. None when they are
-    measurements."""
+    or missing-value words; only those that read as numbers are judged, and each one is judged
+    on its own: a single record number, ZIP code, serial or age over 89 among measurements is
+    enough. None when every one of them is a measurement."""
     vals = [v.strip() for v in values if v.strip() and v.strip() not in TOOL_PLACEHOLDERS
             and not TOOL_OUTPUT.fullmatch(v.strip()) and fold(v) not in MISSING_PHRASES]
     nums = [(v, number_like(v)) for v in vals]
@@ -2389,37 +2593,61 @@ def number_rule(header: str, values: list[str], reference_year: int) -> tuple[st
         return None
     total = len(nums)
     measurement = measurement_header(header)
+    time_only, small_unit = time_only_header(header)
     digits = [_integer_digits(n) for _, n in nums]
     whole = [d for d in digits if d is not None]
     # Dates written as whole numbers in an order the value rules do not read (YYMMDD, 3262017).
     if len(whole) == total and len(set(whole)) >= 3 and all(_packed_date(d, reference_year) for d in whole):
         return (f"whole numbers shaped like dates with no separator in {total} cells (possible dates)",
                 "redact", "date", total)
-    # Excel date and time serials ("44269.4375").
-    serial = [n for _, n in nums if re.fullmatch(r"\d{5}\.\d+", n)
-              and EXCEL_DATE_RANGE[0] <= int(n.split(".")[0]) <= EXCEL_DATE_RANGE[1]]
-    if not measurement and len(serial) >= 0.8 * total and any(_integer_digits(n) is None for n in serial):
-        return (f"decimal numbers shaped like Excel date and time serials in {len(serial)} of {total} cells "
+    # Excel date and time serials ("44269.4375"), under any column name but one that names a
+    # measurement other than a time; under a day, a week, a month or a bare time a number of five
+    # digits is not a duration either ("Visit Day" 43005), unless the unit is minutes or seconds.
+    def excel(n: str) -> bool:
+        m = re.fullmatch(r"(\d{5})(?:\.\d+)?", n)
+        return bool(m) and EXCEL_DATE_RANGE[0] <= int(m.group(1)) <= EXCEL_DATE_RANGE[1]
+    serial = [n for _, n in nums if excel(n) and (_integer_digits(n) is None or (time_only and not small_unit))]
+    if serial and (not measurement or (time_only and not small_unit)):
+        return (f"numbers shaped like Excel date and time serials in {len(serial)} of {total} cells "
                 "(possible dates)", "redact", "date", len(serial))
-    # Record numbers: whole numbers of four or more digits, or with a leading zero, that are not
-    # all years. A leading zero marks a code under any column name.
+    if not measurement:
+        # Scientific notation: how Excel writes a long record, account or phone number in a CSV.
+        exponent = [n for _, n in nums if re.search(r"[eE]", n)]
+        if exponent:
+            return (f"numbers written with an exponent in {len(exponent)} of {total} cells (as Excel writes "
+                    "long record, account and phone numbers)", "pseudonym_id", "id", len(exponent))
+        # Decimals with five or more digits before the point: grid coordinates in metres (UTM),
+        # dates or record numbers with a fraction.
+        long_decimal = [n for _, n in nums if _integer_digits(n) is None
+                        and len(n.lstrip("+-").split(".")[0]) >= 5]
+        if long_decimal:
+            return (f"decimal numbers with five or more digits before the point in {len(long_decimal)} of "
+                    f"{total} cells (possible grid coordinates, dates or record numbers)", "redact", "id",
+                    len(long_decimal))
+    # Record numbers: whole numbers of four or more digits that are not all years, under a column
+    # name that names no measurement, or with a leading zero under any column name.
     long_ = [d for d in whole if len(d) >= 4]
     zero = [d for d in whole if len(d) >= 4 and d.startswith("0")]
     years = all(1880 <= int(d) <= reference_year + 10 and len(d) == 4 for d in whole) and len(whole) == total
-    if long_ and len(long_) >= 0.5 * total and not years and (not measurement or len(zero) >= 0.5 * total):
+    if (long_ and not measurement and not years) or zero:
         five = sum(1 for d in long_ if len(d) >= 5)
         what = "five or more digits" if five >= len(long_) / 2 else "four or more digits"
-        return (f"whole numbers of {what} in {len(long_)} of {total} cells under a column name that names "
-                "no measurement (possible record numbers, account numbers, ZIP codes or dates written as "
-                "numbers)", "pseudonym_id", "id", len(long_))
-    # Ages: whole numbers up to 125 (or a number with a unit of time) with some over 89.
-    if not measurement:
-        ages = [_age_years_of_value(v) for v, _ in nums]
-        if all(a is not None for a in ages) and all(a <= 125 for a in ages):
-            over = sum(1 for a in ages if a >= 90)
-            if over:
-                return (f"whole numbers up to 125, {over} of them over 89, under a column name that names no "
-                        "measurement (possible ages)", "age", "age", over)
+        where = ("with a leading zero" if measurement else "under a column name that names no measurement")
+        return (f"whole numbers of {what} in {len(long_)} of {total} cells {where} (possible record numbers, "
+                "account numbers, ZIP codes or dates written as numbers)", "pseudonym_id", "id", len(long_))
+    if measurement:
+        return None
+    # Ages: a whole number from 90 to 125 (or a number with a unit of time) among any others.
+    ages = [_age_years_of_value(v) for v, _ in nums]
+    over = sum(1 for a in ages if a is not None and 90 <= a <= 125)
+    if over:
+        return (f"whole numbers from 90 to 125 in {over} of {total} cells under a column name that names no "
+                "measurement (possible ages over 89)", "age", "age", over)
+    # A latitude or a longitude alone: decimals of four or more places within 180.
+    shape = _coordinate_shape([n for _, n in nums])
+    if shape and len(nums) == total and shape["places4"]:
+        return (f"decimal numbers of four or more places within the range of a latitude or a longitude in "
+                f"{total} cells (a possible coordinate)", "redact", "geo", total)
     return None
 
 
@@ -2438,6 +2666,7 @@ def _coordinate_shape(values: list[str]) -> dict | None:
             "beyond_90": any(abs(x) > 90 for x in nums),
             "one_sign": all(x < 0 for x in nums) or all(x > 0 for x in nums),
             "precise": sum(1 for p in places if p >= 3) / n >= 0.8,
+            "places4": sum(1 for p in places if p >= 4) / n >= 0.8,
             "max": max(abs(x) for x in nums), "cells": n}
 
 
@@ -2521,7 +2750,7 @@ def header_name_like(header: str) -> bool:
         low = "".join(column_tokens(letters))
         if low in NAME_PARTICLES or low in NAME_SUFFIXES:
             continue
-        if low in HEADER_WORDS() or _vocabulary_word(low) or _is_age_token(low) or _age_word_token(low):
+        if _column_word(low) or _vocabulary_word(low):
             return False
         core += 1
     return core >= 2
@@ -2543,25 +2772,266 @@ def HEADER_WORDS() -> set[str]:  # noqa: N802 - built once, from tables defined 
     return _HEADER_WORDS
 
 
-def check_header_row(headers: list[str], scrubber: Scrubber) -> set[int]:
-    """The positions of header cells that look like a value or a name, which the plan and the
-    report withhold and the output renames column_N. Refuses a header row that holds an
-    identifier pattern in any cell (an email, a phone or ID number, a date: a patient's record
-    read as the header row, or column names that carry identifiers), or in which a third of the
-    cells look like values or names. The message names counts only."""
+# Column names fail closed too (round 3). A first row of data read as the header row puts a
+# patient's name where a column name belongs, and a single surname, a titled name ("Dr. Lee") or a
+# name in a script without capital letters has no shape that tells it from a column word. So a
+# header cell is shown, reported and copied to the output only when every word in it is a word
+# column names are made of: the word lists of the rules above, the category, medical and
+# anatomical words, the words below, single letters, numbers and codes of letters and digits
+# ("TP53", "Col1"). Any other cell is withheld and the output names it column_N, until the person
+# confirms it (--keep-name, --keep-all-names) or says the file has no header row (--no-header).
+# A column name made only of words that are also common surnames or given names ("Long", "Ward",
+# "White", "Rose Hall") is withheld too; beside another column word they count ("Reference Low").
+# "Case", "Day", "Person", "Weeks" and "Mass" are left out: as a column name alone they are common.
+# Measured on 1,161 common US surnames and given names, those four are the only ones shown alone.
+SURNAME_WORDS = (NAME_LIKE_CATEGORY_WORDS - {"case", "mass", "central", "fall"}) | frozenset("""
+cook french english german polish carpenter farmer driver clerk fisher hunter mason porter steward
+foreman baker miller taylor turner parker walker cooper marshal marshall bishop knight dean chase hope
+joy grace faith rose lily ivy hall hill wood woods green gray grey brown young king long price bell
+ward page lane may mark bond rich love ball bush cross frank gold lord moss nash ng min ma mo
+pope post root sharp short small snow strong swift wise rice mills wells banks fox hart hunt grant
+stone holmes black white major minor chef artist writer manager teacher engineer cashier mechanic
+plumber electrician soldier veteran police braden morse pugh wells iris victoria georgia jordan chad
+florence austin dallas lincoln washington madison chelsea sydney paris london branch burns chambers
+christian colon fields flowers foster lang le mays molina powers shields singleton summers wall walls
+waters winters
+""".split())
+COLUMN_WORDS_EXTRA = frozenset("""
+of to from at in on by with for the a an and or per vs versus since until after before during within
+without into over under than as is was if any all not non via plus between among each every whether
+id ids no nr num nbr pt pts pat pats col cols var vars row rows field fields item items obs record
+records entry entries column columns unnamed index idx key keys ref code codes flag flags yn tf
+variable variables label labels value values val vals text desc description comment comments note notes
+remark remarks memo info information detail details data dataset source sources origin type types
+kind kinds class classes category categories group groups status statuses state states level levels
+tier tiers grade grades stage stages score scores scale rank ranks order sequence seq version ver
+date dates dt dtm datetime time times timestamp ts year years yr yrs yyyy yy mo mos month months wk
+week weeks day days hr hrs hour hours min mins minute minutes sec secs second seconds
+start started end ended stop stopped begin onset offset first last next prior previous current
+initial final baseline followup follow up fu visit visits encounter encounters episode episodes admit
+admission admissions discharge discharged readmission readmit readmitted transfer arrival departure
+arrive depart triage disposition dispo outcome outcomes event events endpoint endpoints censor censored
+death died dead deceased alive survival surv os pfs dfs efs rfs ttp ttf mortality mort recurrence
+relapse progression response remission
+patient patients subject subjects participant participants case cases control controls study studies
+trial trials arm arms cohort cohorts site sites center centre centers centres clinic clinics hospital
+hospitals ward wards unit units department dept service services team teams provider providers
+physician physicians surgeon surgeons nurse nurses doctor doctors pcp attending specialist referral
+referring referred ordering ordered order orders
+diagnosis diagnoses dx ddx diag icd icd9 icd10 cm pcs cpt hcpcs snomed loinc rxnorm ndc atc mesh
+umls omop concept concepts vocab vocabulary drg ms apr mdc hcc ccs elixhauser charlson cci
+comorbidity comorbidities condition conditions problem problems disease diseases disorder disorders
+symptom symptoms sign signs finding findings complaint complaints chief history hx pmh psh fhx shx
+medication medications med meds drug drugs rx prescription prescriptions dose doses dosage dosing
+route frequency freq strength form formulation brand generic ingredient ingredients regimen regimens
+therapy therapies treatment treatments tx intervention interventions procedure procedures proc surgery
+surgeries operation operations anesthesia anaesthesia asa implant device devices transfusion
+lab labs laboratory test tests result results panel panels assay assays specimen specimens sample
+samples biopsy culture cultures organism organisms isolate antibiotic antibiotics susceptibility mic
+pathology histology histologic cytology grade tumor tumour tumors size margin margins node nodes
+nodal lymph metastasis metastases mets laterality side location sites primary secondary
+gene genes symbol symbols transcript transcripts protein proteins variant variants mutation mutations
+allele alleles genotype genotypes phenotype phenotypes exon intron chromosome chr chrom pos position
+ref alt hgvs cdna rsid snp snps cnv sv vaf af maf tmb msi mmr pdl1 tps cps ki67 her2 er pr ar egfr
+kras nras braf alk ros1 ret met ntrk pik3ca pten brca brca1 brca2 tp53 apc atm idh idh1 idh2 mgmt
+expression expr tpm fpkm rpkm cpm counts reads log log2 fc logfc pval padj fdr qval
+sex gender race ethnicity ethnic ancestry age ages aged born birth dob language lang interpreter
+needed marital education educ income employment employed occupation job insurance insured payer
+payor plan coverage housing homeless residence urban rural smoker smoking smoke tobacco alcohol
+etoh drinking drinks drug substance use uses user bmi weight wt height ht bsa waist hip
+temperature temp pulse hr heart rate resp rr bp sbp dbp map spo2 sao2 o2 fio2 gcs pain avpu
+glucose lactate wbc rbc hgb hb hct plt mcv mch mchc rdw mpv anc alc na k cl hco3 co2 bun cr creat
+scr egfr gfr ca mg phos alk ast alt ggt ldh tbili dbili bili alb tp inr pt ptt aptt fib fibrinogen
+ddimer dimer troponin trop tni tnt bnp ntprobnp crp hscrp esr pct procalcitonin ferritin iron tibc
+tsat b12 folate tsh t3 t4 ft3 ft4 free a1c hba1c lipid ldl hdl tg chol cholesterol triglycerides
+vitamin vit d urine urinalysis ua upcr uacr protein albumin microalbumin ketones serum plasma blood
+csf stool sputum swab pcr antigen antibody ab ag igg igm iga ige titer titre viral load copies hiv
+hbv hcv covid covid19 sars cov cov2 influenza flu rsv vaccine vaccines vaccination vaccinated dose1 dose2
+booster
+ecog kps nyha asa apache sofa qsofa news mews meld child nihss mrs gose gos phq gad audit mmse
+moca cdr adl iadl barthel braden morse frailty cfs
+icu nicu picu micu sicu ccu ed er or pacu ip op inpatient outpatient ambulatory emergency elective
+urgent los ventilator ventilation vent mv niv hfnc ecmo crrt dialysis hd pd rrt intubation intubated
+pressor pressors vasopressor vasopressors
+adverse ae aes sae saes serious severity severe related relatedness relationship action taken ctcae
+toxicity toxicities dlt
+reference low high normal range abnormal critical units uom unit
+total sum mean median avg average sd std se sem iqr min max minimum maximum range lower upper ci
+pct percent percentage ratio rate rates count counts number n freq proportion prob probability
+predicted observed expected estimate estimated actual raw adjusted imputed derived computed calculated
+change delta diff difference increase decrease baseline
+consent consented signed eligible eligibility enrolled enrollment enrolment randomized
+randomised randomization randomisation allocation allocated withdrawn withdrawal screening screened
+screen fail failure failed complete completed completion incomplete missing partial
+redcap event name instrument repeat instance survey timestamp form forms dag
+address city town zip zipcode postal postcode county state country region phone tel email fax mrn
+ssn
+geschlecht sexo sexe sesso genere geslacht kon plec diagnose diagnostico diagnosi diagnostic
+diagnostik fecha datum data dato fec peso talla altura estatura gewicht groesse grosse poids taille
+gewicht lengte vikt langd waga wzrost medicamento medicamentos farmaco farmaci medicament medicaments
+medikament medikamente tratamiento traitement behandlung trattamento resultado resultados resultat
+resultats ergebnis ergebnisse risultato risultati valor valores valeur valeurs wert werte valore
+valori visita visitas besuch consulta ingreso ingresos alta egreso aufnahme entlassung ricovero
+dimissione numero nummer numer codigo codice code paciente pacientes patiente patient patienten
+paziente pazienti historia clinica numero expediente
+de del della dei des du la le les el los las lo il e y und die das dem von vom zur zum bei mit im am het
+een voor en og och af pa po na w z ze do da di dal al au aux sur par pour con sin tra fra
+seen impression updated created modified when where who what which how reading reply answer epoch
+snapshot reporting period ym yyyymm point time timepoint tp stay religion denomination injury marker
+biomarker census doc docs admin sign off signoff signature cat htn dm ckd cad copd chf afib hld osa
+pg ng ug mcg iu meq mmol umol nmol pmol ml dl l g kg lb lbs oz cm mm in ft mmhg bpm kpa pa mosm mosmol
+pressure blood propensity iptw ipw zscore z tscore weight weights wavelength nm hometown suburb
+locality district pob company employer workplace school college university fname lname mname
+username user login screen handle vin plate serial udi imei device license licence certificate cert
+dea npi passport fax facsimile telephone pager mobile cell email ssn itin nhs nino sin tin mrn empi
+accession barcode fingerprint voiceprint biometric biometrics retinal palm photo photos photograph
+picture headshot portrait selfie avatar url uri website homepage web ip ipv4 ipv6 mac beneficiary
+subscriber policy member insurer medicare medicaid hicn mbi account acct iban card routing kin nok
+emergency spouse guardian caregiver contact relative household landlord roommate tenant lives living
+twitter instagram facebook tiktok snapchat linkedin wechat whatsapp telegram skype reddit youtube
+telefon telefono telefone telefoon telefonnummer celular movil cellulare puhelin plz cep postleitzahl
+codigo postal codice postale postnummer postinumero lat lon lng long lt ln coord coords latlong latlon
+geo gps easting northing utm breitengrad langengrad latitud longitud latitudine longitudine
+hosp patid ptid subjid studyid recordid patno ptno patientennummer persoonsnummer henkilotunnus
+fodselsnummer rodne cislo matricule cartella phn ohip dni cpf rrn nip sus nhc nhi nir insee cip
+kit box slot tube rack well plate aliquot barcode batch lot
+eta anni dob byear yob vehicle badge street network template origin resides residing reside lives
+living stichtag vid ved diagnos diagnoze inclusion inklusion erstdiagnose pri tod nac bth sinh agent
+assigned sent referred ordered signed reviewed entered recorded collected verified approved performed
+completed reported created updated modified scheduled cancelled canceled attended accompanied
+""".split())
+# Column words in scripts the tokens above do not read, matched as phrases.
+OTHER_SCRIPT_COLUMN_WORDS = (
+    AGE_WORDS_CJK + tuple(AGE_WORDS_OTHER_SCRIPTS) + BIRTH_DATE_PHRASES + BIRTH_YEAR_PHRASES
+    + BIRTH_PLACE_PHRASES + SCRIPT_NAME_ANYWHERE + tuple(SCRIPT_NAME_WORDS) + SCRIPT_PATIENT_WORDS
+    + RACE_HEADER_SCRIPTS + tuple("""
+性别 性別 诊断 診断 診斷 日期 日付 药物 藥物 药品 藥品 薬剤 薬 結果 结果 检查 檢查 検査 编号 編號 番号 号 病历 病歷
+住院 门诊 門診 患者 病人 体重 體重 身高 身長 血压 血壓 血圧 血糖 年 月 日 时间 時間 类型 類型 状态 狀態 状態 国家 國家
+省 地区 備考 备注 備註 説明 说明 治疗 治療 手术 手術 科室 医院 醫院 病院 民族 吸烟 喫煙 饮酒 飲酒 分期 分级 分級
+성별 진단 날짜 일자 결과 약물 약품 번호 등록번호 등록 환자 체중 키 신장 혈압 혈당 월 일 년 연도 시간 유형 상태 국가
+지역 비고 치료 수술 병원 흡연 음주 병기
+пол диагноз дата результат номер карта карты истории болезни пациент пациента вес рост давление месяц
+день год время тип статус страна регион примечание лечение операция больница курение
+الجنس التشخيص التاريخ النتيجة رقم الملف المريض الوزن الطول الشهر اليوم السنة الوقت النوع الحالة الدولة
+מין אבחנה תאריך תוצאה מספר תיק חולה משקל גובה חודש יום שנה זמן סוג מצב מדינה
+लिंग निदान तारीख परिणाम संख्या रोगी वजन लंबाई महीना दिन वर्ष समय प्रकार स्थिति देश
+เพศ การวินิจฉัย วันที่ ผล หมายเลข ผู้ป่วย น้ำหนัก ส่วนสูง เดือน วัน ปี เวลา ประเภท สถานะ ประเทศ
+φύλο διάγνωση ημερομηνία αποτέλεσμα αριθμός ασθενής βάρος ύψος μήνας ημέρα έτος 月份 담당
+""".split()) + COORDINATE_WORDS_OTHER_SCRIPTS)
+
+
+def _column_vocab() -> frozenset:
+    if not _COLUMN_VOCAB:
+        _COLUMN_VOCAB.update(
+            set(HEADER_WORDS()) | COLUMN_WORDS_EXTRA | CATEGORY_WORDS | AGE_UNIT_WORDS | YEAR_WORDS_OTHER_LANGUAGES
+            | AGE_WORDS_OTHER_LANGUAGES | DAY_PART_WORDS | MONTH_PART_WORDS | WEEKDAY_WORDS | NOT_AGENT_NOUNS
+            | frozenset(NAME_WORDS_OTHER_LANGUAGES) | frozenset(CITY_WORDS_OTHER_LANGUAGES) | TIME_WORDS
+            | HEAD_ID_WORDS | DATE_PART_CONTEXT | SOCIAL_NETWORKS | COORDINATE_ABBREVIATIONS
+            | COORDINATE_COMPANIONS | PAYER_WORDS | NUMBER_WORDS | frozenset(NAME_HINT_HEADERS)
+            | PERSON_HEADERS | RELATIVE_HEADERS | PERSON_HEAD_WORDS | frozenset(CLINICIAN_WORDS)
+            | frozenset(RELATIVE_WORDS) | frozenset(BIRTH_PLACE_WORDS))
+    return frozenset(_COLUMN_VOCAB)
+
+
+_COLUMN_VOCAB: set[str] = set()
+
+
+def _column_word(t: str) -> bool:
+    """One lower-case word of a column name that column names are made of (see above)."""
+    vocab = _column_vocab()
+    if not t or t.isdigit() or len(t) == 1 or t in vocab or (len(t) > 3 and t.endswith("s") and t[:-1] in vocab):
+        return True
+    if _is_age_token(t) or _age_word_token(t) or _clinical_word(t):
+        return True
+    # A role by its ending (phlebotomist, sonographer, dietician, attendee), but not a Swedish
+    # surname in -qvist.
+    if _role_word(t, PERSON_ROLE_WORDS) and not t.endswith(("qvist", "quist", "kvist")):
+        return True
+    if re.search(r"\d", t) and re.search(r"[a-z]", t):
+        # A code of letters and digits ("tp53", "col1", "a1c", "ensg00000141510", "covid19").
+        return all(len(run) <= 5 or run in vocab for run in re.findall(r"[a-z]+", t))
+    return False
+
+
+def _latin_or_mark(c: str) -> bool:
+    return not c.isalpha() or c.isascii() or unicodedata.name(c, "").startswith("LATIN")
+
+
+def header_shown(header: str) -> bool:
+    """True for a column name every word of which is a column word (see above), with at least one
+    word that is not also a common surname or given name ("Reference Low", not "Low"): the plan,
+    the report and the output may carry it. A surname, a given name, a titled name, a name in a
+    script without capital letters or any word the lists do not know makes it False."""
+    h = str(header).strip()
+    if not h:
+        return True
+    raw = unicodedata.normalize("NFKC", h).casefold()
+    other_script = False
+    for phrase in sorted(OTHER_SCRIPT_COLUMN_WORDS, key=len, reverse=True):
+        if phrase.casefold() in raw:
+            other_script = True
+            raw = raw.replace(phrase.casefold(), " ")
+    stripped = "".join(c for c in unicodedata.normalize("NFKD", raw) if not unicodedata.combining(c))
+    stripped = stripped.replace("\u00df", "ss").translate(LETTERS_WITHOUT_DECOMPOSITION)
+    if not all(_latin_or_mark(c) for c in stripped):
+        return False
+    s = "".join(c for c in unicodedata.normalize("NFKD", stripped) if not unicodedata.combining(c))
+    s = re.sub(r"([a-z])-(?=\d)", r"\1", s)  # il-6, phq-9, covid-19
+    words = []
+    for word in re.findall(r"[a-z0-9]+", s):
+        if _column_word(word):
+            words.append(word)
+            continue
+        # The original capitals split a word written in camel case ("DayOfMonth", "SpO2").
+        return _camel_header_shown(h)
+    letters = [w for w in words if w.isalpha() and len(w) > 1]
+    return other_script or not letters or any(not _surname_word(w) for w in letters)
+
+
+def _surname_word(w: str) -> bool:
+    return w in SURNAME_WORDS or (w.endswith("s") and w[:-1] in SURNAME_WORDS)
+
+
+def _camel_header_shown(header: str) -> bool:
+    s = "".join(c for c in unicodedata.normalize("NFKD", header) if not unicodedata.combining(c))
+    s = s.replace("\u00df", "ss").translate(LETTERS_WITHOUT_DECOMPOSITION)
+    s = re.sub(r"([A-Za-z])-(?=\d)", r"\1", s)
+    words = []
+    for word in re.findall(r"[A-Za-z0-9]+", s):
+        parts = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", word)
+        parts = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", parts)
+        for p in (x.lower() for x in parts.split("_") if x):
+            if not _column_word(p):
+                return False
+            words.append(p)
+    letters = [w for w in words if w.isalpha() and len(w) > 1]
+    return not letters or any(not _surname_word(w) for w in letters)
+
+
+def check_header_row(headers: list[str], scrubber: Scrubber, confirmed: set[int] = frozenset()) -> set[int]:
+    """The positions of header cells the plan and the report withhold and the output renames
+    column_N: cells that look like a value or a name, and cells with a word that is not a column
+    word (header_shown). Positions in `confirmed` (--keep-name, --keep-all-names) are shown.
+    Refuses a header row that holds an identifier pattern in any cell (an email, a phone or ID
+    number, a date: a patient's record read as the header row, or column names that carry
+    identifiers), or in which a third of the cells look like values or names and the person has
+    not confirmed them. The message names counts only."""
     patterned = [i for i, h in enumerate(headers, start=1) if header_identifier_kinds(h, scrubber)]
     if patterned:
         raise UsageError(
             f"the first row looks like data or carries identifiers: {len(patterned)} of {len(headers)} "
             "header cells are shaped like an identifier (an email or web address, a phone, ID or record "
-            "number, a date, ...). If the first row is data, add a header row; if the column names "
-            "themselves carry identifiers, rename those columns. Then run again.")
+            "number, a date, ...). If the file has no header row, rerun with --no-header; if the column "
+            "names themselves carry identifiers, ask the person to rename those columns. Then run again.")
     looks = {i for i, h in enumerate(headers, start=1) if header_looks_like_value(h, scrubber)}
-    if len(looks) >= max(2, (len(headers) + 2) // 3):
+    if len(looks - set(confirmed)) >= max(2, (len(headers) + 2) // 3):
         raise UsageError(
             f"the first row looks like data rather than column names ({len(looks)} of "
-            f"{len(headers)} header cells look like values or names). Add a header row and run again.")
-    return looks
+            f"{len(headers)} header cells look like values or names). If the file has no header row, "
+            "rerun with --no-header; if the person confirms that the first row holds column names, "
+            "rerun with --keep-all-names.")
+    unknown = {i for i, h in enumerate(headers, start=1) if not header_shown(h)}
+    return (looks | unknown) - set(confirmed)
 
 
 def output_headers(headers: list[str], withheld: set[int]) -> dict[str, str]:
@@ -2638,6 +3108,10 @@ def decide_columns(data: list[dict], headers: list[str], locale: dict, scrubber:
             elif d["free_text"]:
                 d.update(kind="uncertain", finding="free text (names inside text cannot be found)",
                          action="redact", phi_type="free_text")
+            elif part := date_part_rule(col, present):
+                d.update(kind="unverified", finding=f"values: {part[0]}", action="redact", phi_type="date")
+            elif coord := coordinate_name_rule(col, present):
+                d.update(kind="unverified", finding=f"values: {coord[0]}", action="redact", phi_type="geo")
             elif hint := name_hint_rule(col, nonempty):
                 d.update(kind="uncertain", finding=hint[0], action=hint[1], phi_type=hint[2])
             elif (shape := value_shape_rule(col, nonempty, reference_year)) and shape[2] != "zip":
@@ -2687,13 +3161,22 @@ def decide_columns(data: list[dict], headers: list[str], locale: dict, scrubber:
 
     # Latitude and longitude under names the rules above do not know.
     unvouched = [(d["index"], [str(row.get(d["column"], "") or "") for row in data])
-                 for d in decisions if d["kind"] == "none" and d["action"] == "keep"]
+                 for d in decisions if (d["kind"] == "none" and d["action"] == "keep")
+                 or (d["kind"] == "unverified" and d["phi_type"] == "geo")]
     pairs = coordinate_pairs(unvouched)
     for d in decisions:
         if d["index"] in pairs:
             d.update(kind="uncertain", action="redact", phi_type="geo", verified=False,
                      finding="values: decimal numbers shaped like latitude and longitude "
                              "(with the column next to it)")
+    # A month and a day written in their own columns beside the year.
+    parts = date_sibling_positions([(d["index"], d["column"], [str(row.get(d["column"], "") or "") for row in data])
+                                    for d in decisions], reference_year)
+    for d in decisions:
+        if d["index"] in parts and d["action"] == "keep":
+            d.update(kind="unverified", action="redact", phi_type="date", verified=False,
+                     finding=f"values: whole numbers that are the {parts[d['index']]} of a date written in "
+                             "columns beside its year: a date element other than the year")
 
     by_name = {str(d["column"]): d for d in decisions}
     by_index = {f"#{d['index']}": d for d in decisions}
@@ -2770,8 +3253,10 @@ UNIT_FACTORS = (
     # Single letters other than y are not read as units: "96 M" is more often a sex than
     # months, "aged" is not "age" in days, and an unread unit counts as years, which can only
     # over-group. The words of other languages come from column names ("Alter (Monate)").
-    (re.compile(r"y|yr|yrs|years?|yo|y/o|yoa|ys|jahre|jahren|anos|anni|jaar|roky"), 1.0),
-    (re.compile(r"mo|mos|mon|mths?|months?|monate|monaten|meses|mois|mesi|maanden|manader"), 12.0),
+    (re.compile(r"y|yr|yrs|years?|yo|y/o|yoa|ys|jahre|jahren|jahr|anos|ano|anni|anno|anys|any|ans|an|jaar"
+                r"|jaren|ar|aar|lat|let|roky|rok|rokov|vuotta|yil|yas|sui|tuoi|sal|岁|歲|歳|才|세|살"), 1.0),
+    (re.compile(r"mo|mos|mon|mths?|months?|monate|monaten|meses|mes|mois|mesi|maanden|manader|miesiecy"
+                r"|kuukautta"), 12.0),
     (re.compile(r"wk|wks|weeks?|wochen|semanas|semaines|settimane|weken|veckor"), 52.18),
     (re.compile(r"dy|dys|days?|tage|tagen|dias|jours|giorni|dagen|dagar"), 365.25),
     (re.compile(r"hr|hrs|hours?"), 8766.0),
@@ -2796,7 +3281,8 @@ def age_years(v: str, header: str) -> list[float]:
         if factor is not None and (m or tok != "y"):
             base = factor
     out = []
-    for m in re.finditer(r"(\d+(?:\.\d+)?)\s*([A-Za-z]+)?", v):
+    v = _without_accents(v)
+    for m in re.finditer(r"(\d+(?:\.\d+)?)\s*([^\W\d_]+)?", v):
         factor = _unit_factor(m.group(2)) if m.group(2) else None
         out.append(float(m.group(1)) / (factor if factor is not None else base))
     return out
@@ -2816,8 +3302,15 @@ neonates neonatal child children adolescent adolescents teen teens teenager teen
 elderly senior seniors pediatric paediatric geriatric toddler toddlers baby babies preterm term
 anos ano ans an anni jahre jahren jahr j jaar ar lat let roky rok yil v vuotta ev meses mes mois
 mesi monate monat maanden semanas semaines wochen settimane dias jours tage giorni dagen
-岁 歲 才 세 살 лет год года سنة سنوات שנים वर्ष साल ปี ετών ετη
+岁 歲 歳 才 세 살 лет год года سنة سنوات שנים वर्ष साल ปี ετών ετη anys any aar rokov sui tuoi sal
 """.split())
+
+
+def _without_accents(v: str) -> str:
+    """The text with accents dropped and the letters NFKD does not take apart replaced ("años",
+    "år"), recomposed so that Hangul syllables stay whole ("세")."""
+    s = "".join(c for c in unicodedata.normalize("NFKD", str(v)) if not unicodedata.combining(c))
+    return unicodedata.normalize("NFC", s.translate(LETTERS_WITHOUT_DECOMPOSITION))
 
 
 def age_text(v: str) -> bool:
@@ -2827,7 +3320,7 @@ def age_text(v: str) -> bool:
     if not s or fold(s) in MISSING_PHRASES or s in CASELESS_MISSING or AGE_WORD_RX.search(s) \
             or TOOL_OUTPUT.fullmatch(s) or s in TOOL_PLACEHOLDERS:
         return True
-    s = "".join(c for c in unicodedata.normalize("NFKD", s) if not unicodedata.combining(c)).casefold()
+    s = _without_accents(s).casefold()
     rest = re.sub(r"\d+(?:[.,]\d+)?", " ", s)
     rest = re.sub(r"[<>≤≥=~+\-\u2013/().,:;%\[\]]", " ", rest)
     words = rest.split()
@@ -2925,7 +3418,8 @@ def residual_findings(rows: list[dict], headers: list[str], decisions: list[dict
                      if actions[i] == "keep" and i not in kept_on_request]
     shapes = {}
     for i, vals in shape_checked:
-        shape = value_shape_rule(headers[i - 1], vals, reference_year)
+        shape = (value_shape_rule(headers[i - 1], vals, reference_year) or date_part_rule(headers[i - 1], vals)
+                 or coordinate_name_rule(headers[i - 1], vals))
         if shape:
             shapes[i] = (shape[0], shape[3])
             continue
@@ -3028,9 +3522,9 @@ def print_plan(decisions: list[dict], withheld: set[int], changed: dict | None =
         print("\n  Free text, redacted and never kept (a name inside a sentence has no pattern to find): "
               + names(free))
     if withheld:
-        print(f"\n  Column names withheld because they look like values or names: "
-              + ", ".join(f"#{i}" for i in sorted(withheld))
-              + "; the output names them " + ", ".join(f"column_{i}" for i in sorted(withheld)) + ".")
+        print("\n  " + WITHHELD_NOTE.format(
+            positions=", ".join(f"#{i}" for i in sorted(withheld)),
+            names=", ".join(f"column_{i}" for i in sorted(withheld))))
     on_word = kept_unverified_columns(decisions)
     kept = [d for d in decisions if d["action"] == "keep" and d not in on_word]
     if kept:
@@ -3047,6 +3541,14 @@ def print_plan(decisions: list[dict], withheld: set[int], changed: dict | None =
             print("  Of these, text in a script without capital letters (Chinese, Japanese, Korean, Arabic,")
             print("  Hebrew, Hindi, Thai, ...), where not even a titled name inside a longer value is certain")
             print("  to be found: " + names(caseless))
+
+
+WITHHELD_NOTE = ("Column names withheld, because a word in them is not a column word the script knows or "
+                 "they look like a value (a first row of data, or a name): {positions}. The output names "
+                 "them {names}. If the file has no header row, rerun with --no-header, so the first row "
+                 "is read as data. If the person confirms that a withheld name is an ordinary column name "
+                 "with no identifier in it, rerun with --keep-name #N (or --keep-all-names for the whole "
+                 "first row).")
 
 
 KEPT_TEXT_WARNING = ("Columns kept on the person's word are scrubbed for identifier patterns only (phone "
@@ -3076,17 +3578,35 @@ def needing_decision(decisions: list[dict]) -> list[dict]:
             and d["action"] != "keep" and not d["forced_redaction"]]
 
 
-def load_input(path: Path, scrubber: Scrubber, encoding: str | None = None, locale_code: str = "us"):
+def load_input(path: Path, scrubber: Scrubber, encoding: str | None = None, locale_code: str = "us",
+               no_header: bool = False, delimiter: str | None = None, keep_names: set[str] | None = None,
+               keep_all_names: bool = False):
     if not path.is_file():
         raise UsageError(f"input file not found: {path}")
-    data, meta = read_table(path, encoding, locale_code)
+    data, meta = read_table(path, encoding, locale_code, no_header=no_header, delimiter=delimiter)
     headers = list(meta.get("headers") or [])
     if not headers:
         raise UsageError("the file has no header row")
-    refuse_other_separator(headers)
     if not data:
         raise UsageError("the file has a header row but no data rows")
-    return data, meta, headers, check_header_row(headers, scrubber)
+    confirmed = confirmed_names(keep_names or set(), len(headers))
+    if keep_all_names:
+        confirmed = set(range(1, len(headers) + 1))
+    withheld = set() if no_header else check_header_row(headers, scrubber, confirmed)
+    return data, meta, headers, withheld
+
+
+def confirmed_names(refs: set[str], width: int) -> set[int]:
+    """The positions named with --keep-name, which must be written #N: the agent never sees a
+    withheld name, so it cannot name one."""
+    out = set()
+    for ref in refs:
+        m = re.fullmatch(r"#(\d+)", ref.strip())
+        if not m or not 1 <= int(m.group(1)) <= width:
+            raise UsageError(f"--keep-name takes a column position such as #2 (1 to {width}), the way the "
+                             "plan names a withheld column; it does not take a name")
+        out.add(int(m.group(1)))
+    return out
 
 
 # Encodings a locale's exports often use when they are not UTF-8.
@@ -3135,26 +3655,92 @@ def file_encoding(path: Path, requested: str | None, locale_code: str = "us") ->
                      f"{suggestion} (or the encoding the person names). No output was written.")
 
 
-def read_table(path: Path, encoding: str | None = None, locale_code: str = "us"):
-    """upstream.load_tabular with the encoding chosen by file_encoding, not upstream's guess."""
-    enc = file_encoding(path, encoding, locale_code)
-    guess = upstream.detect_encoding
-    if enc:
-        upstream.detect_encoding = lambda _path: enc
+DELIMITERS = {",": ",", "comma": ",", ";": ";", "semicolon": ";", "|": "|", "pipe": "|", "tab": "\t",
+              "\\t": "\t", "\t": "\t"}
+
+
+def _xlsx_rows(path: Path) -> tuple[list[list[str]], int]:
+    """The cell text of the first sheet of a workbook, and how many other sheets it has. No sheet
+    name is printed or kept: a workbook with one sheet per patient names them."""
     try:
-        return upstream.load_tabular(path)
+        import openpyxl
+    except ImportError:
+        raise UsageError("openpyxl is required for .xlsx files (pip install openpyxl), or save the first "
+                         "sheet as 'CSV UTF-8' and run on that")
+    wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+    try:
+        names = list(wb.sheetnames)
+        rows = [[upstream._cell_text(v) for v in row] for row in wb[names[0]].iter_rows(values_only=True)]
     finally:
-        upstream.detect_encoding = guess
+        wb.close()
+    return rows, len(names) - 1
 
 
-def refuse_other_separator(headers: list[str]) -> None:
-    """A file read as one column whose name holds ';', '|' or a tab uses another separator:
-    every row would be one long text value. The message names no header, which in a
-    pivoted table can be a person's name."""
-    if len(headers) == 1 and any(c in str(headers[0]) for c in ";|\t"):
-        raise UsageError("the file was read as one column whose name contains ';', '|' or a tab, so "
-                         "it uses another column separator. Save it as CSV with commas (or as .tsv "
-                         "with tabs) and run again.")
+def read_table(path: Path, encoding: str | None = None, locale_code: str = "us", no_header: bool = False,
+               delimiter: str | None = None):
+    """The rows of a CSV, TSV or Excel file as dicts keyed by column name, and metadata. The first
+    row is the header row unless `no_header`, when the columns are named column_1, column_2, ...
+    and every row is data. A blank header cell is named column_N too. Every message names
+    positions and counts, never a cell: a first row of data, or a sheet name, can be a patient's
+    name (deidentify.py quoted duplicate header names)."""
+    fmt = upstream.detect_format(path)
+    meta = {"format": fmt, "sheets_skipped": [], "delimiter": None}
+    if fmt == "xlsx":
+        if delimiter:
+            raise UsageError("--delimiter applies to CSV and text files, not to an Excel workbook")
+        rows, skipped = _xlsx_rows(path)
+        meta["sheets_skipped"] = [None] * skipped
+        numbered = list(enumerate(rows, start=1))
+    else:
+        sep = DELIMITERS.get(delimiter, delimiter) if delimiter else ("\t" if fmt == "tsv" else ",")
+        if len(sep) != 1:
+            raise UsageError("--delimiter takes one character, or comma, semicolon, pipe or tab")
+        meta["delimiter"] = sep
+        enc = file_encoding(path, encoding, locale_code)
+        numbered = []
+        with open(path, newline="", encoding=enc) as f:
+            reader = csv.reader(f, delimiter=sep)
+            for row in reader:
+                if row:  # a blank line holds no row, as csv.DictReader reads it
+                    numbered.append((reader.line_num, row))
+    if not numbered:
+        raise UsageError("the file is empty")
+    refuse_other_separator([c for c in numbered[0][1]], fmt)
+    if no_header:
+        width = max(len(r) for _, r in numbered)
+        headers = [f"column_{i}" for i in range(1, width + 1)]
+        body = numbered
+    else:
+        first = numbered[0][1]
+        headers = [h if str(h).strip() else f"column_{i}" for i, h in enumerate(first, start=1)]
+        body = numbered[1:]
+    seen: dict[str, int] = {}
+    for i, h in enumerate(headers, start=1):
+        if h in seen:
+            raise UsageError(f"columns #{seen[h]} and #{i} have the same name, so they cannot be told apart. "
+                             "If the first row is data (the file has no header row), rerun with --no-header; "
+                             "otherwise ask the person to give each column a unique name.")
+        seen[h] = i
+    data = []
+    for line, row in body:
+        if len(row) > len(headers) and any(str(c).strip() for c in row[len(headers):]):
+            raise UsageError(f"{path.name}, line {line}: this row has more fields than the header "
+                             f"({len(headers)} columns). Fix the file (for example an unquoted "
+                             f"{'comma' if meta['delimiter'] == ',' else 'separator'}) and run again.")
+        data.append({h: (str(row[i]) if i < len(row) else "") for i, h in enumerate(headers)})
+    meta["headers"] = headers
+    meta["rows"] = len(data)
+    return data, meta
+
+
+def refuse_other_separator(first_row: list[str], fmt: str = "csv") -> None:
+    """A file read as one column whose only cell holds ';', '|' or a tab uses another separator:
+    every row would be one long text value. The message names no cell, which can be a person's
+    name."""
+    if fmt != "xlsx" and len(first_row) == 1 and any(c in str(first_row[0]) for c in ";|\t"):
+        raise UsageError("the file was read as one column whose first cell contains ';', '|' or a tab, so "
+                         "it uses another column separator. Rerun with --delimiter ';' (or '|', or tab), "
+                         "or save it as CSV with commas (or as .tsv with tabs).")
 
 
 def resolve_locale(args) -> dict:
@@ -3167,7 +3753,8 @@ def cmd_plan(args) -> int:
     locale = resolve_locale(args)
     scrubber = Scrubber(locale, args.reference_year)
     data, meta, headers, withheld = load_input(Path(args.input_file), scrubber, args.encoding,
-                                               locale.get("code", "us"))
+                                               locale.get("code", "us"), args.no_header, args.delimiter,
+                                               set(args.keep_name), args.keep_all_names)
     decisions = decide_columns(data, headers, locale, scrubber, set(args.keep), set(args.redact),
                                args.reference_year)
     print("Safe Harbor plan (no cell values are printed)")
@@ -3186,7 +3773,9 @@ def cmd_run(args) -> int:
     scrubber = Scrubber(locale, args.reference_year)
     input_path = Path(args.input_file).resolve()
     out_dir = Path(args.output_dir).resolve()
-    data, meta, headers, withheld = load_input(input_path, scrubber, args.encoding, locale.get("code", "us"))
+    data, meta, headers, withheld = load_input(input_path, scrubber, args.encoding, locale.get("code", "us"),
+                                               args.no_header, args.delimiter, set(args.keep_name),
+                                               args.keep_all_names)
     decisions = decide_columns(data, headers, locale, scrubber, set(args.keep), set(args.redact),
                                args.reference_year)
 
@@ -3221,6 +3810,8 @@ def cmd_run(args) -> int:
         "sheets_not_processed": len(meta.get("sheets_skipped") or []),
         "locale": locale.get("code", "custom"),
         "reference_year": args.reference_year,
+        "header_row": not args.no_header,
+        "delimiter": meta.get("delimiter"),
         "decisions": [
             {"index": d["index"],
              "column": None if d["index"] in withheld else d["column"],
@@ -3288,7 +3879,13 @@ def cmd_run(args) -> int:
     # A column name that looks like a value or a name (a patient's record read as the header row,
     # a ZIP code) is not copied into the output; every other column name is copied as it is.
     rows = [{out_names[c]: row[c] for c in headers} for row in rows]
-    upstream.save_tabular(rows, out_path, upstream.detect_format(input_path))
+    if meta.get("delimiter"):
+        with open(out_path, "w", newline="", encoding="utf-8") as fh:
+            writer = csv.DictWriter(fh, fieldnames=[out_names[c] for c in headers], delimiter=meta["delimiter"])
+            writer.writeheader()
+            writer.writerows(rows)
+    else:
+        upstream.save_tabular(rows, out_path, upstream.detect_format(input_path))
     if not out_path.exists():  # save_tabular falls back to CSV when openpyxl is missing
         alt = out_path.with_suffix(".csv")
         if alt.exists():
@@ -3318,6 +3915,9 @@ def cmd_run(args) -> int:
     if pending:
         print(f"Changed because the script cannot verify them ({len(pending)}); keep one with --keep "
               "COLUMN once the person confirms it: " + ", ".join(display_name(d, withheld) for d in pending))
+    if withheld:
+        print(f"Column names withheld and written as column_N ({len(withheld)}): "
+              + ", ".join(f"#{i}" for i in sorted(withheld)) + "; see the note above (--no-header, --keep-name).")
     print(f"Output: {out_path}")
     print(f"Report: {report_path}")
     if mapping_path is not None:
@@ -3348,17 +3948,32 @@ def report_decisions(path: Path, headers: list[str], report_arg: str | None):
     return decisions, rp.name
 
 
+def report_delimiter(path: Path, report_arg: str | None) -> str | None:
+    """The column separator the run that wrote `path` used, from its report, if there is one."""
+    rp = Path(report_arg) if report_arg else path.parent / REPORT_NAME
+    try:
+        report = json.loads(rp.read_text(encoding="utf-8"))
+        if report.get("output_file") == path.name and report.get("delimiter") in (",", ";", "|", "\t"):
+            return report["delimiter"]
+    except (OSError, ValueError, AttributeError):
+        pass
+    return None
+
+
 def cmd_verify(args) -> int:
     locale = resolve_locale(args)
     scrubber = Scrubber(locale, args.reference_year)
     path = Path(args.input_file)
     if not path.is_file():
         raise UsageError(f"file not found: {path}")
-    data, meta = read_table(path, args.encoding, locale.get("code", "us"))
+    delimiter = args.delimiter or report_delimiter(path, args.report)
+    data, meta = read_table(path, args.encoding, locale.get("code", "us"), delimiter=delimiter)
     headers = list(meta.get("headers") or [])
-    refuse_other_separator(headers)
-    withheld = {i for i, h in enumerate(headers, start=1) if header_looks_like_value(h, scrubber)}
     decisions, used = report_decisions(path, headers, args.report)
+    # The names in a file this tool wrote are column_N or names it showed or the person confirmed;
+    # any other file's names are shown only when they are ordinary column words.
+    withheld = set() if used else {i for i, h in enumerate(headers, start=1)
+                                   if header_looks_like_value(h, scrubber) or not header_shown(h)}
     findings = residual_findings(data, headers, decisions, scrubber, args.reference_year)
     print("Residual identifier check (no cell values are printed)")
     print(f"  file: {path.name}  rows: {len(data)}  columns: {len(headers)}")
@@ -3392,6 +4007,9 @@ def build_parser() -> argparse.ArgumentParser:
         sp.add_argument("--encoding", metavar="NAME",
                         help="text encoding of a CSV or TSV file that is not UTF-8 (for example cp1252, "
                              "latin-1, utf-16-le, euc-kr); the output is always UTF-8")
+        sp.add_argument("--delimiter", metavar="CHAR",
+                        help="column separator of a CSV or text file that does not use commas: ';', '|' or "
+                             "tab (the output uses the same one)")
 
     for name, help_text in (("plan", "show what would happen to each column; writes nothing"),
                             ("run", "de-identify the file")):
@@ -3403,6 +4021,15 @@ def build_parser() -> argparse.ArgumentParser:
                              "identifier patterns inside it are still replaced")
         sp.add_argument("--redact", action="append", default=[], metavar="COLUMN",
                         help="replace every value of a column with [REDACTED] (name or #N)")
+        sp.add_argument("--no-header", action="store_true",
+                        help="the file has no header row: every row is data, and the columns are named "
+                             "column_1, column_2, ...")
+        sp.add_argument("--keep-name", action="append", default=[], metavar="#N",
+                        help="show and copy a withheld column name once the person confirms it is an "
+                             "ordinary column name with no identifier in it")
+        sp.add_argument("--keep-all-names", action="store_true",
+                        help="the person confirmed that the first row holds column names and that none of "
+                             "them carries an identifier: show and copy every one")
         if name == "run":
             sp.add_argument("-o", "--output-dir", required=True,
                             help="folder for the de-identified file and the report")

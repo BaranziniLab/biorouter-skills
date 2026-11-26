@@ -326,6 +326,13 @@ class KeepAndRedactRequests(unittest.TestCase):
         self.assertEqual(sorted(s for s in raw_identifier_strings(raw) if s.lower() in shown), [])
 
 
+def output_names(report: dict, header: list[str]) -> dict[str, str]:
+    """The output name of each input column: its own, or column_N for a name the run withheld
+    (round 3 withholds a column name with a word it does not know, such as "Zxq")."""
+    by_index = {d["index"]: d.get("output_column") or d["column"] for d in report["decisions"]}
+    return {h: by_index[i] for i, h in enumerate(header, start=1)}
+
+
 def write_csv(path: Path, header: list[str], rows: list[list[str]]) -> Path:
     with open(path, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
@@ -530,7 +537,14 @@ class NamesUnderUnlistedHeaders(unittest.TestCase):
         for i, col in enumerate(header):
             if col in ("Insured", "Children", "wavelength_nm", "sex"):
                 self.assertEqual([r[col] for r in out], [row[i] for row in rows], col)
-        kept = run("plan", str(raw), "--keep", "Subject")
+        # Round 3: a column named for the person ("Subject") that holds names is an identifier by its
+        # name, like "Participant", and cannot be kept (it could be kept before). Subject numbers can.
+        refused = run("plan", str(raw), "--keep", "Subject")
+        self.assertEqual(refused.returncode, 2, refused.stdout)
+        self.assertIn("cannot be kept", refused.stderr)
+        numbers = write_csv(self.tmp / "subject_numbers.csv", ["Subject", "sex"],
+                            [[str(1001 + i % 7), "F"] for i in range(30)])
+        kept = run("plan", str(numbers), "--keep", "Subject")
         self.assertEqual(kept.returncode, 0, kept.stderr)
         self.assertIn("[kept on request]", kept.stdout)
 
@@ -1106,11 +1120,13 @@ class YearMonthsAndScriptsWithoutCase(unittest.TestCase):
             rows = [[write(*months[(i + k) % 36]) for k in range(len(self.MONTH_HEADERS))]
                     + ["F" if i % 2 else "M"] for i in range(180)]
             raw = write_csv(self.tmp / f"months_{form}.csv", header, rows)
-            p, out, _ = self.run_file(raw)
+            p, out, report = self.run_file(raw)
             self.assertEqual(p.returncode, 0, (form, p.stdout + p.stderr))
+            # Round 3: "Zxq" is withheld and written as column_N.
+            shown = output_names(json.loads(report.read_text(encoding="utf-8")), header)
             for k, col in enumerate(self.MONTH_HEADERS):
                 expected = [str(months[(i + k) % 36][0]) for i in range(180)]
-                self.assertEqual([r[col] for r in out], expected, (form, col))
+                self.assertEqual([r[shown[col]] for r in out], expected, (form, col))
             self.assertEqual([r["sex"] for r in out], [row[-1] for row in rows])
             # The check finds the months in a file that has no report.
             bad = run("verify", str(raw), "--reference-year", REFERENCE_YEAR)
@@ -1171,8 +1187,10 @@ class YearMonthsAndScriptsWithoutCase(unittest.TestCase):
                 p, out, report = self.run_file(raw, "--locale", locale)
                 self.assertEqual(p.returncode, 0, (script, locale, p.stdout + p.stderr))
                 self.assert_hidden(p, report, names)
+                # Round 3: "Zxq" is withheld and written as column_1.
+                shown = output_names(json.loads(report.read_text(encoding="utf-8")), header)
                 for col in self.SCRIPT_HEADERS:
-                    self.assertTrue(all(re.fullmatch(r"\[REDACTED\]|P\d{4}", r[col]) for r in out),
+                    self.assertTrue(all(re.fullmatch(r"\[REDACTED\]|P\d{4}", r[shown[col]]) for r in out),
                                     (script, locale, col))
                 self.assertEqual([r["sex"] for r in out], [row[-1] for row in rows])
             bad = run("verify", str(raw), "--reference-year", REFERENCE_YEAR)
@@ -1407,8 +1425,11 @@ class FailClosedTextColumns(unittest.TestCase):
         p, out, report = self.run_file(write_csv(self.tmp / "qualified.csv", header + ["sex"], rows))
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         self.assert_hidden(p, out, report, self.FIRST + self.LAST)
+        # Round 3: "Zxq 21" is not a column name the script knows, so the output calls it column_22.
+        names = output_names(report, header + ["sex"])
+        self.assertEqual(names["Zxq 21"], "column_22")
         for col in header:
-            self.assertTrue(all(re.fullmatch(r"\[REDACTED\]|P\d{4}", r[col]) for r in out), col)
+            self.assertTrue(all(re.fullmatch(r"\[REDACTED\]|P\d{4}", r[names[col]]) for r in out), col)
         self.assertEqual([r["sex"] for r in out], [row[-1] for row in rows])
 
     # High (first review) and medium (second review): names under a category word and a role
@@ -1882,7 +1903,13 @@ class NumbersDatesAndHeadersOfRoundTwo(unittest.TestCase):
         values = ["10500", "7200", "11200", "6400", "250000", "180000", "12345", "4500"]
         decided = probe(self.tmp, "decide", [(h, [values[(i + k) % 8] for i in range(64)])
                                              for k, h in enumerate(self.MEASUREMENT_HEADERS)])
-        self.assertEqual([h for h, action, _ in decided if action != "keep"], [], "measurements")
+        # Round 3: a number of days from 10000 up is not a duration (27 years) but may be an Excel
+        # date serial, so "Duration (days)" and "Length of Stay" holding them are no longer kept.
+        self.assertEqual([h for h, action, _ in decided if action != "keep"], ["Duration (days)", "Length of Stay"],
+                         "measurements")
+        short = probe(self.tmp, "decide", [(h, [str(1 + (i * 7) % 900) for i in range(64)])
+                                           for h in ("Duration (days)", "Length of Stay")])
+        self.assertEqual([h for h, action, _ in short if action != "keep"], [])
         # Small whole numbers and decimals are measurements under any name.
         small = probe(self.tmp, "decide", [(h, ["1", "2", "3", "12", "87", "305"] * 5)
                                            for h in ("Value", "Col5", "Result", "Visit No")]
@@ -1942,8 +1969,11 @@ class NumbersDatesAndHeadersOfRoundTwo(unittest.TestCase):
         raw = write_csv(self.tmp / "births.csv", header, rows)
         p, out, report = self.run_file(raw)
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        # Round 3: "ДР" can be a person's initials as well as a birth date, so its name is withheld.
+        shown = output_names(report, header)
+        self.assertTrue(shown["ДР"].startswith("column_"))
         for k, col in enumerate(header):
-            for r, got in zip(index, [row[col] for row in out]):
+            for r, got in zip(index, [row[shown[col]] for row in out]):
                 year = int(births[r[k]][:4])
                 self.assertEqual(got, "[90_OR_OLDER]" if 2026 - year >= 90 else str(year), (col, births[r[k]]))
         # Kept text: a full date of someone over 89 becomes [90_OR_OLDER] too.
@@ -2243,6 +2273,579 @@ class NumbersDatesAndHeadersOfRoundTwo(unittest.TestCase):
         units = probe(self.tmp, "verified", [(h, words[9:]) for h in ("Unit", "Units", "UOM", "Result Unit")])
         for header, flags in race + units:
             self.assertTrue(all(flags), header)
+
+
+# A probe of the table reader with a stand-in for openpyxl, run in a child interpreter like
+# PROBE. openpyxl is not installed where these tests run, so this checks the script's own
+# handling of a workbook (the first sheet only, the header row, --no-header, duplicate names),
+# not openpyxl itself. It prints what the reader returned, and whatever it printed.
+XLSX_PROBE = r"""
+import contextlib, io, json, sys, types
+sys.path.insert(0, sys.argv[1])
+spec = json.load(open(sys.argv[2], encoding="utf-8"))
+
+class Sheet:
+    def __init__(self, rows):
+        self.rows = rows
+    def iter_rows(self, values_only=True):
+        return iter([tuple(r) for r in self.rows])
+
+class Book:
+    def __init__(self, sheets):
+        self.sheetnames = [name for name, _ in sheets]
+        self.sheets = dict(sheets)
+    def __getitem__(self, name):
+        return Sheet(self.sheets[name])
+    def close(self):
+        pass
+
+fake = types.ModuleType("openpyxl")
+fake.load_workbook = lambda path, read_only=True, data_only=True: Book(spec["sheets"])
+sys.modules["openpyxl"] = fake
+import safe_harbor as s
+out = io.StringIO()
+with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+    try:
+        data, meta = s.read_table(s.Path(sys.argv[3]), no_header=spec.get("no_header", False))
+        result = {"headers": meta["headers"], "rows": [[r[h] for h in meta["headers"]] for r in data],
+                  "sheets_skipped": len(meta.get("sheets_skipped") or [])}
+    except s.UsageError as e:
+        result = {"refused": str(e)}
+result["printed"] = out.getvalue()
+print(json.dumps(result, ensure_ascii=False))
+"""
+
+
+# A probe of decide_columns over whole tables, for rules that look at neighbouring columns.
+TABLE_PROBE = r"""
+import json, sys
+sys.path.insert(0, sys.argv[1])
+import safe_harbor as s, deidentify as u
+locale = u.load_locale("us")
+sc = s.Scrubber(locale, 2026)
+out = []
+for table in json.load(open(sys.argv[2], encoding="utf-8")):
+    headers = [h for h, _ in table]
+    n = len(table[0][1])
+    data = [{h: v[i] for h, v in table} for i in range(n)]
+    out.append([[d["column"], d["action"]] for d in s.decide_columns(data, headers, locale, sc, set(), set(), 2026)])
+print(json.dumps(out, ensure_ascii=False))
+"""
+
+
+def table_probe(tmp: Path, tables: list) -> list:
+    path = tmp / "probe_tables.json"
+    path.write_text(json.dumps(tables, ensure_ascii=False), encoding="utf-8")
+    p = subprocess.run([sys.executable, "-I", "-B", "-c", TABLE_PROBE, str(SCRIPT.parent), str(path)],
+                       capture_output=True, text=True, env=dict(os.environ, PYTHONDONTWRITEBYTECODE="1"),
+                       timeout=300)
+    if p.returncode != 0:
+        raise AssertionError(p.stderr[-2000:])
+    return json.loads(p.stdout)
+
+
+class HeadersNumbersAndDatePartsOfRoundThree(unittest.TestCase):
+    """Round 3 of the fail-closed review (2026-11-25, 1.0.1): a first row of data read as the
+    header row, numbers in scientific notation, ages beside one decimal or outlier, numeric
+    month and day columns, coordinates that are alone or not side by side, numbers judged by
+    their majority, Excel serials under time and day names, --keep over identifier words with
+    a qualifier, and the smaller gaps. Each test takes the review's cases and generates more of
+    the same kind. Every name, number, date and place here is invented."""
+
+    SURNAMES = ["Okonkwo", "Quillmont", "Okerbrae", "Varnstead", "Delmorrow", "Fintally", "Graywick",
+                "Haskenvale", "Lorrimere", "Pemberwick"]
+    GIVEN = ["Marguerite", "Thaddeo", "Anwen", "Brisolde", "Maeron", "Velisse", "Corliss", "Isaurel"]
+    OTHER_SCRIPTS = ["山田太郎", "岚溪月", "林子涵", "김민수", "박서윤", "محمد", "يوسف الحسن", "יוסי",
+                     "Иванов", "Ольга Петрова", "Αλέξανδρος", "ราตรี", "प्रिया"]
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="safe_harbor_test_"))
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def run_file(self, path: Path, *extra: str) -> tuple[subprocess.CompletedProcess, list[dict], dict]:
+        out_dir = self.tmp / "out"
+        if out_dir.exists():
+            shutil.rmtree(out_dir)
+        p = run("run", str(path), "-o", str(out_dir), "--reference-year", REFERENCE_YEAR, *extra)
+        out = out_dir / f"{path.stem}_deidentified{path.suffix}"
+        report = out_dir / "deidentification_report.json"
+        return (p, read_rows(out) if out.exists() else [],
+                json.loads(report.read_text(encoding="utf-8")) if report.exists() else {})
+
+    def name_cells(self) -> list[str]:
+        """A first row's cell that is a person's name, in the shapes the review found printed."""
+        s, g = self.SURNAMES, self.GIVEN
+        cells = []
+        for k, last in enumerate(s):
+            first, other = g[k % len(g)], s[(k + 3) % len(s)]
+            cells += [last, first, last.upper(), last.lower(), f"{last} {first[0]}", f"{first[0]}. {last}",
+                      f"Dr. {last}", f"Dr {last}", f"Seen by {last}", f"{last}, {first[0]}",
+                      f"{first.lower()} {last.lower()}", f"{first[0].lower()}{last.lower()}",
+                      f"{last.lower()}.{first.lower()}", f"van der {last}", f"O'{last}", f"{last}-{other}",
+                      f"Mr {last}", f"Mrs. {last}", f"Prof. {last}", f"{last} MD", f"{last} (wife)",
+                      f"Nurse {last}", f"{first} {last}", f"{last} {other}", f"{last}2"]
+        return cells + self.OTHER_SCRIPTS + ["Müllerová", "Ødegårdsen", "Łukasikowa", "Ñandúez"]
+
+    @staticmethod
+    def write_lines(path: Path, rows: list[list[str]]) -> Path:
+        with open(path, "w", newline="", encoding="utf-8") as f:
+            csv.writer(f).writerows(rows)
+        return path
+
+    # High (both reviewers): in a file with no header row, a first row of a single-word or
+    # titled name, sex, a diagnosis and a number was shown, reported and written as the header.
+    def test_a_first_row_of_data_never_shows_a_name(self):
+        cells = self.name_cells()
+        rows = []
+        for c in cells:
+            rows += [[c, "F", "Asthma", "61", "Yes"], [c, "Diagnosis", "Sex"], ["Sex", "Visit", c]]
+        for headers, result in zip(rows, header_probe(self.tmp, rows)):
+            position = headers.index(next(c for c in headers if c in cells)) + 1
+            self.assertTrue(result == "refused" or position in result, (headers, result))
+        # The review's file, end to end: the name is never printed, reported or written.
+        sex = ["F", "M"]
+        dx = ["Asthma", "COPD", "Heart Failure"]
+        body = [[self.SURNAMES[i % 10], sex[i % 2], dx[i % 3], str(30 + i % 50), ["Yes", "No"][i % 2]]
+                for i in range(1, 60)]
+        raw = self.write_lines(self.tmp / "headerless.csv", [["Okonkwo", "F", "Asthma", "61", "Yes"]] + body)
+        plan = run("plan", str(raw))
+        self.assertEqual(plan.returncode, 0, plan.stdout + plan.stderr)
+        self.assertNotIn("Okonkwo", plan.stdout + plan.stderr)
+        self.assertIn("--no-header", plan.stdout)
+        p, out, report = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        written = (self.tmp / "out" / "headerless_deidentified.csv").read_text(encoding="utf-8")
+        self.assertNotIn("Okonkwo", written.splitlines()[0])
+        self.assertNotIn("Okonkwo", p.stdout + p.stderr + json.dumps(report))
+        # With --no-header the first row is data: every row is read, the columns are column_N,
+        # and the names are text the script cannot verify, so they are redacted.
+        p, out, report = self.run_file(raw, "--no-header")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual(len(out), 60)
+        self.assertEqual(list(out[0]), ["column_1", "column_2", "column_3", "column_4", "column_5"])
+        self.assertEqual({r["column_1"] for r in out}, {"[REDACTED]"})
+        self.assertEqual([r["column_2"] for r in out], ["F"] + [row[1] for row in body])
+        shown = p.stdout + p.stderr + json.dumps(report) + json.dumps(out)
+        for name in self.SURNAMES:
+            self.assertNotIn(name, shown)
+        # A first row whose cells repeat (a surname twice) is refused without printing it.
+        twice = self.write_lines(self.tmp / "twice.csv", [["Quillmont", "Quillmont", "F"], ["A", "B", "M"]])
+        p = run("plan", str(twice))
+        self.assertEqual(p.returncode, 2, p.stdout + p.stderr)
+        self.assertNotIn("Quillmont", p.stdout + p.stderr)
+        p = run("plan", str(twice), "--no-header")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertNotIn("Quillmont", p.stdout + p.stderr)
+
+    # The other half of the same finding: ordinary column names are still shown, and a name the
+    # script withheld is shown once the person confirms it.
+    def test_ordinary_column_names_are_shown_and_others_on_the_persons_word(self):
+        ordinary = [
+            "Diagnosis", "Drug", "Medication", "Site", "Arm", "Visit", "Race", "Sex", "Gender", "State",
+            "Country", "Notes", "Age", "Hemoglobin", "Creatinine", "ICD10", "Dx Code", "Admit Date",
+            "Discharge Date", "LOS", "Sodium", "BMI", "Weight (kg)", "Height (cm)", "Smoker", "Alcohol",
+            "Comorbidities", "Outcome", "Mortality", "Readmission", "ED Visit", "ICU Admission",
+            "Ventilator", "Dialysis", "Insurance", "Payer", "Language", "Interpreter Needed",
+            "Marital Status", "Education", "Income", "Employment", "Housing", "BRCA1", "EGFR Mutation",
+            "PD-L1 TPS", "Ki-67", "ER Status", "PR Status", "HER2", "MSI", "TMB", "Tumor Grade",
+            "Histology", "Laterality", "Procedure", "Surgeon", "Anesthesia", "ASA Class",
+            "Blood Loss (mL)", "Complications", "Discharge Disposition", "Follow-up (months)",
+            "Recurrence", "Vital Status", "Days to Death", "Censored", "Event", "Time (days)", "Group",
+            "Treatment", "Control", "Placebo", "Dose (mg)", "Route", "Frequency", "Start Date",
+            "Stop Date", "Adverse Event", "Severity", "Serious", "Related", "Action Taken",
+            "CTCAE Grade", "Lab Test", "Lab Value", "Units", "Reference Low", "Reference High",
+            "Abnormal Flag", "Specimen Type", "Collection Date", "Result Date", "Ordering Department",
+            "Encounter Type", "Encounter Date", "Primary Diagnosis", "Secondary Diagnosis",
+            "Chief Complaint", "Triage Level", "Arrival Mode", "Disposition", "Pain", "GCS",
+            "Temperature", "Pulse", "Resp", "SpO2", "SBP", "DBP", "MAP", "Glucose", "Lactate", "WBC",
+            "Hgb", "Plt", "Na", "K", "Cl", "HCO3", "BUN", "Cr", "AST", "ALT", "Alk Phos", "T Bili",
+            "Albumin", "INR", "PT", "PTT", "Troponin I", "BNP", "CRP", "ESR", "Procalcitonin",
+            "D-dimer", "Ferritin", "LDH", "HbA1c", "TSH", "Free T4", "Vitamin D", "Cholesterol",
+            "LDL-C", "HDL-C", "Triglycerides", "eGFR", "Urine Protein", "Culture Result", "Organism",
+            "Antibiotic", "Susceptibility", "MIC", "Record ID", "MRN", "Subject ID", "Study ID",
+            "Patient ID", "redcap_event_name", "redcap_repeat_instrument", "dob", "sex_at_birth",
+            "zip", "city", "phone", "email", "first_name", "last_name", "age_at_dx", "bmi_cat",
+            "hx_htn", "hx_dm", "meds_count", "visit_1_date", "visit_2_date", "wt_kg", "ht_cm",
+            "sbp_mmhg", "a1c_pct", "egfr_ml_min", "Geschlecht", "Sexo", "Diagnóstico", "Fecha",
+            "Datum", "Peso", "Talla", "Edad", "Alter", "Âge", "性别", "诊断", "日期", "年龄", "성별",
+            "진단", "나이", "Пол", "Диагноз", "Дата", "Возраст", "الجنس", "التشخيص", "מין", "תאריך",
+            "ENSG00000141510", "TP53", "CD4 Count", "Viral Load", "IL-6 pg/mL", "COVID-19 Vaccine",
+            "SARS-CoV-2 PCR", "PHQ-9", "GAD-7", "Unnamed: 0", "Col1", "X", "V12", "Var 3", "Q1", "T0",
+        ]
+        chunks = [ordinary[i:i + 20] for i in range(0, len(ordinary), 20)]
+        for chunk, withheld in zip(chunks, header_probe(self.tmp, chunks)):
+            self.assertEqual(withheld, [], [chunk[i - 1] for i in withheld] if isinstance(withheld, list) else chunk)
+        # A column name the script does not know is withheld until the person confirms it.
+        header = ["Diagnosis", "Haskenvale Score", "Sex"]
+        raw = write_csv(self.tmp / "odd_name.csv", header,
+                        [[["Asthma", "COPD"][i % 2], str(i % 7), "F"] for i in range(30)])
+        plan = run("plan", str(raw))
+        self.assertEqual(plan.returncode, 0, plan.stderr)
+        self.assertNotIn("Haskenvale", plan.stdout)
+        self.assertIn("#2 (name withheld)", plan.stdout)
+        for extra in (["--keep-name", "#2"], ["--keep-all-names"]):
+            p, out, report = self.run_file(raw, *extra)
+            self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+            self.assertIn("Haskenvale Score", p.stdout)
+            self.assertIn("Haskenvale Score", out[0])
+        bad = run("plan", str(raw), "--keep-name", "Haskenvale Score")
+        self.assertEqual(bad.returncode, 2)
+
+    # Medium: numbers in scientific notation, as Excel writes long record, account and phone
+    # numbers in a CSV, were kept under every column name.
+    def test_numbers_written_with_an_exponent_are_not_kept(self):
+        import random
+        rng = random.Random(3)
+        people = [rng.randrange(10 ** 6, 10 ** 7) for _ in range(15)] + [rng.randrange(10 ** 9, 10 ** 10)
+                                                                        for _ in range(5)]
+        forms = [lambda n: f"{n:.5E}", lambda n: f"{n:.5e}", lambda n: f"{n:.4E}".replace("E+0", "E+"),
+                 lambda n: f"{n:.6E}", lambda n: f"{n * 10 ** 4:.5E}"]
+        headers = ["Value", "Result", "Chart", "Col1", "Key", "Ref", "Seen", "Entry", "Record", "Field",
+                   "Info", "Data", "Hosp No", "Pat Nr", "Admit", "Updated", "Created", "When", "Obs", "X3",
+                   "Var7", "Item", "Source", "Contact", "Number", "Account", "Link"]
+        columns = [(h, [forms[k % len(forms)](people[(i * 7) % 20]) for i in range(80)])
+                   for k, h in enumerate(headers)]
+        decided = probe(self.tmp, "decide", columns)
+        self.assertEqual([(h, a) for h, a, _ in decided if a == "keep"], [], "exponent numbers kept")
+        # Under a column name that names a measurement, scientific notation is a measurement.
+        loads = [f"{(i % 9 + 1) * 1.37:.2E}".replace("E+00", "E+06") for i in range(40)]
+        kept = probe(self.tmp, "decide", [(h, loads) for h in ("Viral Load (copies/mL)", "HIV RNA copies",
+                                                               "Platelets", "Total Cost")])
+        self.assertEqual([h for h, a, _ in kept if a != "keep"], [])
+        rows = [[columns[k][1][i] for k in range(4)] + ["F"] for i in range(80)]
+        p, out, report = self.run_file(write_csv(self.tmp / "exponents.csv", headers[:4] + ["Sex"], rows))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        text = json.dumps(out)
+        for c in columns[:4]:
+            for v in set(c[1]):
+                self.assertNotIn(v.split("E")[0].split("e")[0], text)
+        self.assertEqual({d["column"] for d in report["columns_needing_decision"]}, set(headers[:4]))
+
+    # Medium: one decimal, one "<1" or one outlier switched off the over-89 cap.
+    def test_ages_over_89_are_grouped_beside_any_other_value(self):
+        ages = [str(20 + (i * 7) % 69) for i in range(40)] + ["93", "95", "97", "102"]
+        headers = ["Value", "Result", "Kor", "Eta", "Info", "Obs", "Field", "Col4", "Years Seen", "Item",
+                   "Measure", "Entry", "Var2", "Seen", "Px", "Group Value"]
+        odd = ["0.5", "<1", "130", "-1", "1.5", "unknown", ">100", "0", "250", "4.5"]
+        columns = [(h, ages + [odd[k % len(odd)], odd[(k + 3) % len(odd)]]) for k, h in enumerate(headers)]
+        decided = probe(self.tmp, "decide", columns)
+        self.assertEqual([(h, a) for h, a, _ in decided if a != "age"], [], "ages over 89 not grouped")
+        rows = [[columns[k][1][i] for k in range(5)] + ["F"] for i in range(len(columns[0][1]))]
+        p, out, report = self.run_file(write_csv(self.tmp / "ages_mixed.csv", headers[:5] + ["Sex"], rows))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        for col in headers[:5]:
+            self.assertFalse({"93", "95", "97", "102"} & {r[col] for r in out}, col)
+            self.assertIn("90+", {r[col] for r in out}, col)
+
+    # High: numeric month and day-of-month columns were kept, so the admission date could be
+    # rebuilt from the year beside them.
+    def test_numeric_month_and_day_columns_are_date_elements(self):
+        days = [str(1 + (i * 7) % 31) for i in range(93)]
+        months = [str(1 + (i * 5) % 12) for i in range(93)]
+        weekdays = [str(1 + i % 7) for i in range(93)]
+        day_headers = ["Day", "Admit Day", "Visit Day", "Dx Day", "Date Day", "Day of Month", "DayOfMonth",
+                       "DD", "dd", "Day_1", "Day of Admission", "Admission Day", "Discharge Day", "Birth Day",
+                       "Tag", "Jour", "Dia", "Día", "Giorno", "Dag", "入院日", "日", "일", "День", "Event Day",
+                       "Onset Day", "Surgery Day", "Death Day", "Day (admit)", "admit_dd", "dd_admit"]
+        month_headers = ["Month", "Admit Month", "Discharge Month", "Dx Month", "Date Month", "Visit Date Month",
+                         "MM", "mm", "Mon", "Mth", "Month_1", "Mois", "Monat", "Mes", "Mese", "Maand", "入院月",
+                         "月", "월", "Месяц", "Onset Month", "Event Month", "Month of Visit", "admit_mm",
+                         "mm_admit", "Surgery Mth", "Birth Month"]
+        week_headers = ["Weekday", "Day of Week", "DayOfWeek", "DOW", "Admit Weekday", "Wochentag"]
+        columns = ([(h, days) for h in day_headers] + [(h, months) for h in month_headers]
+                   + [(h, weekdays) for h in week_headers])
+        decided = probe(self.tmp, "decide", columns)
+        self.assertEqual([(h, a) for h, a, _ in decided if a == "keep"], [], "date elements kept")
+        # Beside a year: one-letter or two-letter parts of a date that shares the year's name.
+        years = [str(2018 + i % 5) for i in range(60)]
+        tables = [
+            [("Admit Year", years), ("Admit M", months[:60]), ("Admit D", days[:60]), ("Sex", ["F", "M"] * 30)],
+            [("Y", years), ("M", months[:60]), ("D", days[:60])],
+            [("yyyy", years), ("Mo", months[:60]), ("Dy", days[:60])],
+            [("Dx Yr", years), ("Dx Mo", months[:60]), ("Dx Dy", days[:60])],
+            [("D", days[:60]), ("M", months[:60]), ("Y", years)],
+        ]
+        for table in table_probe(self.tmp, tables):
+            for h, a in table:
+                if h in ("Admit Year", "Y", "yyyy", "Dx Yr", "Sex"):
+                    self.assertEqual(a, "keep", (h, table))
+                else:
+                    self.assertNotEqual(a, "keep", (h, table))
+        # A year beside an ordinary small number (a stage) is not a date.
+        table = table_probe(self.tmp, [[("Year of Diagnosis", years), ("Stage", [str(1 + i % 4) for i in range(60)]),
+                                        ("ECOG", [str(i % 3) for i in range(60)])]])[0]
+        self.assertEqual([a for _, a in table], ["keep", "keep", "keep"])
+        # Durations, counts and visit labels stay measurements.
+        controls = probe(self.tmp, "decide", [
+            ("Days", [str(1 + i % 30) for i in range(60)]), ("LOS Days", [str(1 + i % 30) for i in range(60)]),
+            ("Length of Stay (days)", [str(1 + i % 30) for i in range(60)]),
+            ("Months", [str(i % 61) for i in range(60)]), ("Follow-up Months", [str(i % 61) for i in range(60)]),
+            ("Study Day", [str(1 + i * 7) for i in range(60)]), ("Month 6 Pain Score", [str(i % 11) for i in range(60)]),
+            ("Visit Number", months[:60]), ("Stage", [str(1 + i % 4) for i in range(60)]),
+            ("Day 28 Viral Load", [str(40 + i) for i in range(60)])])
+        self.assertEqual([h for h, a, _ in controls if a != "keep"], [])
+        # End to end: the review's table.
+        header = ["Admit Year", "Admit Month", "Admit Day", "Sex"]
+        rows = [[str(2015 + i % 8), months[i], days[i], "F" if i % 2 else "M"] for i in range(93)]
+        p, out, report = self.run_file(write_csv(self.tmp / "dateparts.csv", header, rows))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        actions = {d["column"]: d["action"] for d in report["decisions"]}
+        self.assertEqual(actions["Admit Year"], "keep")
+        self.assertEqual({r["Admit Month"] for r in out} | {r["Admit Day"] for r in out}, {"[REDACTED]"})
+        self.assertEqual({d["column"] for d in report["columns_needing_decision"]}, {"Admit Month", "Admit Day"})
+        self.assertIn("date element", p.stdout)
+
+    # High: latitude, longitude and UTM columns that were alone, not side by side, or under a
+    # name the rules did not know were kept.
+    def test_coordinates_alone_or_apart_are_not_kept(self):
+        import random
+        rng = random.Random(11)
+        lat = [f"{37.2 + rng.random() * 0.6:.5f}" for _ in range(40)]
+        lon = [f"{-122.9 + rng.random() * 0.6:.5f}" for _ in range(40)]
+        near_equator = [f"{1.2 + rng.random() * 0.3:.4f}" for _ in range(40)]
+        east = [f"{550000 + rng.random() * 9000:.2f}" for _ in range(40)]
+        north = [f"{4180000 + rng.random() * 9000:.2f}" for _ in range(40)]
+        headers = ["Home Lon", "Patient Lat", "Patient Long", "Geo_Lat", "geo_lon", "Lat (deg)", "Lt", "Ln",
+                   "Home Lat", "X", "Y", "x_coord", "y_coord", "Coord", "Position", "Location", "Breitengrad",
+                   "Längengrad", "Latitud", "Longitud", "经度", "纬度", "緯度", "위도", "Широта", "Col1", "Value",
+                   "Notes", "Point", "Where", "Geo", "Pos 1"]
+        columns = [(h, (lat, lon, near_equator)[k % 3]) for k, h in enumerate(headers)]
+        columns += [(h, (east, north)[k % 2]) for k, h in enumerate(["Easting", "Northing", "UTM E", "UTM N",
+                                                                    "X", "Y", "Value", "Col2", "Grid Ref"])]
+        decided = probe(self.tmp, "decide", columns)
+        self.assertEqual([(h, a) for h, a, _ in decided if a == "keep"], [], "coordinates kept")
+        # Decimals of four or more places under a measurement name stay; so do two-place decimals
+        # and a column named for the lateral meniscus.
+        controls = probe(self.tmp, "decide", [
+            ("Troponin", [f"0.0{i % 9}{i % 7}{i % 5}" for i in range(40)]),
+            ("Weight kg", [f"{60 + i % 30}.{1000 + i}" for i in range(40)]),
+            ("Propensity Score", [f"0.{4000 + i * 13}" for i in range(40)]),
+            ("Value", [f"{12 + i % 9}.{i % 10}{i % 7}" for i in range(40)]),
+            ("Lat Meniscus Tear", ["Yes", "No"] * 20)])
+        self.assertEqual([h for h, a, _ in controls if a != "keep"], [])
+        # End to end, the review's table: a latitude and a longitude with a column between them.
+        header = ["Home Lat", "Mid", "Home Lon", "Sex"]
+        rows = [[lat[i], ["Asthma", "COPD"][i % 2], lon[i], "F"] for i in range(40)]
+        p, out, report = self.run_file(write_csv(self.tmp / "apart.csv", header, rows))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        text = json.dumps(out)
+        for v in lat + lon:
+            self.assertNotIn(v, text)
+
+    # Medium: a number column was judged by its majority, so up to 49% record numbers, or one
+    # ZIP code, year or serial in a column of small numbers, passed.
+    def test_numbers_are_judged_cell_by_cell(self):
+        import random
+        rng = random.Random(5)
+        records = [str(rng.randrange(10 ** 6, 10 ** 7)) for _ in range(30)]
+        columns = []
+        for share in (0.02, 0.1, 0.3, 0.45):
+            for h in ("Value", "Result", "Col4", "Var", "Obs", "Answer", "Response Value"):
+                vals = [records[i % 30] if rng.random() < share else str(1 + rng.randrange(300)) for i in range(200)]
+                vals[7] = records[0]
+                columns.append((h, vals))
+        for odd in (records[3], "1925", "94110", "1234", "44269.4375", "00512", "4.52783E+06", "552345.12"):
+            for h, base in (("Value", ["12.5", "13.1", "7"]), ("Result", ["3", "4"]), ("Col2", ["0.8", "1.25"])):
+                vals = [base[i % len(base)] for i in range(300)]
+                for i in range(0, 300, 50):
+                    vals[i] = odd
+                columns.append((h, vals))
+        decided = probe(self.tmp, "decide", columns)
+        self.assertEqual([(k, h) for k, (h, a, _) in enumerate(decided) if a == "keep"], [], "kept")
+        header = ["Value", "Result", "Sex"]
+        rows = [[columns[0][1][i], columns[-1][1][i], "F"] for i in range(200)]
+        p, out, report = self.run_file(write_csv(self.tmp / "minority.csv", header, rows))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        text = json.dumps(out)
+        for v in records + ["552345.12"]:
+            self.assertNotIn(v, text)
+
+    # Medium: Excel date and time serials were kept under time and day names, which made them
+    # measurements.
+    def test_excel_serials_under_time_and_day_names_are_dates(self):
+        frac = [f"{43000 + (i * 37) % 900}.{(i * 7919) % 10000:04d}" for i in range(200)]
+        whole = [str(43000 + (i * 37) % 900) for i in range(200)]
+        headers = ["Time", "Event Time", "Start Time", "Visit Day", "Day", "Days", "Duration", "LOS",
+                   "Admit Time", "Time (days)", "Stop Time", "Interval", "Days Since Admission", "Delay",
+                   "Elapsed", "Weeks", "Time Point"]
+        columns = [(h, v) for h in headers for v in (frac, whole)]
+        decided = probe(self.tmp, "decide", columns)
+        self.assertEqual([(h, a) for h, a, _ in decided if a == "keep"], [], "serials kept")
+        # Small units of time and money make large numbers plausible.
+        controls = probe(self.tmp, "decide", [(h, v) for h in ("Minutes", "Seconds", "Duration (min)",
+                                                              "Time (s)", "Hours", "Total Cost")
+                                              for v in (frac, whole)])
+        self.assertEqual([h for h, a, _ in controls if a != "keep"], [])
+
+    # Medium (cut short in the review): --keep was accepted for columns whose names carry an
+    # identifier word, when their values were words: a type or status column of an identifier
+    # word, a person's column name such as Subject, a social network, and phone and postal code
+    # column names in other languages.
+    def test_keep_is_refused_over_identifier_words_holding_names(self):
+        names = [self.SURNAMES[i % 10] for i in range(40)]
+        refused = ["Phone Type", "Email Status", "SSN Flag", "License Status", "Account Type", "Zip Type",
+                   "Address Type", "Name Type", "Patient ID Status", "Username Type", "Device ID Type",
+                   "Subject", "Member", "Donor", "Recipient", "Resident", "Policyholder", "Insured",
+                   "Twitter", "Instagram", "Facebook", "TikTok", "LinkedIn", "WeChat", "Telefon", "Teléfono",
+                   "Telefone", "Telefoon", "Celular", "PLZ", "CEP", "Postleitzahl", "Código Postal",
+                   "Code Postal", "Codice Postale"]
+        header = refused + ["Sex"]
+        raw = write_csv(self.tmp / "named.csv", header, [[names[i]] * len(refused) + ["F"] for i in range(40)])
+        for col in refused:
+            p = run("plan", str(raw), "--keep", col)
+            self.assertEqual(p.returncode, 2, (col, p.stdout))
+            self.assertIn("cannot be kept", p.stderr, col)
+            self.assertNotIn("Quillmont", p.stdout + p.stderr)
+        p, out, report = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        for col in refused:
+            self.assertFalse(set(self.SURNAMES) & {r[col] for r in out}, col)
+        # The same names with category words or numbers are kept, or can be.
+        ok = {"Phone Type": ["Mobile", "Home", "Work"], "Insurance Type": ["Medicare", "Commercial", "Medicaid"],
+              "Subject": [str(1001 + i % 20) for i in range(40)], "Twitter": ["Yes", "No"],
+              "Member": ["Yes", "No"], "Email Status": ["Valid", "Invalid"], "Donor": ["Yes", "No"]}
+        header = list(ok)
+        raw = write_csv(self.tmp / "category.csv", header,
+                        [[ok[h][i % len(ok[h])] for h in header] for i in range(40)])
+        p, out, report = self.run_file(raw, *[a for h in header for a in ("--keep", h)])
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        for col in header:
+            self.assertEqual({r[col] for r in out}, set(ok[col]), col)
+
+    # Low: decimal ages under age names the lists did not know, ages with a unit of years in
+    # another language under an age column in months, and measurement names with an identifier
+    # word at their end.
+    def test_smaller_age_and_record_number_gaps(self):
+        decided = probe(self.tmp, "decide", [(h, ["95.2", "102.7", "45.5", "61.0", "33.3"] * 8)
+                                             for h in ("Kor", "Vanus", "Amzius", "Vecums", "Ageing", "Aging",
+                                                       "Kac yasinda", "Yasi")])
+        self.assertEqual([(h, a) for h, a, _ in decided if a != "age"], [])
+        values = ["94 ans", "95 anos", "95 años", "95 anni", "95 jahre", "95岁", "95歳", "95세", "95 år",
+                  "95 lat", "18 mois", "24"]
+        raw = write_csv(self.tmp / "months_old.csv", ["Months Old", "Sex"], [[v, "F"] for v in values])
+        p, out, _ = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual([r["Months Old"] for r in out], ["90+"] * 10 + ["18 mois", "24"])
+        import random
+        rng = random.Random(9)
+        people = [str(rng.randrange(10 ** 6, 10 ** 7)) for _ in range(20)]
+        decided = probe(self.tmp, "decide", [(h, [people[i % 20] for i in range(120)])
+                                             for h in ("Glucose Case", "Count Episode", "Count Specimen",
+                                                       "Count Patient", "Dose Encounter", "Score Participant",
+                                                       "Level Chart", "Total Subject", "Amount Sample")])
+        self.assertEqual([(h, a) for h, a, _ in decided if a == "keep"], [])
+
+    # Low: a file separated by semicolons (the European Excel default) needed a re-save.
+    def test_a_semicolon_file_is_read_with_delimiter(self):
+        path = self.tmp / "semi.csv"
+        rows = [["Diagnosis", "Sex", "Glucose"]] + [[["Asthma", "COPD"][i % 2], "F", f"{5 + i % 3},1"]
+                                                    for i in range(20)]
+        path.write_text("\n".join(";".join(r) for r in rows) + "\n", encoding="utf-8")
+        p = run("plan", str(path))
+        self.assertEqual(p.returncode, 2)
+        self.assertIn("--delimiter", p.stderr)
+        p, out, report = self.run_file(path, "--delimiter", ";")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        written = self.tmp / "out" / "semi_deidentified.csv"
+        self.assertTrue(written.read_text(encoding="utf-8").startswith("Diagnosis;Sex;Glucose"))
+        ok = run("verify", str(written), "--reference-year", REFERENCE_YEAR)
+        self.assertEqual(ok.returncode, 0, ok.stdout + ok.stderr)
+
+    # Low: the workbook path could not be exercised. With a stand-in for openpyxl: only the first
+    # sheet is read, no sheet name is printed, --no-header works, and duplicate names are refused
+    # without printing them.
+    def test_workbook_reading_with_a_stand_in_for_openpyxl(self):
+        book = self.tmp / "book.xlsx"
+        book.write_bytes(b"PK")
+
+        def read(spec):
+            path = self.tmp / "xlsx_spec.json"
+            path.write_text(json.dumps(spec, ensure_ascii=False), encoding="utf-8")
+            p = subprocess.run([sys.executable, "-I", "-B", "-c", XLSX_PROBE, str(SCRIPT.parent), str(path),
+                                str(book)], capture_output=True, text=True, timeout=60,
+                               env=dict(os.environ, PYTHONDONTWRITEBYTECODE="1"))
+            self.assertEqual(p.returncode, 0, p.stderr[-2000:])
+            return json.loads(p.stdout)
+
+        sheets = [["Okerbrae Family", [["Diagnosis", "Sex", None], ["Asthma", "F", None], ["COPD", 1, 2.5]]],
+                  ["Quillmont", [["x"], ["y"]]]]
+        got = read({"sheets": sheets})
+        self.assertEqual(got["headers"], ["Diagnosis", "Sex", "column_3"])
+        self.assertEqual(got["rows"], [["Asthma", "F", ""], ["COPD", "1", "2.5"]])
+        self.assertEqual(got["sheets_skipped"], 1)
+        self.assertNotIn("Okerbrae", got["printed"] + json.dumps(got))
+        self.assertNotIn("Quillmont", got["printed"] + json.dumps(got))
+        got = read({"sheets": sheets[:1], "no_header": True})
+        self.assertEqual(got["headers"], ["column_1", "column_2", "column_3"])
+        self.assertEqual(len(got["rows"]), 3)
+        got = read({"sheets": [["S", [["Varnstead", "Varnstead"], ["a", "b"]]]]})
+        self.assertIn("refused", got)
+        self.assertNotIn("Varnstead", got["refused"] + got["printed"])
+
+    def test_regression_table_of_an_ordinary_clinical_export_after_round_three(self):
+        import random
+        rng = random.Random(33)
+        records = [str(rng.randrange(10 ** 6, 10 ** 7)) for _ in range(25)]
+        cols = {
+            "Record ID": lambda i: records[i % 25],
+            "Diagnosis": lambda i: ["Heart Failure", "Type 2 Diabetes", "Asthma", "Chronic Kidney Disease"][i % 4],
+            "ICD-10": lambda i: ["I50.9", "E11.9", "J45.909", "N18.3"][i % 4],
+            "Drug": lambda i: ["Metformin", "Lisinopril", "Albuterol", "Furosemide"][i % 4],
+            "Dose (mg)": lambda i: ["500", "10", "2.5", "40"][i % 4],
+            "Specimen Site": lambda i: ["Breast", "Lung", "Colon", "Prostate"][i % 4],
+            "Study Site": lambda i: ["Site 01", "Site 02", "Site 03"][i % 3],
+            "Hemoglobin": lambda i: f"{9 + (i % 70) / 10:.1f}",
+            "Creatinine": lambda i: f"{0.5 + (i % 30) / 10:.2f}",
+            "Troponin": lambda i: f"{(i % 50) / 1000:.4f}",
+            "Pain Score": lambda i: str(i % 11),
+            "ECOG": lambda i: str(i % 4),
+            "Charlson Index": lambda i: str(i % 9),
+            "Gene Symbol": lambda i: ["TP53", "EGFR", "KRAS", "BRAF"][i % 4],
+            "Ensembl ID": lambda i: ["ENSG00000141510", "ENSG00000146648", "ENSG00000133703"][i % 3],
+            "Variant": lambda i: ["p.V600E", "c.35G>A", "p.G12D"][i % 3],
+            "Treatment Arm": lambda i: ["Placebo", "Arm A", "Arm B"][i % 3],
+            "Visit": lambda i: ["Screening", "Baseline", "Week 4", "End of Study"][i % 4],
+            "Visit Number": lambda i: str(1 + i % 6),
+            "Study Day": lambda i: str(1 + (i * 7) % 400),
+            "Admit Year": lambda i: str(2015 + i % 9),
+            "Length of Stay (days)": lambda i: str(1 + i % 21),
+            "Age": lambda i: str([34, 61, 95, 47, 102, 18][i % 6]),
+            "Race": lambda i: ["White", "Asian", "Black or African American"][i % 3],
+            "Sex": lambda i: ["Female", "Male"][i % 2],
+            "State": lambda i: ["California", "Oregon", "Nevada"][i % 3],
+            "Country": lambda i: ["United States", "Mexico", "Canada"][i % 3],
+            "Smoking Status": lambda i: ["Never smoker", "Former smoker", "Current every day smoker"][i % 3],
+            "Weight (kg)": lambda i: f"{50 + (i * 3) % 70}.{i % 10}",
+            "Notes": lambda i: ["Patient tolerated the infusion well and will return for the next cycle.",
+                                "Reports mild nausea after the second dose, managed at home."][i % 2],
+        }
+        self.assertEqual(len(cols), 30)
+        header = list(cols)
+        rows = [[cols[h](i) for h in header] for i in range(200)]
+        raw = write_csv(self.tmp / "clinical30_r3.csv", header, rows)
+        unverified = ["Diagnosis", "Drug", "Specimen Site", "Study Site", "Gene Symbol", "Treatment Arm", "Visit"]
+        expected = {h: "keep" for h in header}
+        expected.update({h: "redact" for h in unverified + ["Notes"]})
+        expected.update({"Record ID": "pseudonym_id", "Age": "age"})
+        p, out, report = self.run_file(raw)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual({d["column"]: d["action"] for d in report["decisions"]}, expected)
+        self.assertEqual([d["column"] for d in report["columns_needing_decision"]], unverified)
+        self.assertFalse(any(d["name_withheld"] for d in report["decisions"]))
+        for k, col in enumerate(header):
+            if expected[col] == "keep":
+                self.assertEqual([r[col] for r in out], [row[k] for row in rows], col)
+        p, out, report = self.run_file(raw, *[a for h in unverified for a in ("--keep", h)])
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        for k, col in enumerate(header):
+            if col in unverified:
+                self.assertEqual([r[col] for r in out], [row[k] for row in rows], col)
+        self.assertEqual([d["column"] for d in report["kept_unverified_columns"]], unverified)
+        ok = run("verify", str(self.tmp / "out" / "clinical30_r3_deidentified.csv"), "--reference-year",
+                 REFERENCE_YEAR)
+        self.assertEqual(ok.returncode, 0, ok.stdout + ok.stderr)
 
 
 class NoNetwork(unittest.TestCase):
