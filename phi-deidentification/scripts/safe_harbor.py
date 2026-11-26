@@ -15,9 +15,10 @@ decisions and placeholders only: never a cell value of the input, so the chat
 that started it never sees the raw data.
 
     python3 safe_harbor.py plan   INPUT [--locale us] [--keep COL] [--redact COL]
+                                  [--encoding NAME]
     python3 safe_harbor.py run    INPUT --output-dir DIR [--locale us] [--keep COL]
                                   [--redact COL] [--reference-year YYYY]
-                                  [--mapping-out FILE]
+                                  [--mapping-out FILE] [--encoding NAME]
     python3 safe_harbor.py verify FILE [--locale us] [--reference-year YYYY]
 
 What it does, per the 18 identifiers of 45 CFR 164.514(b)(2), is listed in
@@ -25,11 +26,14 @@ references/safe-harbor-mode.md. In short: identifier columns found by name
 are replaced (names and record numbers by pseudonyms, dates by their year,
 ZIP codes by their first three digits or 000, ages over 89 by "90+", the rest
 by [REDACTED]). Every other column fails closed: it is kept only when every
-value is verified as a number, a code of a closed grammar, a word of a closed
-vocabulary (sex, race, yes and no, ...), a date or an allowed state or country.
-Any other text is redacted until the person keeps it with --keep; free text can
-never be kept. Every kept cell is scrubbed of identifier patterns, and the
-output is scanned again before it is kept.
+value is verified as a measurement (a decimal, a whole number of up to three
+digits, or a longer one under a column name that names a measurement), a code of
+a closed grammar, a word of a closed vocabulary (sex, yes and no, ...), a date or
+an allowed state or country. Any other text, and numbers it cannot tell from
+record numbers, dates, ZIP codes or ages, are changed until the person keeps them
+with --keep; free text can never be kept. Every kept cell is scrubbed of
+identifier patterns, and the output is scanned again before it is kept. A file
+that is not UTF-8 is refused unless --encoding names its encoding.
 
 Exit codes: 0 done and the output passed the residual check; 2 refused (bad
 arguments, a file it cannot read, a header row that looks like data); 3 the
@@ -66,6 +70,7 @@ for _name in ("connect", "connect_ex", "sendto", "sendmsg", "bind"):
 sys.dont_write_bytecode = True
 
 import argparse  # noqa: E402
+import codecs  # noqa: E402
 import csv  # noqa: E402
 import json  # noqa: E402
 import logging  # noqa: E402
@@ -192,6 +197,21 @@ def _year_and_month(m: re.Match):
     if len(month) == 2 and int(month) == (int(m.group("y")) + 1) % 100:
         return None
     return m.group("y")
+
+
+def cap_old_year(year: str, reference_year: int) -> str:
+    """[90_OR_OLDER] for a four-digit year at least 90 years before the reference year: as the
+    year of a birth date it reveals an age over 89, so no date column keeps it."""
+    if re.fullmatch(r"\d{4}", year) and reference_year - int(year) >= 90:
+        return "[90_OR_OLDER]"
+    return year
+
+
+def _capped_year(repl, reference_year: int):
+    def capped(m: re.Match):
+        out = repl(m)
+        return cap_old_year(out, reference_year) if isinstance(out, str) else out
+    return capped
 
 
 def _keep_label(placeholder: str):
@@ -408,8 +428,9 @@ PATTERNS: list[tuple[str, re.Pattern, object]] = [
     ("name", re.compile(r"(?:\b(?:Mr|Mrs|Ms|Mx|Miss|Dr|Prof)\.?\s*|(?i:\b" + NAME_LABELS + r")\s*[:=]?\s*)"
                         r"(?P<v>" + CASELESS_CLASS + r"+(?:[\s\u30fb\u00b7]" + CASELESS_CLASS + r"+){0,2})"),
      _caseless_labelled_name),
-    # Ages over 89.
-    ("age", re.compile(r"(?i)\b(?:" + AGE_NUM + "|" + AGE_WORD + r")\s*-?\s*(?:years?(?:[\s-]*old)?|yrs?|y/o|y\.?o\.?|yo)(?![\w])"), _age90),
+    # Ages over 89 ("92 years old", "93 yo", "95 y", "95y"; "95 y/n" is not one).
+    ("age", re.compile(r"(?i)\b(?:" + AGE_NUM + "|" + AGE_WORD + r")\s*-?\s*(?:years?(?:[\s-]*old)?|yrs?|y/o|y\.?o\.?|yo"
+                       r"|y\.?(?![\w/]))(?![\w])"), _age90),
     # "(?![\d.+])" keeps "aged 90+" from matching again.
     ("age", re.compile(r"(?i)\b(?P<label>age[ds]?)\s*[:=]?\s*(?:" + AGE_NUM + r"(?![\d.+])|" + AGE_WORD + r"\b)"), _age_label),
     # "92F" or "92 M" at the start of a cell or after "a"/"an" ("a 92F with CHF"); a
@@ -427,8 +448,11 @@ PATTERNS: list[tuple[str, re.Pattern, object]] = [
     ("photo", re.compile(r"(?i)(?<![\w.-])[\w./\\~:-]*[\w-]\.(?:jpe?g|png|gif|bmp|tiff?|heic|heif|webp|dcm|dicom)(?![\w])"), "[IMAGE_FILE]"),
     ("biometric", re.compile(r"(?i)(?<![0-9a-f])[0-9a-f]{32,}(?![0-9a-f])"), "[BIOMETRIC_OR_CODE]"),
     ("biometric", re.compile(r"(?<![A-Za-z0-9+/=])(?=[A-Za-z0-9+/]*\d)(?=[A-Za-z0-9+/]*[A-Za-z])[A-Za-z0-9+/]{40,}={0,2}(?![A-Za-z0-9+/=])"), "[BIOMETRIC_OR_CODE]"),
-    # Any other unique identifying number or code.
+    # Any other unique identifying number or code, also with thousands separators
+    # ("274,365,867"), which a nine-digit number written as money would otherwise dodge.
     ("code", re.compile(r"(?<![\d.])\d{9,}(?![\d.])"), _long_number),
+    ("code", re.compile(r"(?<![\d.,])\d{1,3}(?:,\d{3}){2,}(?![\d,]|\.\d)"),
+     lambda m: "[ID]" if len(_digits(m.group(0))) >= 9 else None),
     ("code", re.compile(r"(?<![\w-])[A-Za-z0-9]+(?:-[A-Za-z0-9]+)+(?![\w-])|(?<![\w-])(?=[A-Za-z]*\d)(?=\d*[A-Za-z])[A-Za-z0-9]{6,}(?![\w-])"), _code),
 ]
 
@@ -453,9 +477,14 @@ class Scrubber:
 
     def __init__(self, locale: dict, reference_year: int | None = None):
         year = reference_year if reference_year is not None else date.today().year
+        self.reference_year = year
+        # A date of 90 or more years ago keeps no year: as a birth date it reveals an age over
+        # 89, and a date that old in a clinical table is almost always one (DOB 1925-03-14).
+        patterns = [(kind, rx, _capped_year(repl, year) if repl in (_year_of, _year_and_month) else repl)
+                    for kind, rx, repl in PATTERNS]
         # The year after "born" or "DOB" is judged once full dates have become years.
-        at = next(i for i, (kind, _, _) in enumerate(PATTERNS) if kind == "phone")
-        self.patterns = PATTERNS[:at] + [birth_year_pattern(year)] + PATTERNS[at:] + locale_patterns(locale)
+        at = next(i for i, (kind, _, _) in enumerate(patterns) if kind == "phone")
+        self.patterns = patterns[:at] + [birth_year_pattern(year)] + patterns[at:] + locale_patterns(locale)
 
     def scrub(self, text: str) -> tuple[str, list[str]]:
         """The text with every identifier pattern replaced, and the types replaced."""
@@ -485,14 +514,13 @@ class Scrubber:
             return new
         return rx.sub(sub, text)
 
-    @staticmethod
-    def _scrub_number(text: str, found: list[str]) -> tuple[str, list[str]]:
+    def _scrub_number(self, text: str, found: list[str]) -> tuple[str, list[str]]:
         """A plain number is a measurement, except a compact date, a telephone number
         in international form (+14155550134) or a long ID."""
         s = text.strip()
         if re.fullmatch(YEAR4 + r"(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])", s):
             found.append("date")
-            return s[:4], found
+            return cap_old_year(s[:4], self.reference_year), found
         if re.fullmatch(r"\+\d{8,15}", s):
             found.append("phone")
             return "[PHONE]", found
@@ -506,11 +534,18 @@ class Scrubber:
 
 
 # ================================================================ columns
+LETTERS_WITHOUT_DECOMPOSITION = str.maketrans({"\u00f8": "o", "\u00d8": "O", "\u00e6": "ae", "\u00c6": "Ae",
+                                               "\u0131": "i", "\u0142": "l", "\u0141": "L", "\u0111": "d",
+                                               "\u0110": "D", "\u0153": "oe", "\u0152": "Oe",
+                                               "\u00fe": "th", "\u00f0": "d"})
+
+
 def column_tokens(header: str) -> list[str]:
     # Accents are dropped first, so "Médecin" and "Ärztin" are read as medecin and arztin
     # rather than split at the accented letter.
     s = "".join(c for c in unicodedata.normalize("NFKD", str(header)) if not unicodedata.combining(c))
-    s = s.replace("\u00df", "ss")
+    # Letters NFKD does not take apart ("Fødselsdato", "Yıl", "Płeć", "Ærø").
+    s = s.replace("\u00df", "ss").translate(LETTERS_WITHOUT_DECOMPOSITION)
     s = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s)
     s = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", s)
     toks = [t for t in re.split(r"[^a-z0-9]+", s.lower()) if t]
@@ -584,7 +619,9 @@ BIRTH_YEAR_TOKENS = {"byear", "byr", "yob", "birthyear", "birthyr", "yrbirth", "
 YEAR_TOKENS = {"year", "yr", "yrs", "yyyy", "y"}
 # "birth" or "born" with one of these is a place, which is geography smaller than a state.
 BIRTH_PLACE_WORDS = {"place", "city", "town", "village", "county", "location", "municipality",
-                     "address", "zip", "zipcode", "postcode", "birthplace"}
+                     "address", "zip", "zipcode", "postcode", "birthplace", "lugar", "lieu", "luogo",
+                     "local", "ort", "ciudad", "ville", "citta", "cidade", "stadt", "tempat", "yeri",
+                     "noi", "plaats", "sted", "ort"}
 # "birth" with one of these describes the birth, not its date.
 BIRTH_NOT_A_DATE = {"weight", "wt", "length", "len", "height", "order", "rank", "plurality",
                     "outcome", "outcomes", "type", "defect", "defects", "control", "rate",
@@ -594,7 +631,9 @@ BIRTH_NOT_A_DATE = {"weight", "wt", "length", "len", "height", "order", "rank", 
                     "spacing", "interval", "complication", "complications", "history", "hx",
                     "status", "season", "circumference", "head", "apgar", "presentation",
                     "route", "delivery", "multiple", "twin", "singleton", "registry", "anomaly",
-                    "anomalies", "country", "state", "province", "nationality", "cohort"}
+                    "anomalies", "country", "state", "province", "nationality", "cohort", "pais",
+                    "pays", "paese", "land", "estado", "staat", "peso", "gewicht", "poids", "talla",
+                    "laenge", "orden", "rang", "tipo", "typ", "sexo", "geschlecht", "sexe", "sesso"}
 # One-word age columns: ageyrs, agegroup, ageatdx, ...
 AGE_TOKEN = re.compile(r"age(?:s|d|yrs?|years?|yo|y|mos?|months?|wks?|weeks?|days?|hrs?|hours?"
                        r"|grp|groups?|cats?|category|categories|bands?|bins?|ranges?|class"
@@ -606,31 +645,58 @@ def _is_age_token(token: str) -> bool:
 
 
 # "Age" in other languages. These words mean age wherever they stand in a column name
-# ("Edad al diagnostico", "Idade (anos)").
+# ("Edad al diagnostico", "Idade (anos)", "Alter bei Diagnose", "Ålder vid diagnos", "Věk
+# (roky)"). "Alter" and "alder" are English words too, but hardly in a column name. Words for
+# age that have a common other meaning ("Kor" in Hungarian; "Eta" in Italian, which is also an
+# arrival time) are not here: their numbers are judged by number_rule like any column's.
 AGE_WORDS_OTHER_LANGUAGES = frozenset({"edad", "idade", "leeftijd", "wiek", "umur", "usia", "tuoi",
-                                       "eletkor", "varsta", "lebensalter", "levensjaar"})
-# These mean age only alone or beside a word for years ("Alter", "Alter in Jahren", "Alder
-# (ar)"), because they are English words or abbreviations too. Italian "eta" counts with its
-# accent ("Età") or beside "anni", because ETA is also an arrival time.
-AGE_WORDS_ALONE = frozenset({"alter", "alder", "yas", "vek", "ika", "starost"})
-YEAR_WORDS_OTHER_LANGUAGES = frozenset({"jahre", "jahren", "j", "anni", "anos", "ans", "annees", "jaar",
-                                        "jaren", "ar", "lat", "let", "years", "yrs", "in", "en", "di", "em"})
+                                       "eletkor", "varsta", "lebensalter", "levensjaar", "alter", "alder",
+                                       "yas", "vek", "ika", "starost", "edat", "edats"})
+# German and Scandinavian compounds of the word ("Patientenalter", "Aufnahmealter", "Alters",
+# "Altersgruppe", "Aldersgruppe").
+NOT_AGE_COMPOUNDS = frozenset({"falter", "halter", "psalter", "salter", "walter", "alderman", "alderney",
+                               "alderson", "alderton", "alderwood", "alderbrook", "aldershot"})
+# Units an age is counted in, among the column-name tokens ("Years Old", "Months Old", "Alter
+# (Monate)").
+AGE_UNIT_WORDS = frozenset({"year", "years", "yr", "yrs", "month", "months", "mo", "mos", "week", "weeks",
+                            "wk", "wks", "day", "days", "hours", "hrs", "jahre", "jahren", "monate",
+                            "monaten", "monat", "wochen", "tage", "tagen", "anos", "meses", "semanas",
+                            "dias", "ans", "mois", "semaines", "jours", "anni", "mesi", "settimane",
+                            "giorni", "jaar", "maanden", "weken", "dagen", "ar", "manader", "veckor",
+                            "dagar", "roky", "mesice", "dny"})
+# Words for years: a column named for them holding numbers over 89 holds ages (value_shape_rule).
+YEAR_WORDS_OTHER_LANGUAGES = frozenset({"jahre", "jahren", "anni", "anos", "ans", "annees", "jaar",
+                                        "jaren", "roky", "rokov", "let", "lata", "vuotta", "yil", "ev",
+                                        "evek", "godina", "godine", "yillar"})
 # The same in scripts the column-name tokens do not read: Chinese, Japanese and Korean words
 # are found inside a name, words of other scripts as whole words.
-AGE_WORDS_CJK = ("年龄", "年齡", "年齢", "岁", "歲", "나이", "연령")
-AGE_WORDS_OTHER_SCRIPTS = frozenset({"возраст", "возраста", "вік", "عمر", "العمر", "السن", "سن", "גיל",
-                                     "आयु", "उम्र", "อายุ", "ηλικία", "ηλικια"})
+AGE_WORDS_CJK = ("年龄", "年齡", "年齢", "年纪", "年紀", "岁", "歲", "나이", "연령", "연세")
+AGE_WORDS_OTHER_SCRIPTS = frozenset({"возраст", "возраста", "вік", "віку", "عمر", "العمر", "السن", "سن",
+                                     "גיל", "आयु", "उम्र", "อายุ", "ηλικία", "ηλικια", "বয়স", "বয়স",
+                                     "வயது", "వయస్సు", "ವಯಸ್ಸು", "വയസ്സ്", "ਉਮਰ", "ઉંમર", "वय", "ასაკი",
+                                     "տարիք", "жас"})
+
+
+def _age_word_token(t: str) -> bool:
+    """One column-name token that says age: a word of AGE_WORDS_OTHER_LANGUAGES, or a German or
+    Scandinavian compound of one ("patientenalter", "alters", "aldersgruppe")."""
+    if t in AGE_WORDS_OTHER_LANGUAGES:
+        return True
+    if t in NOT_AGE_COMPOUNDS:
+        return False
+    return (len(t) > 5 and t.endswith("alter")) or t.startswith(("alters", "aldersg", "alderen"))
 
 
 def age_in_other_language(header: str, tokens: list[str]) -> bool:
     """True for a column name that says age in a language other than English or French
-    ("Edad", "Alter", "Idade", "年龄", "年齢", "나이", "Возраст", "العمر")."""
-    if set(tokens) & AGE_WORDS_OTHER_LANGUAGES:
+    ("Edad", "Alter bei Diagnose", "Patientenalter", "Idade", "年龄", "年纪", "나이", "연세",
+    "Возраст", "العمر", "বয়স"), or that names an age by its unit ("Years Old", "Months Old")."""
+    if any(_age_word_token(t) for t in tokens):
         return True
-    if set(tokens) & AGE_WORDS_ALONE and not set(tokens) - AGE_WORDS_ALONE - YEAR_WORDS_OTHER_LANGUAGES:
+    if "old" in tokens and set(tokens) & AGE_UNIT_WORDS:
         return True
     raw = unicodedata.normalize("NFKC", str(header)).casefold()
-    if "eta" in tokens and ("et\u00e0" in raw or set(tokens) & {"anni", "paziente"}):
+    if "eta" in tokens and ("età" in raw or set(tokens) & {"anni", "paziente"}):
         return True
     if any(w in raw for w in AGE_WORDS_CJK):
         return True
@@ -810,6 +876,71 @@ NAME_TRAILING = frozenset({"name", "names", "nm", "initials", "first", "last", "
                            "surname", "surnames", "firstname", "lastname", "fullname"})
 
 
+# "Birth" in other languages, as column-name tokens (accents already dropped).
+BIRTH_WORDS_OTHER_LANGUAGES = frozenset({"natal", "natalicio", "geburt", "naissance", "nacimiento", "nasc",
+                                         "nascimento", "nascita", "lahir", "dogum", "nacim", "nasci",
+                                         "nacido", "nacida", "geboren", "fodsel", "fodt",
+                                         "fodelse", "syntyma", "narozeni", "urodzenia", "szuletes"})
+# Single tokens that are a birth date ("BDate" splits into b and date, "Geburtsdatum" does not).
+BIRTH_DATE_TOKENS = frozenset({"bdate", "bdt", "bday", "geburtstag", "geburtsdatum", "gebdatum", "gebdat",
+                               "gebdt", "fdn", "fnac", "fechanac", "fechanacimiento", "datanasc",
+                               "datanascita", "fodselsdato", "fodelsedatum", "syntymaaika",
+                               "syntymapaiva", "geboortedatum", "dob", "ddn", "dnasc"})
+BIRTH_DATE_WORDS = frozenset({"date", "dt", "fecha", "fec", "fe", "f", "data", "datum", "dato", "tarihi",
+                              "tanggal", "ngay", "dia", "giorno", "jour", "tag"})
+BIRTH_YEAR_WORDS = frozenset({"jahr", "ano", "anos", "anno", "annee", "tahun", "nam", "yili", "rok",
+                              "roku", "aar", "ar", "vuosi"})
+# Birth dates, birth years and places of birth in scripts the column-name tokens do not read.
+BIRTH_DATE_PHRASES = ("出生日期", "出生日", "出生年月日", "生年月日", "誕生日", "生日", "생년월일", "출생일",
+                      "생일", "дата рождения", "день рождения", "дата народження", "تاريخ الميلاد",
+                      "تاريخ الولادة", "תאריך לידה", "जन्मतिथि", "जन्म तिथि", "जन्म दिनांक", "जन्मदिन",
+                      "วันเกิด", "วันเดือนปีเกิด", "ημερομηνία γέννησης", "ημερομηνια γεννησης")
+BIRTH_YEAR_PHRASES = ("出生年", "出生年份", "生年", "출생연도", "출생년도", "출생년", "год рождения",
+                      "سنة الميلاد", "שנת לידה", "जन्म वर्ष", "ปีเกิด", "έτος γέννησης")
+BIRTH_PLACE_PHRASES = ("出生地", "出身地", "籍贯", "출생지", "место рождения", "مكان الميلاد", "מקום לידה",
+                       "जन्मस्थान", "जन्म स्थान", "สถานที่เกิด", "τόπος γέννησης")
+BIRTH_SHORT_TOKENS = frozenset({"др", "д.р", "д р"})
+
+
+def birth_in_other_script(header: str, tokens: list[str]) -> tuple[str, str, str] | None:
+    """A birth date, a birth year or a place of birth named in a script the column-name tokens
+    do not read ("出生日期", "생년월일", "Дата рождения", "ДР", "تاريخ الميلاد", "תאריך לידה")."""
+    raw = " ".join(unicodedata.normalize("NFKC", str(header)).casefold().replace("_", " ").split())
+    words = set(re.split(r"[\s/,;:()\[\]]+", raw))
+    if any(p in raw for p in BIRTH_PLACE_PHRASES):
+        return ("place of birth", "redact", "address")
+    if any(p in raw for p in BIRTH_DATE_PHRASES) or words & BIRTH_SHORT_TOKENS:
+        return ("date of birth", "birth_date", "date")
+    if any(p in raw for p in BIRTH_YEAR_PHRASES):
+        return ("year of birth", "birth_year", "date")
+    return None
+
+
+# "Name" in scripts the column-name tokens do not read. These are a person's name wherever they
+# stand ("患者姓名", "母亲姓名"): 姓 is a surname, and 성명 and 성함 are said only of people.
+SCRIPT_NAME_ANYWHERE = ("姓名", "氏名", "성명", "성함", "фио", "ф.и.о")
+# These name a thing as often as a person ("药品名字", "약품이름", "اسم الدواء"), so they count
+# alone or beside a word for the patient ("患者名前", "환자 이름", "اسم المريض", "שם החולה").
+SCRIPT_NAME_WORDS = frozenset({"名前", "名字", "이름", "اسم", "الاسم", "שם", "नाम", "ชื่อ", "имя",
+                               "фамилия", "отчество", "ім'я", "прізвище", "όνομα", "ονομα", "επώνυμο",
+                               "επωνυμο", "ชื่อสกุล", "นามสกุล", "שם משפחה", "שם פרטי"})
+SCRIPT_PATIENT_WORDS = ("患者", "病人", "病患", "환자", "المريض", "مريض", "החולה", "חולה", "रोगी", "मरीज",
+                        "का", "की", "ผู้ป่วย", "пациента", "пациент", "больного", "ασθενούς", "του")
+
+
+def name_in_other_script(header: str) -> tuple[str, str, str] | None:
+    raw = " ".join(unicodedata.normalize("NFKC", str(header)).casefold().replace("_", " ").split())
+    if any(w in raw for w in SCRIPT_NAME_ANYWHERE):
+        return ("name (a word for name in another script)", "pseudonym_name", "name")
+    rest = raw
+    for w in sorted(SCRIPT_PATIENT_WORDS, key=len, reverse=True):
+        rest = rest.replace(w, " ")
+    words = [w for w in re.split(r"[\s/,;:()\[\].\-]+", rest) if w]
+    if words and (" ".join(words) in SCRIPT_NAME_WORDS or all(w in SCRIPT_NAME_WORDS for w in words)):
+        return ("name (a word for name in another script)", "pseudonym_name", "name")
+    return None
+
+
 def name_rule(header: str) -> tuple[str, str, str] | None:
     """(finding, action, phi type) for a column whose name marks a Safe Harbor identifier.
 
@@ -820,10 +951,21 @@ def name_rule(header: str) -> tuple[str, str, str] | None:
     t = column_tokens(header)
     if age_in_other_language(header, t):
         return ("age", "age", "age")
+    script_rule = birth_in_other_script(header, t) or name_in_other_script(header)
+    if script_rule:
+        return script_rule
     if not t:
         return None
     ts = set(t)
     whole = " ".join(t)
+    # "DoB", "YoB", "BDate" and "DoD" are split at their capitals; read them whole too.
+    compact = "".join(t)
+    if compact in BIRTH_YEAR_TOKENS:
+        return ("year of birth", "birth_year", "date")
+    if compact in BIRTH_DATE_TOKENS | {"dateofbirth", "birthdate", "birthday"}:
+        return ("date of birth", "birth_date", "date")
+    if compact in ("dod", "dateofdeath", "deathdate"):
+        return ("date", "year", "date")
 
     # Allowed geography: a state or a country is not an identifier.
     if whole in ("state", "state code", "province", "country", "country code", "state province",
@@ -905,15 +1047,18 @@ def name_rule(header: str) -> tuple[str, str, str] | None:
     # split ages over 89 ("90-94" is refused, "90+" is the one allowed group).
     if any(_is_age_token(x) for x in t):
         return ("age", "age", "age")
-    birth_word = bool(ts & {"birth", "born"})
-    if ts & {"birthplace", "placeofbirth", "birthcity"} or (birth_word and ts & BIRTH_PLACE_WORDS):
+    # "Birth" in other languages ("Geburt", "naissance", "nacimiento", "nascita", "Natal",
+    # "Doğum", "lahir"), and "nac" or "bth" beside a word for date ("Fecha Nac", "Bth Dt").
+    birth_word = bool(ts & ({"birth", "born"} | BIRTH_WORDS_OTHER_LANGUAGES)) or bool(
+        ts & {"nac", "bth"} and ts & BIRTH_DATE_WORDS) or bool("sinh" in ts and ts & {"ngay", "nam", "noi"})
+    if ts & {"birthplace", "placeofbirth", "birthcity", "geburtsort"} or (birth_word and ts & BIRTH_PLACE_WORDS):
         return ("place of birth", "redact", "address")
     if ts & BIRTH_YEAR_TOKENS or _has(t, "birth year", "year of birth", "yob", "yearofbirth",
                                       "birthyear", "year born", "born year", "yr of birth") \
-            or (birth_word and ts & YEAR_TOKENS and not (ts & BIRTH_NOT_A_DATE)):
+            or (birth_word and ts & (YEAR_TOKENS | BIRTH_YEAR_WORDS) and not (ts & BIRTH_NOT_A_DATE)):
         return ("year of birth", "birth_year", "date")
-    if _has(t, "dob", "birthdate", "birthday", "date of birth", "dateofbirth", "birth date",
-            "birth dt"):
+    if ts & BIRTH_DATE_TOKENS or _has(t, "dob", "birthdate", "birthday", "date of birth", "dateofbirth",
+                                      "birth date", "birth dt", "d of b", "b date", "b dt", "bth dt"):
         return ("date of birth", "birth_date", "date")
     if birth_word and not (ts & BIRTH_NOT_A_DATE):
         return ("date or year of birth", "birth_date", "date")
@@ -933,11 +1078,14 @@ def name_rule(header: str) -> tuple[str, str, str] | None:
             "coordinates", "gps", "place of residence", "home location", "hometown",
             "home town", "locality", "suburb", "district", "subdistrict", "township",
             "hamlet", *CITY_WORDS_OTHER_LANGUAGES) \
-            or whole in ("lat", "lon", "lng", "long", "residence", "pob", "pob city", "pob town"):
+            or whole in ("lat", "lon", "lng", "long", "residence", "pob", "pob city", "pob town") \
+            or _has(t, "lives in", "living in", "lives at", "resides in", "residing in", "resident of",
+                    "lives near", "lieu de residence", "lugar de residencia", "wohnhaft in"):
         return ("geography smaller than a state", "redact", "address")
 
     # 1: names of the person, relatives, household members and employers.
-    if ts & {"employer", "workplace"} or _has(t, "next of kin", "emergency contact"):
+    if ts & {"employer", "workplace"} or _has(t, "next of kin", "emergency contact", "next kin",
+                                              "nextofkin"):
         return ("relative, household member or employer", "redact", "name")
     if whole in RELATIVE_HEADERS:
         return ("relative or contact of the person", "redact", "name")
@@ -975,7 +1123,9 @@ CITY_WORDS_OTHER_LANGUAGES = (
 NAME_WORDS_OTHER_LANGUAGES = (
     "nombre", "nombres", "apellido", "apellidos", "nom", "prenom", "prenoms", "nome", "cognome",
     "vorname", "nachname", "familienname", "naam", "voornaam", "achternaam", "navn", "fornavn",
-    "etternavn", "efternavn", "namn", "fornamn", "efternamn", "imie", "nazwisko", "sobrenome")
+    "etternavn", "efternavn", "namn", "fornamn", "efternamn", "imie", "nazwisko", "sobrenome",
+    "sukunimi", "etunimi", "prijmeni", "vezeteknev", "keresztnev", "prenume", "soyad", "soyadi",
+    "geburtsname", "madchenname", "maedchenname")
 # A whole column name that is a relative or a contact: the values are that person's
 # name (or identifier). Redacted, never kept.
 RELATIVE_HEADERS = {"spouse", "mother", "father", "guardian", "husband", "wife", "caregiver",
@@ -1067,16 +1217,63 @@ def _hints(words: str, finding: str, action: str, phi: str, numbers_are_ids: boo
 NAME_HINT_HEADERS = {
     **_hints("subject,subjects,member,insured,donor,recipient,resident,policyholder",
              "a person's name or identifier", "pseudonym_name", "name", True),
-    **_hints("first,last,given,middle,maiden,first last,last first",
-             "a first, last or given name", "pseudonym_name", "name", False),
-    **_hints("parent,parents,partner,sibling,siblings,brother,sister,son,daughter,child,"
-             "children,relative,relatives,contact,contacts,family,household,friend",
-             "a relative's or contact's name", "redact", "name", False),
     **_hints("region,home,place,origin,community,locale",
              "a place smaller than a state", "redact", "address", False),
     **_hints("company,organization,organisation,business,firm,school,college,university",
              "an employer's or a school's name", "redact", "name", False),
 }
+
+
+# Whole column names that are the person's own first, last or given name, and words that name a
+# relative, a household member or a contact ("Next Kin", "Contact Person", "Landlord", "Lives
+# With"). Such a column is an identifier by its name, which --keep cannot keep, unless every value
+# is a category word ("Mother", "Yes") or a number (person_name_rule).
+OWN_NAME_HEADERS = frozenset({"first", "last", "given", "middle", "maiden", "first last", "last first",
+                              "firsts", "lasts", "givens", "first given", "christian"})
+RELATIVE_NAME_WORDS = (frozenset(RELATIVE_WORDS) - {"emergency"}) | frozenset("""
+parents guardians relatives caregivers carer carers households siblings children husbands wives
+partners contacts spouses mothers fathers family families friend friends neighbor neighbour neighbors
+neighbours roommate roommates landlord landlady tenant tenants lodger housemate housemates flatmate
+cousin cousins aunt uncle niece nephew grandparent grandparents grandmother grandfather grandson
+granddaughter grandchild grandchildren stepparent stepmother stepfather stepson stepdaughter godparent
+godmother godfather fiance fiancee girlfriend boyfriend maiden informant brother sister son daughter
+brothers sisters sons daughters kin nok madre padre mere pere mutter vater esposa esposo conjoint
+conjointe ehemann ehefrau marito moglie hijo hija fils fille sohn tochter figlio figlia hermano
+hermana frere soeur bruder schwester cuidador cuidadora aidant aidante angehorige angehoerige
+familiar familia famille familie contacto contatto kontakt
+""".split())
+# Last words that make a relative's word the subject of the column ("Contact Person", "Household
+# Member", "Contact Info"), as opposed to "Contact Method" or "Family History".
+PERSON_HEAD_WORDS = frozenset({"person", "persons", "people", "member", "members", "individual",
+                               "individuals", "info", "information", "details", "detail", "name", "names",
+                               "nm", "who", "persona", "personne"})
+
+
+def _category_or_count(v: str) -> bool:
+    """A number, or category words with or without numbers ("Mother", "2 adults, 1 child")."""
+    if is_number(v):
+        return True
+    words = re.findall(r"[^\W\d_]+(?:['\u2019-][^\W\d_]+)*", v.lower())
+    return bool(words) and all(_vocabulary_word(w) for w in words)
+
+
+def person_name_rule(header: str, values: list[str]) -> tuple[str, str, str] | None:
+    """(finding, action, phi type) for a column named for the person's own first, last or given
+    name, or for a relative, a household member or a contact, unless every value is a category
+    word or a number. Unlike name_hint_rule, the column cannot be kept."""
+    t = [x for x in column_tokens(header) if not x.isdigit()]
+    if not t:
+        return None
+    vals = _shape_values(values)
+    if not vals or all(_category_or_count(v) for v in vals):
+        return None
+    if " ".join(t) in OWN_NAME_HEADERS:
+        return ("a first, last or given name", "pseudonym_name", "name")
+    head = t[-1]
+    if _has(t, "lives with", "living with", "lives together with", "vive con", "vit avec", "lebt mit") \
+            or head in RELATIVE_NAME_WORDS or (head in PERSON_HEAD_WORDS and set(t) & RELATIVE_NAME_WORDS):
+        return ("a relative's, household member's or contact's name", "redact", "name")
+    return None
 
 
 def name_hint_rule(header: str, values: list[str]) -> tuple[str, str, str] | None:
@@ -1158,6 +1355,9 @@ neck chest abdomen abdominal pelvis pelvic lymph node nodes muscle joint knee hi
 ankle elbow eye ear nose throat mouth tongue soft tissue upper lower anterior posterior
 lateral medial proximal distal small large cell cells icu nicu picu micu sicu cvicu ccu pacu
 neuro labor delivery stepdown step-down telemetry floor wing virus
+alone children siblings sons daughters brothers sisters grandchildren grandchild roommate roommates
+friends girlfriend boyfriend fiance fiancee niece nephew stepmother stepfather stepparent independently
+assisted adult adults infant infants baby babies teen teens elderly
 catholic protestant christian muslim islam jewish judaism hindu hinduism buddhist buddhism
 sikh atheist agnostic mormon lds baptist methodist lutheran orthodox evangelical presbyterian
 episcopalian pentecostal adventist quaker unitarian spiritual nonreligious religious
@@ -1653,8 +1853,7 @@ mm/hr|g/kg|kcal|kcal/day|kj|mmol/kg|ppm|ppb|hz|db|mv|µv|uv|ma|gy|cgy|mgy|msv|bq
 mg/mmol|au/ml|eu/ml|times/day|x/day|/day|/week|/wk|per day|per week|puffs/day|cigarettes/day|
 packs/day|pack-years|pack years|drinks/week|drinks/day|steps|steps/day|mm2|cm2|cm3|mm3|m2|ml/s
 """)
-VOCABULARY = (SEX_GENDER | YES_NO | RACE_ETHNICITY | RESULT_FLAGS | LATERALITY | RESPONSE | SMOKING
-              | UNITS | MISSING_PHRASES)
+VOCABULARY = (SEX_GENDER | YES_NO | RESULT_FLAGS | LATERALITY | RESPONSE | SMOKING | MISSING_PHRASES)
 
 # States and countries, which Safe Harbor allows, for columns named for them (state, country,
 # country of birth, nationality, ...): US states, territories and their postal codes, Canadian
@@ -1736,6 +1935,15 @@ TNM_HEADER_WORDS = STAGE_HEADER_WORDS | frozenset("t n m ct cn cm pt pn pm yp yp
 BLOOD_HEADER_WORDS = frozenset("blood abo bloodtype bloodgroup rh rhesus".split())
 VARIANT_HEADER_WORDS = frozenset("""variant variants mutation mutations mut alteration alterations
 change changes hgvs hgvsp hgvsc protein aa amino substitution substitutions codon snv""".split())
+# Race and ethnicity words (White, Black, Mixed, Chinese, Cuban, ...) are also surnames and
+# nationalities, so they count only under a column name for race or ethnicity; bare units (Ng,
+# Ma, Mo, Min) are also surnames, so they count only under a column name for units.
+RACE_HEADER_WORDS = frozenset("""race races racial ethnicity ethnicities ethnic ethnical ancestry
+ancestries heritage hispanic latino latinx raza etnia etnicidad ethnie rasse ethnizitat razza raca
+etniciteit omb""".split())
+RACE_HEADER_SCRIPTS = ("人种", "人種", "种族", "種族", "民族", "인종", "민족", "раса", "этнич", "عرق", "גזע")
+UNIT_HEADER_WORDS = frozenset("""unit units uom uoms unidad unidades einheit einheiten unite unites unita
+eenheid eenheden""".split())
 
 
 class ColumnContext:
@@ -1754,6 +1962,9 @@ class ColumnContext:
         self.blood = bool(ts & BLOOD_HEADER_WORDS)
         self.variant = bool(ts & VARIANT_HEADER_WORDS)
         self.loinc = "loinc" in ts
+        raw = unicodedata.normalize("NFKC", str(header)).casefold()
+        self.race = bool(ts & RACE_HEADER_WORDS) or any(w in raw for w in RACE_HEADER_SCRIPTS)
+        self.unit = bool(ts & UNIT_HEADER_WORDS) or _has(t, "unit of measure", "units of measure")
 
 
 # (a) Numbers, with an optional comparator and a unit of UNITS ("<0.5", "5.2 mg/dL", "12%",
@@ -1876,7 +2087,10 @@ def vocabulary_value(value: str, ctx: ColumnContext) -> bool:
         return True
     if ctx.geography and key in GEOGRAPHY_NAMES:
         return True
-    return not ctx.person_or_place and (key in VOCABULARY or s in CASELESS_CATEGORY_VALUES)
+    if ctx.person_or_place:
+        return False
+    return (key in VOCABULARY or s in CASELESS_CATEGORY_VALUES or (ctx.race and key in RACE_ETHNICITY)
+            or (ctx.unit and key in UNITS))
 
 
 # Groups of single letters with one meaning each; a column of single letters from more than
@@ -1939,10 +2153,13 @@ def verify_column(header: str, values: list[str], reference_year: int,
     nums = [n for n in (number_like(v) for v in cells) if n is not None]
     if not bad and nums and not all(is_number(v) for v in cells):
         shape = value_shape_rule(header, nums, reference_year)
+        rule = None if shape else number_rule(header, cells, reference_year)
         if shape:
-            numeric = shape[0]
-        elif upstream.is_high_cardinality_numeric(nums):
-            numeric = "unique numbers (possible record or account number)"
+            numeric = (shape[0], "redact")
+        elif upstream.is_high_cardinality_numeric(nums) and not measurement_header(header):
+            numeric = ("unique numbers (possible record or account number)", "redact")
+        elif rule:
+            numeric = (rule[0], rule[1])
     return {"distinct": len(distinct), "unverified": bad, "names": names, "caseless": caseless,
             "numeric": numeric, "cells": sum(1 for v in values if v.strip() in bad),
             "verified": not bad and numeric is None}
@@ -2028,17 +2245,181 @@ def value_shape_rule(header: str, values: list[str], reference_year: int) -> tup
         return (f"a month and a day written as a number with no separator in {len(vals)} cells "
                 "(possible dates)", "redact", "date", len(vals))
     toks = set(column_tokens(header))
-    if toks & {"years", "yrs", "yr", "yo"}:
+    if toks & ({"years", "yrs", "yr", "yo"} | YEAR_WORDS_OTHER_LANGUAGES):
         nums = [float(v) for v in vals]
         over = sum(1 for n in nums if n >= 90)
         if over and all(0 <= n <= 125 for n in nums):
             return (f"{over} values over 89 in a column named for years (possible ages)", "age", "age", over)
-    # Mostly five digits: a lab count such as a white cell count mixes four and five.
-    if all(re.fullmatch(r"\d{4,5}(?:\.0+)?", v) for v in vals):
+    # Mostly five digits: a lab count such as a white cell count mixes four and five, and a
+    # column name that names a measurement ("WBC", "Steps", "Total Cost") says what they are.
+    if all(re.fullmatch(r"\d{4,5}(?:\.0+)?", v) for v in vals) and not measurement_header(header):
         five = sum(1 for v in vals if len(v.split(".")[0]) == 5)
         if five >= 0.8 * len(vals):
             return (f"five-digit numbers in {five} of {len(vals)} cells (possible ZIP codes)",
                     "redact", "zip", five)
+    return None
+
+
+# ================================================================ numbers (fail closed)
+# A column of numbers is a measurement only when it reads as one: decimals, whole numbers of
+# three digits or fewer (an age column excepted), or whole numbers of any length under a column
+# name that names a measurement (a lab, a vital sign, a count, a score, a dose, a unit, money, a
+# duration). Record numbers that repeat across visits, ZIP codes that lost their leading zero,
+# dates written as numbers and ages over 89 have no other shape, and a list of column names that
+# hold them never closes (Chart, Hosp No, Patid, 病历号, Col6 ...), so number_rule judges the
+# numbers and leaves the decision to the person.
+MEASUREMENT_WORDS = frozenset("""
+count counts cnt total totals sum steps step freq frequency times episodes visits admissions
+encounters events occurrences reads read depth coverage copies load score scores scale rating
+level levels percentile pctl rank tpm fpkm rpkm cpm expression intensity signal auc cmax tmax
+dose doses dosage mg mcg ug kg ml dl mmol umol nmol pmol iu units cells cell ul mm cm km
+mmhg cmh2o bpm kcal calories kj percent percentage pct ratio fraction rate rates concentration conc
+titer titre heart pulse hr bp sbp dbp systolic diastolic map temp temperature rr resp respiratory spo
+sao sat sats saturation oxygen fio pao paco gcs pain weight wt height ht bmi bsa length circumference
+waist hip size volume vol diameter width depth thickness distance grams kilograms
+pounds lbs lb oz inches inch feet ft cost costs charge charges price amount payment paid income salary
+dollars usd eur gbp spend spending duration days day weeks week wks months month hours hour hrs
+minutes minute min mins seconds second sec secs los interval delay elapsed time latency lag 
+hemoglobin haemoglobin hgb hb hematocrit hct platelet platelets plt wbc rbc anc alc neutrophil
+neutrophils lymphocyte lymphocytes monocyte monocytes eosinophil eosinophils basophil basophils mcv
+mch mchc rdw mpv sodium na potassium chloride bicarbonate hco co calcium magnesium phosphate
+phosphorus glucose glu creatinine creat urea bun nitrogen albumin protein bilirubin bili alkaline
+phosphatase alp alt ast ggt ldh ck cpk troponin trop lactate ferritin iron tibc transferrin
+cholesterol chol triglycerides triglyceride tg hdl ldl vldl a1c hba tsh ft insulin cortisol crp esr
+inr ptt aptt bnp ntprobnp probnp procalcitonin psa cea afp ige igg igm iga amylase
+lipase urate uric ammonia ketones ketone ph pco po osmolality egfr gfr crcl cd viral vl hiv rna dna
+fev fvc pef dlco ef lvef iq mmse moca phq gad nihss apache sofa qsofa news meld apgar kps ecog
+karnofsky barthel charlson elixhauser frailty asa braden morse glasgow apfel caprini wells
+""".split())
+# Words that make a number column a list of identifiers whatever else it says ("Lab No", "Sample
+# ID", "Visit Number"); "number of" is a count.
+NUMBER_ID_WORDS = frozenset("""
+id ids identifier identifiers uid uuid guid no nr nbr num nummer numero ref refs reference key keys
+code codes link linkage token tag tags file files folder dossier record records chart registry
+register registration reg accession barcode serial account acct mrn mbi seq sequence fallnummer
+""".split())
+
+
+def measurement_header(header: str) -> bool:
+    """True for a column name that says its numbers are measurements: a lab, a vital sign, a
+    count, a score, a dose, a unit, money or a duration ("WBC", "Heart Rate", "Steps", "Total
+    Cost", "Dose mg", "Number of Visits", "HbA1c (%)"), and no word that says identifier ("Lab
+    No", "Sample ID")."""
+    t = column_tokens(header)
+    ts = set(t)
+    raw = str(header)
+    count_phrase = _has(t, "number of", "no of", "num of", "count of", "n of", "amount of")
+    if ts & NUMBER_ID_WORDS and not count_phrase:
+        return False
+    if "number" in ts and not count_phrase:
+        return False
+    compact = re.sub(r"[^a-z0-9]", "", raw.lower())
+    return bool(count_phrase or ts & MEASUREMENT_WORDS or "%" in raw or _unit_in_brackets(raw)
+                or any(w in compact for w in ("spo2", "sao2", "fio2", "pao2", "paco2", "etco2", "o2sat",
+                                              "hba1c", "egfr", "pco2", "po2")))
+
+
+TIME_UNITS = _phrases("""y|yr|yrs|year|years|mo|mos|month|months|wk|wks|week|weeks|d|day|days|h|hr|hrs|
+hour|hours|min|mins|minute|minutes|s|sec|second|seconds|ms|msec""")
+
+
+def _unit_in_brackets(raw: str) -> bool:
+    """A unit of measurement in brackets ("(mg/dL)", "[kg]"); a unit of time ("(years)", "[y]")
+    does not count, because ages are written in it."""
+    for m in re.finditer(r"[(\[]\s*([^)\]]{1,20})\s*[)\]]", raw):
+        unit = fold(m.group(1))
+        if unit in UNITS and unit not in TIME_UNITS:
+            return True
+    return False
+
+
+def _integer_digits(n: str) -> str | None:
+    """The digits of a whole number written as a number ("4527832", "00088221", "6135517.0",
+    "2589882.00"), or None for a number with a fraction."""
+    m = re.fullmatch(r"[+]?(\d+)(?:\.0+)?", n.strip())
+    return m.group(1) if m else None
+
+
+EXCEL_DATE_RANGE = (10000, 73050)  # Excel serial days 1927-05-18 to 2099-12-31
+
+
+def _packed_date(d: str, reference_year: int) -> bool:
+    """A date written as a whole number with no separator in an order _compact_date does not
+    read: YYMMDD of six digits, and M/D/YYYY or YYYY/M/D with a one-digit month or day (seven
+    digits: 3262017, 2016112)."""
+    def ok(y: int, mo: int, dd: int) -> bool:
+        return 1 <= mo <= 12 and 1 <= dd <= 31 and (y < 100 or 1880 <= y <= reference_year + 10)
+    if len(d) == 6:
+        return ok(int(d[:2]), int(d[2:4]), int(d[4:]))
+    if len(d) == 7:
+        return (ok(int(d[3:]), int(d[0]), int(d[1:3])) or ok(int(d[3:]), int(d[:2]), int(d[2]))
+                or ok(int(d[:4]), int(d[4]), int(d[5:])) or ok(int(d[:4]), int(d[4:6]), int(d[6])))
+    return False
+
+
+TIME_UNIT = re.compile(r"(?i)\s*(\d{1,6}(?:\.\d+)?)\s*(y|yr|yrs|years?|yo|y/o|mo|mos|mon|mths?|months?|wk|wks"
+                       r"|weeks?|d|dy|dys|days?)\.?")
+
+
+def _age_years_of_value(v: str) -> float | None:
+    """The age in years of a value that is a whole number of up to three digits ("95", "95.0"),
+    or a number with a unit of time ("95 y", "1140 mo", "34700 days"); None for anything else."""
+    s = _plain(v)
+    m = re.fullmatch(r"(\d{1,3})(?:\.0+)?", s)
+    if m:
+        return float(m.group(1))
+    m = TIME_UNIT.fullmatch(s)
+    if m:
+        unit = m.group(2).lower()
+        factor = 365.25 if unit == "d" else (_unit_factor(unit) or 1.0)
+        return float(m.group(1)) / factor
+    return None
+
+
+def number_rule(header: str, values: list[str], reference_year: int) -> tuple[str, str, str, int] | None:
+    """(finding, action, phi type, cells) for a column whose numbers the script cannot verify as
+    measurements (see the section comment). `values` are the column's cells that are not blank
+    or missing-value words; only those that read as numbers are judged. None when they are
+    measurements."""
+    vals = [v.strip() for v in values if v.strip() and v.strip() not in TOOL_PLACEHOLDERS
+            and not TOOL_OUTPUT.fullmatch(v.strip()) and fold(v) not in MISSING_PHRASES]
+    nums = [(v, number_like(v)) for v in vals]
+    nums = [(v, n) for v, n in nums if n is not None and not BLOOD_PRESSURE.fullmatch(_plain(v))]
+    if not nums:
+        return None
+    total = len(nums)
+    measurement = measurement_header(header)
+    digits = [_integer_digits(n) for _, n in nums]
+    whole = [d for d in digits if d is not None]
+    # Dates written as whole numbers in an order the value rules do not read (YYMMDD, 3262017).
+    if len(whole) == total and len(set(whole)) >= 3 and all(_packed_date(d, reference_year) for d in whole):
+        return (f"whole numbers shaped like dates with no separator in {total} cells (possible dates)",
+                "redact", "date", total)
+    # Excel date and time serials ("44269.4375").
+    serial = [n for _, n in nums if re.fullmatch(r"\d{5}\.\d+", n)
+              and EXCEL_DATE_RANGE[0] <= int(n.split(".")[0]) <= EXCEL_DATE_RANGE[1]]
+    if not measurement and len(serial) >= 0.8 * total and any(_integer_digits(n) is None for n in serial):
+        return (f"decimal numbers shaped like Excel date and time serials in {len(serial)} of {total} cells "
+                "(possible dates)", "redact", "date", len(serial))
+    # Record numbers: whole numbers of four or more digits, or with a leading zero, that are not
+    # all years. A leading zero marks a code under any column name.
+    long_ = [d for d in whole if len(d) >= 4]
+    zero = [d for d in whole if len(d) >= 4 and d.startswith("0")]
+    years = all(1880 <= int(d) <= reference_year + 10 and len(d) == 4 for d in whole) and len(whole) == total
+    if long_ and len(long_) >= 0.5 * total and not years and (not measurement or len(zero) >= 0.5 * total):
+        five = sum(1 for d in long_ if len(d) >= 5)
+        what = "five or more digits" if five >= len(long_) / 2 else "four or more digits"
+        return (f"whole numbers of {what} in {len(long_)} of {total} cells under a column name that names "
+                "no measurement (possible record numbers, account numbers, ZIP codes or dates written as "
+                "numbers)", "pseudonym_id", "id", len(long_))
+    # Ages: whole numbers up to 125 (or a number with a unit of time) with some over 89.
+    if not measurement:
+        ages = [_age_years_of_value(v) for v, _ in nums]
+        if all(a is not None for a in ages) and all(a <= 125 for a in ages):
+            over = sum(1 for a in ages if a >= 90)
+            if over:
+                return (f"whole numbers up to 125, {over} of them over 89, under a column name that names no "
+                        "measurement (possible ages)", "age", "age", over)
     return None
 
 
@@ -2081,9 +2462,122 @@ def coordinate_pairs(columns: list[tuple[int, list[str]]]) -> dict[int, int]:
     return found
 
 
+def header_identifier_kinds(header: str, scrubber: Scrubber) -> list[str]:
+    """The identifier patterns in a header cell. A labelled name ("Patient Key", "Mother Maiden")
+    is the shape of most column names, so it counts only with a colon or an equals sign after the
+    label ("Patient: Okafor")."""
+    h = str(header).strip()
+    kinds = scrubber.find(h) if h else []
+    return [k for k in kinds if k != "name" or re.search(r"[:=]", h)]
+
+
 def header_looks_like_value(header: str, scrubber: Scrubber) -> bool:
     h = str(header).strip()
-    return bool(h) and (is_number(h) or len(h) > 80 or bool(scrubber.find(h)))
+    return bool(h) and (is_number(h) or len(h) > 80 or bool(header_identifier_kinds(h, scrubber))
+                        or header_name_like(h))
+
+
+# Words column names are made of. A column name of two or more capitalised words none of which is
+# one of these, or a category, medical or anatomical word, has the shape of a person's or a place's
+# name ("Okafor Jane", "Walnut Grove"), as a first row of data read as the header row does.
+GENERIC_HEADER_WORDS = frozenset("""
+symbol purity allele change exon copy margin invasion hormone survival progression event events censor
+censored modified version instance redcap survey timestamp complete unnamed chief complaint course
+disposition source marital preferred language allergies allergy vital cause pack alcohol use collection
+assay platform tumor size gene consent signed study arm cohort site name entry data form repeat flag
+overall free nodal lymphovascular perineural pathologic response receptor variant baseline value
+investigator coordinator status follow drug sample type specimen method field variable column item
+question answer comment comments note notes remark remarks description label group category class
+result results test tests panel order date time start end stop first last next previous prior initial
+final total new old current former primary secondary main other misc miscellaneous extra additional
+derived computed calculated adjusted raw imputed estimated predicted observed expected actual target
+reported self measured clinical medical record history family social demographic demographics
+outcome outcomes exposure treatment therapy regimen line cycle phase visit week month year
+day hour minute quarter period wave round session interval duration frequency count number amount
+quantity unit units mean median average min max minimum maximum range std sd se ci lower upper
+low high mid level grade stage score index ratio rate percent change delta diff difference
+smoker smoking ever never alive dead living deceased survival censor
+""".split())
+
+
+def header_name_like(header: str) -> bool:
+    """True for a column name of two to six capitalised words, at least two of them neither a
+    word column names are made of nor an abbreviation ("ED", "Pat."), and no word the name rules
+    read: the shape of a person's or a place's name ("Okafor Jane", "OKAFOR JANE", "Walnut
+    Grove"), not of "Waist Circumference" or "Alter ED"."""
+    s = str(header).strip()
+    words = [w for w in re.split(r"[\s,;/]+", s) if w]
+    if re.search(r"\d", s) or not 2 <= len(words) <= 6 or name_rule(s) is not None:
+        return False
+    core = 0
+    for w in words:
+        letters = re.sub(r"['\u2019.-]", "", w)
+        if not letters.isalpha():
+            return False
+        if len(letters) == 1 or w.endswith(".") or (letters.isupper() and len(letters) <= 3):
+            continue  # an initial or an abbreviation
+        if not letters[0].isupper():
+            return False
+        low = "".join(column_tokens(letters))
+        if low in NAME_PARTICLES or low in NAME_SUFFIXES:
+            continue
+        if low in HEADER_WORDS() or _vocabulary_word(low) or _is_age_token(low) or _age_word_token(low):
+            return False
+        core += 1
+    return core >= 2
+
+
+_HEADER_WORDS: set[str] = set()
+
+
+def HEADER_WORDS() -> set[str]:  # noqa: N802 - built once, from tables defined further down
+    if not _HEADER_WORDS:
+        _HEADER_WORDS.update(
+            GENERIC_HEADER_WORDS | MEASUREMENT_WORDS | NUMBER_ID_WORDS | PERSON_ROLE_WORDS | HEAD_ROLE_WORDS
+            | PLACE_WORDS | QUALIFIER_WORDS | NAME_TRAILING | SELF_WORDS | INTERVAL_WORDS | DATE_TIME_CONTEXT
+            | RELATIVE_NAME_WORDS | STAGE_HEADER_WORDS | ICD_HEADER_WORDS | ATC_HEADER_WORDS
+            | VARIANT_HEADER_WORDS | BLOOD_HEADER_WORDS | RACE_HEADER_WORDS | UNIT_HEADER_WORDS
+            | AGE_UNIT_WORDS | BIRTH_NOT_A_DATE | BIRTH_WORDS_OTHER_LANGUAGES | BIRTH_DATE_TOKENS
+            | BIRTH_DATE_WORDS | BIRTH_YEAR_WORDS | YEAR_WORDS_OTHER_LANGUAGES | frozenset(DATE_WORDS)
+            | frozenset(NOT_A_PERSON_NAME) | frozenset(NOT_A_PERSON_ID))
+    return _HEADER_WORDS
+
+
+def check_header_row(headers: list[str], scrubber: Scrubber) -> set[int]:
+    """The positions of header cells that look like a value or a name, which the plan and the
+    report withhold and the output renames column_N. Refuses a header row that holds an
+    identifier pattern in any cell (an email, a phone or ID number, a date: a patient's record
+    read as the header row, or column names that carry identifiers), or in which a third of the
+    cells look like values or names. The message names counts only."""
+    patterned = [i for i, h in enumerate(headers, start=1) if header_identifier_kinds(h, scrubber)]
+    if patterned:
+        raise UsageError(
+            f"the first row looks like data or carries identifiers: {len(patterned)} of {len(headers)} "
+            "header cells are shaped like an identifier (an email or web address, a phone, ID or record "
+            "number, a date, ...). If the first row is data, add a header row; if the column names "
+            "themselves carry identifiers, rename those columns. Then run again.")
+    looks = {i for i, h in enumerate(headers, start=1) if header_looks_like_value(h, scrubber)}
+    if len(looks) >= max(2, (len(headers) + 2) // 3):
+        raise UsageError(
+            f"the first row looks like data rather than column names ({len(looks)} of "
+            f"{len(headers)} header cells look like values or names). Add a header row and run again.")
+    return looks
+
+
+def output_headers(headers: list[str], withheld: set[int]) -> dict[str, str]:
+    """The output name of each column: column_N for a withheld one, its own name otherwise."""
+    used = {str(h) for i, h in enumerate(headers, start=1) if i not in withheld}
+    out = {}
+    for i, h in enumerate(headers, start=1):
+        if i in withheld:
+            name = f"column_{i}"
+            while name in used:
+                name += "_"
+            used.add(name)
+            out[h] = name
+        else:
+            out[h] = h
+    return out
 
 
 def decide_columns(data: list[dict], headers: list[str], locale: dict, scrubber: Scrubber,
@@ -2102,7 +2596,8 @@ def decide_columns(data: list[dict], headers: list[str], locale: dict, scrubber:
         prose = [v for v in nonempty if not _is_category_value(v) and not value_verified(v, ctx)]
         d["free_text"] = bool(prose) and (upstream.looks_like_free_text(prose)
                                           or any(caseless_prose(v) for v in prose))
-        rule = column_name_rule(col, nonempty, scrubber) or locale_name_rule(col, locale)
+        rule = (column_name_rule(col, nonempty, scrubber) or locale_name_rule(col, locale)
+                or person_name_rule(col, nonempty))
         # A state or country column is allowed by Safe Harbor, but its values are checked like
         # any other column: only state and country names are vouched for (verify_column).
         if rule and rule[2] == "allowed_geography":
@@ -2124,7 +2619,11 @@ def decide_columns(data: list[dict], headers: list[str], locale: dict, scrubber:
                                    or out.strip() == "90+ years")]
             present = [v for v in nonempty if fold(v) not in MISSING_PHRASES]
             check = verify_column(col, nonempty, reference_year, ctx)
-            if whole and len(whole) / max(1, len(present)) > 0.5:
+            numbers = number_rule(col, present, reference_year)
+            if hits and numbers and numbers[1] == "age" and all(k == "age" for found in hits for k in found):
+                # Ages written with a unit ("95 y", "102 yo"), some over 89: grouped as ages.
+                d.update(kind="unverified", finding=f"values: {numbers[0]}", action="age", phi_type="age")
+            elif whole and len(whole) / max(1, len(present)) > 0.5:
                 phi = max(set(whole), key=whole.count)
                 action = {"date": "year", "code": "pseudonym_id", "age": "age"}.get(phi, "redact")
                 if phi == "zip" and all(re.fullmatch(r"\s*\d{5}(?:-\d{4})?\s*", v) for v in present):
@@ -2143,7 +2642,7 @@ def decide_columns(data: list[dict], headers: list[str], locale: dict, scrubber:
                 d.update(kind="uncertain", finding=hint[0], action=hint[1], phi_type=hint[2])
             elif (shape := value_shape_rule(col, nonempty, reference_year)) and shape[2] != "zip":
                 d.update(kind="uncertain", finding=f"values: {shape[0]}", action=shape[1], phi_type=shape[2])
-            elif upstream.is_high_cardinality_numeric(nonempty):
+            elif upstream.is_high_cardinality_numeric(nonempty) and not measurement_header(col):
                 d.update(kind="uncertain", finding="unique numbers (possible record or account number)",
                          action="pseudonym_id", phi_type="id")
             elif shape:  # five-digit numbers that repeat: possible ZIP codes
@@ -2153,8 +2652,8 @@ def decide_columns(data: list[dict], headers: list[str], locale: dict, scrubber:
                 d.update(kind="unverified", finding=unverified_finding(check, ctx), action="redact",
                          phi_type="unverified")
             elif check["numeric"]:
-                d.update(kind="uncertain", finding=f"values: {check['numeric']}", action="redact",
-                         phi_type="id")
+                d.update(kind="unverified", finding=f"values: {check['numeric'][0]}",
+                         action=check["numeric"][1], phi_type="id")
             elif ctx.geography:
                 d.update(kind="allowed", action="keep", phi_type="allowed_geography", verified=True,
                          finding="column name: state or country (allowed); every value is a state or "
@@ -2165,14 +2664,22 @@ def decide_columns(data: list[dict], headers: list[str], locale: dict, scrubber:
             elif not present:
                 d.update(kind="none", finding="only missing-value words", action="keep",
                          phi_type=None, verified=True)
+            elif all(is_number(v) for v in present) and numbers:
+                # Fail closed on numbers too: record numbers that repeat, dates and ZIP codes
+                # written as numbers and ages have no shape that tells them from a measurement.
+                d.update(kind="unverified", finding=f"values: {numbers[0]}", action=numbers[1],
+                         phi_type=numbers[2])
             elif all(is_number(v) for v in present):
-                d.update(kind="none", finding="numbers, no identifier shape found", action="keep",
-                         phi_type=None, verified=True)
+                d.update(kind="none", action="keep", phi_type=None, verified=True,
+                         finding="numbers verified as measurements (decimals, whole numbers of up to three "
+                                 "digits, or longer ones under a column name that names a measurement)")
             else:
                 d.update(kind="none", action="keep", phi_type=None, verified=True,
                          finding="every value verified (a number, a code, a date or a common category word)")
-            if d["kind"] in ("uncertain", "identifier_values"):
-                d["verified"] = check["verified"]
+            # Only a column every value of which the script verified counts as verified; one kept
+            # over a finding is kept on the person's word (kept_unverified_columns).
+            if d["kind"] not in ("none", "allowed"):
+                d["verified"] = False
         d["text"] = any(not is_number(v) for v in _shape_values(values))
         # A name inside a longer value in a script without capital letters is not found.
         d["caseless"] = any(has_caseless_text(v) for v in _shape_values(values))
@@ -2245,10 +2752,7 @@ def to_year(v: str, scrubber: Scrubber) -> str:
 
 
 def birth(v: str, scrubber: Scrubber, reference_year: int) -> str:
-    y = to_year(v, scrubber)
-    if re.fullmatch(r"\d{4}", y) and reference_year - int(y) >= 90:
-        return "[90_OR_OLDER]"
-    return y
+    return cap_old_year(to_year(v, scrubber), reference_year)
 
 
 def zip3(v: str) -> str:
@@ -2263,12 +2767,13 @@ def zip3(v: str) -> str:
 
 
 UNIT_FACTORS = (
-    # Single letters other than y are not read as units: "96 M" is more often a sex
-    # than months, and an unread unit counts as years, which can only over-group.
-    (re.compile(r"y|yr|yrs|years?|yo|yoa|ys"), 1.0),
-    (re.compile(r"mo|mos|mon|mths?|months?"), 12.0),
-    (re.compile(r"wk|wks|weeks?"), 52.18),
-    (re.compile(r"dy|dys|days?"), 365.25),
+    # Single letters other than y are not read as units: "96 M" is more often a sex than
+    # months, "aged" is not "age" in days, and an unread unit counts as years, which can only
+    # over-group. The words of other languages come from column names ("Alter (Monate)").
+    (re.compile(r"y|yr|yrs|years?|yo|y/o|yoa|ys|jahre|jahren|anos|anni|jaar|roky"), 1.0),
+    (re.compile(r"mo|mos|mon|mths?|months?|monate|monaten|meses|mois|mesi|maanden|manader"), 12.0),
+    (re.compile(r"wk|wks|weeks?|wochen|semanas|semaines|settimane|weken|veckor"), 52.18),
+    (re.compile(r"dy|dys|days?|tage|tagen|dias|jours|giorni|dagen|dagar"), 365.25),
     (re.compile(r"hr|hrs|hours?"), 8766.0),
 )
 AGE_RANGE = re.compile(r"\d\s*(?:-|\u2013|to)\s*\d")
@@ -2301,11 +2806,42 @@ def age_over_89(v: str, header: str) -> bool:
     return bool(AGE_WORD_RX.search(v)) or any(y >= 90 for y in age_years(v, header))
 
 
+# Words an age cell may hold besides its numbers ("45 years", "18 to 29", "65 and over",
+# "under 1", "infant"): anything else in an age column (a name, a place) is replaced.
+AGE_TEXT_WORDS = frozenset("""
+y yr yrs year years yo y/o old m mo mos mon month months mth mths w wk wks week weeks d dy dys day days h
+hr hrs hour hours to and or over under above below older younger less more than plus aged age ages
+about approx approximately circa ca years-old yrs. at least up infant infants newborn newborns neonate
+neonates neonatal child children adolescent adolescents teen teens teenager teenagers adult adults
+elderly senior seniors pediatric paediatric geriatric toddler toddlers baby babies preterm term
+anos ano ans an anni jahre jahren jahr j jaar ar lat let roky rok yil v vuotta ev meses mes mois
+mesi monate monat maanden semanas semaines wochen settimane dias jours tage giorni dagen
+岁 歲 才 세 살 лет год года سنة سنوات שנים वर्ष साल ปี ετών ετη
+""".split())
+
+
+def age_text(v: str) -> bool:
+    """True for a value an age column may hold: numbers with units of time, ranges, comparators,
+    age words ("ninety-two", "infant") and missing-value words; not a name or a place."""
+    s = _plain(v)
+    if not s or fold(s) in MISSING_PHRASES or s in CASELESS_MISSING or AGE_WORD_RX.search(s) \
+            or TOOL_OUTPUT.fullmatch(s) or s in TOOL_PLACEHOLDERS:
+        return True
+    s = "".join(c for c in unicodedata.normalize("NFKD", s) if not unicodedata.combining(c)).casefold()
+    rest = re.sub(r"\d+(?:[.,]\d+)?", " ", s)
+    rest = re.sub(r"[<>≤≥=~+\-\u2013/().,:;%\[\]]", " ", rest)
+    words = rest.split()
+    return all(w in AGE_TEXT_WORDS for w in words) and bool(re.search(r"\d", s) or words)
+
+
 def age_cap(v: str, header: str, scrubber: Scrubber) -> str:
     """90+ for an age over 89 (in any unit, or in words). A range that straddles 90
-    ("85-94") is replaced, because it would split the ages over 89."""
+    ("85-94") is replaced, because it would split the ages over 89, and so is a value that is
+    not an age ("Alice Okafor" under "Edad")."""
     if AGE_WORD_RX.search(v):
         return "90+"
+    if not age_text(v):
+        return "[REDACTED]"
     years = age_years(v, header)
     if any(y >= 90 for y in years):
         if any(y < 90 for y in years) and AGE_RANGE.search(v):
@@ -2342,7 +2878,7 @@ def apply_decisions(data: list[dict], headers: list[str], decisions: list[dict],
             elif action == "pseudonym_id":
                 nv = ids.get(v.strip())
             elif action == "year":
-                nv = to_year(v, scrubber)
+                nv = cap_old_year(to_year(v, scrubber), reference_year)
             elif action == "birth_date":
                 nv = birth(v, scrubber, reference_year)
             elif action == "birth_year":
@@ -2394,10 +2930,13 @@ def residual_findings(rows: list[dict], headers: list[str], decisions: list[dict
             shapes[i] = (shape[0], shape[3])
             continue
         check = verify_column(headers[i - 1], vals, reference_year, ctxs[i], own_output=decisions is None)
+        numbers = number_rule(headers[i - 1], vals, reference_year)
         if check["unverified"]:
             shapes[i] = (residual_text_finding(check), check["cells"])
         elif check["numeric"]:
-            shapes[i] = (check["numeric"], sum(1 for v in vals if number_like(v)))
+            shapes[i] = (check["numeric"][0], sum(1 for v in vals if number_like(v)))
+        elif numbers:
+            shapes[i] = (numbers[0], numbers[3])
     pairs = coordinate_pairs(shape_checked)
     for i, col in enumerate(headers, start=1):
         action = actions[i]
@@ -2422,8 +2961,8 @@ def residual_findings(rows: list[dict], headers: list[str], decisions: list[dict
                 problem = "not redacted"
             elif action in ("year", "birth_date", "birth_year"):
                 if re.fullmatch(r"\d{4}", v):
-                    if action != "year" and reference_year - int(v) >= 90:
-                        problem = "birth year of a person aged 90 or over"
+                    if reference_year - int(v) >= 90:
+                        problem = "a year 90 or more years before the reference year (a birth year reveals an age over 89)"
                 elif re.search(r"\d", v):
                     problem = "date not reduced to a year"
                 elif v.lower() not in MISSING_VALUES:
@@ -2435,6 +2974,8 @@ def residual_findings(rows: list[dict], headers: list[str], decisions: list[dict
                 if v != "90+":
                     if age_over_89(v, col):
                         problem = "age over 89"
+                    elif not age_text(v):
+                        problem = "text left in an age column"
                     scan = True
             elif decisions is None and PSEUDONYM.fullmatch(v):
                 scan = False  # a pseudonym written by this tool, checked without its report
@@ -2475,30 +3016,29 @@ def print_plan(decisions: list[dict], withheld: set[int], changed: dict | None =
             name = name[: width - 3] + "..."
         print(f"  {d['index']:>3}  {name:<{width}}  {label:<16}  {count}  {d['finding']}{note}")
     names = lambda ds: ", ".join(display_name(d, withheld) for d in ds)  # noqa: E731
-    pending = [d for d in decisions if d["kind"] == "unverified" and d["action"] != "keep"
-               and not d["forced_redaction"]]
+    pending = needing_decision(decisions)
     if pending:
-        print("\n  Need the person's decision (redact: text the script cannot verify is free of identifiers;")
-        print("  keep with --keep COLUMN once the person confirms it): " + names(pending))
-        print("  Ask the person, naming only these columns, whether each one holds nothing but category")
-        print("  values, with no names, places, dates, contact details or other identifiers.")
+        print("\n  Need the person's decision (changed because the script cannot verify their values are free")
+        print("  of identifiers; keep with --keep COLUMN once the person confirms it): " + names(pending))
+        print("  Ask the person, naming only these columns, whether each one holds nothing but category values")
+        print("  or measurements, with no names, places, dates, ages over 89, record or account numbers,")
+        print("  contact details or other identifiers.")
     free = [d for d in decisions if d["free_text"] and d["action"] != "keep"]
     if free:
         print("\n  Free text, redacted and never kept (a name inside a sentence has no pattern to find): "
               + names(free))
-    uncertain = [d for d in decisions if d["kind"] == "uncertain" and d["action"] != "keep"
-                 and not d["free_text"]]
-    if uncertain:
-        print("\n  Redacted or changed because the scanner cannot vouch for them: " + names(uncertain))
-        print("  Keep one only after the person confirms it holds no identifiers (--keep COLUMN).")
-    kept = [d for d in decisions if d["action"] == "keep"]
+    if withheld:
+        print(f"\n  Column names withheld because they look like values or names: "
+              + ", ".join(f"#{i}" for i in sorted(withheld))
+              + "; the output names them " + ", ".join(f"column_{i}" for i in sorted(withheld)) + ".")
+    on_word = kept_unverified_columns(decisions)
+    kept = [d for d in decisions if d["action"] == "keep" and d not in on_word]
     if kept:
         print("  Kept (identifier patterns inside them are replaced): " + names(kept))
     verified = [d for d in kept_text_columns(decisions) if d.get("verified")]
     if verified:
         print("  Kept text the script verified (every value a number, a code, a date, a common category")
         print("  word such as a sex, a race or yes and no, or a state or country name): " + names(verified))
-    on_word = kept_unverified_columns(decisions)
     if on_word:
         print("  Kept on the person's word: " + names(on_word))
         print("  " + KEPT_TEXT_WARNING)
@@ -2509,10 +3049,11 @@ def print_plan(decisions: list[dict], withheld: set[int], changed: dict | None =
             print("  to be found: " + names(caseless))
 
 
-KEPT_TEXT_WARNING = ("Kept text is scrubbed for identifier patterns only (phone and fax numbers, email "
-                     "and web addresses, ID and record numbers, dates, street addresses, IP addresses, "
-                     "titled names): a name, a place or another identifier with no pattern stays in it, "
-                     "so the person must spot-check these columns before the data leaves the institution.")
+KEPT_TEXT_WARNING = ("Columns kept on the person's word are scrubbed for identifier patterns only (phone "
+                     "and fax numbers, email and web addresses, labelled ID and record numbers, dates, "
+                     "street addresses, IP addresses, titled names): a name, a place, a record number, a "
+                     "ZIP code, an age or another identifier with no pattern stays in them, so the person "
+                     "must spot-check these columns before the data leaves the institution.")
 
 
 def kept_text_columns(decisions: list[dict]) -> list[dict]:
@@ -2521,27 +3062,89 @@ def kept_text_columns(decisions: list[dict]) -> list[dict]:
 
 
 def kept_unverified_columns(decisions: list[dict]) -> list[dict]:
-    """Text columns kept on request that the script could not verify: kept on the person's
-    word, scrubbed for patterns only, and named again for the person's spot-check."""
-    return [d for d in kept_text_columns(decisions) if d["kept_on_request"] and not d.get("verified")]
+    """Columns kept on request that the script could not verify, text or numbers (record
+    numbers, ZIP codes, coordinates, old years kept over the finding): kept on the person's word,
+    scrubbed for patterns only, and named again for the person's spot-check."""
+    return [d for d in decisions if d["action"] == "keep" and d["kept_on_request"] and not d.get("verified")]
 
 
-def load_input(path: Path, scrubber: Scrubber):
+def needing_decision(decisions: list[dict]) -> list[dict]:
+    """Columns changed only because the script cannot verify their values, which the person may
+    keep once they confirm them: text it cannot verify, numbers and other shapes it cannot tell
+    from identifiers, and column names that usually hold a name or a place."""
+    return [d for d in decisions if d["kind"] in ("unverified", "uncertain") and not d["free_text"]
+            and d["action"] != "keep" and not d["forced_redaction"]]
+
+
+def load_input(path: Path, scrubber: Scrubber, encoding: str | None = None, locale_code: str = "us"):
     if not path.is_file():
         raise UsageError(f"input file not found: {path}")
-    data, meta = upstream.load_tabular(path)
+    data, meta = read_table(path, encoding, locale_code)
     headers = list(meta.get("headers") or [])
     if not headers:
         raise UsageError("the file has no header row")
     refuse_other_separator(headers)
     if not data:
         raise UsageError("the file has a header row but no data rows")
-    looks = {i for i, h in enumerate(headers, start=1) if header_looks_like_value(h, scrubber)}
-    if len(looks) >= max(2, (len(headers) + 2) // 3):
-        raise UsageError(
-            f"the first row looks like data rather than column names ({len(looks)} of "
-            f"{len(headers)} header cells look like values). Add a header row and run again.")
-    return data, meta, headers, looks
+    return data, meta, headers, check_header_row(headers, scrubber)
+
+
+# Encodings a locale's exports often use when they are not UTF-8.
+LOCALE_ENCODINGS = {"kr": "euc-kr", "jp": "shift_jis", "cn": "gb18030"}
+
+
+def file_encoding(path: Path, requested: str | None, locale_code: str = "us") -> str | None:
+    """The text encoding to read a CSV or TSV file with: the one the person named with
+    --encoding, else UTF-8, with or without a byte order mark, or UTF-16 and UTF-32 with one.
+    Any other file is refused with the remedy, because guessing an 8-bit encoding can turn names
+    into other text silently. No byte of the file is quoted."""
+    if upstream.detect_format(path) == "xlsx":
+        return None
+    raw = path.read_bytes()
+    if requested:
+        try:
+            codecs.lookup(requested)
+        except LookupError:
+            raise UsageError(f"--encoding {requested!r} is not an encoding this Python knows (for example "
+                             "utf-8, cp1252, latin-1, utf-16, euc-kr, shift_jis, gb18030)")
+        try:
+            raw.decode(requested)
+        except (UnicodeDecodeError, UnicodeError):
+            raise UsageError(f"the file cannot be read as {requested}. Ask the person which encoding the "
+                             "export uses, or save it as 'CSV UTF-8' and run again without --encoding.")
+        return requested
+    if raw.startswith(codecs.BOM_UTF8):
+        return "utf-8-sig"
+    if raw.startswith((codecs.BOM_UTF32_LE, codecs.BOM_UTF32_BE)):
+        return "utf-32"
+    if raw.startswith((codecs.BOM_UTF16_LE, codecs.BOM_UTF16_BE)):
+        return "utf-16"
+    try:
+        raw.decode("utf-8")
+        return "utf-8"
+    except UnicodeDecodeError:
+        pass
+    head = raw[:4096]
+    if head.count(b"\x00") > len(head) // 4:
+        kind, suggestion = "UTF-16 text without a byte order mark", "utf-16-le"
+    else:
+        kind = "an 8-bit encoding such as Windows-1252 or Latin-1, which Excel writes for a plain 'CSV' save"
+        suggestion = LOCALE_ENCODINGS.get(locale_code, "cp1252")
+    raise UsageError(f"the file is not UTF-8 text; it looks like {kind}. Save it again as 'CSV UTF-8' "
+                     "(in Excel: File, Save As, CSV UTF-8) and run again, or rerun with --encoding "
+                     f"{suggestion} (or the encoding the person names). No output was written.")
+
+
+def read_table(path: Path, encoding: str | None = None, locale_code: str = "us"):
+    """upstream.load_tabular with the encoding chosen by file_encoding, not upstream's guess."""
+    enc = file_encoding(path, encoding, locale_code)
+    guess = upstream.detect_encoding
+    if enc:
+        upstream.detect_encoding = lambda _path: enc
+    try:
+        return upstream.load_tabular(path)
+    finally:
+        upstream.detect_encoding = guess
 
 
 def refuse_other_separator(headers: list[str]) -> None:
@@ -2563,7 +3166,8 @@ def resolve_locale(args) -> dict:
 def cmd_plan(args) -> int:
     locale = resolve_locale(args)
     scrubber = Scrubber(locale, args.reference_year)
-    data, meta, headers, withheld = load_input(Path(args.input_file), scrubber)
+    data, meta, headers, withheld = load_input(Path(args.input_file), scrubber, args.encoding,
+                                               locale.get("code", "us"))
     decisions = decide_columns(data, headers, locale, scrubber, set(args.keep), set(args.redact),
                                args.reference_year)
     print("Safe Harbor plan (no cell values are printed)")
@@ -2582,7 +3186,7 @@ def cmd_run(args) -> int:
     scrubber = Scrubber(locale, args.reference_year)
     input_path = Path(args.input_file).resolve()
     out_dir = Path(args.output_dir).resolve()
-    data, meta, headers, withheld = load_input(input_path, scrubber)
+    data, meta, headers, withheld = load_input(input_path, scrubber, args.encoding, locale.get("code", "us"))
     decisions = decide_columns(data, headers, locale, scrubber, set(args.keep), set(args.redact),
                                args.reference_year)
 
@@ -2602,6 +3206,8 @@ def cmd_run(args) -> int:
 
     rows, mapping, changed = apply_decisions(data, headers, decisions, scrubber, args.reference_year)
     residual = residual_findings(rows, headers, decisions, scrubber, args.reference_year)
+    pending = needing_decision(decisions)
+    out_names = output_headers(headers, withheld)
 
     report = {
         "tool": "phi-deidentification safe_harbor.py",
@@ -2622,8 +3228,9 @@ def cmd_run(args) -> int:
              "finding": d["finding"], "action": d["action"],
              "kept_on_request": d["kept_on_request"], "redacted_on_request": d["forced_redaction"],
              "text": d["text"], "verified": bool(d.get("verified")),
-             "needs_decision": d["kind"] == "unverified" and not d["kept_on_request"],
-             "cells_changed": changed.get(d["column"], 0)}
+             "needs_decision": d in pending,
+             "cells_changed": changed.get(d["column"], 0),
+             **({"output_column": out_names[d["column"]]} if d["index"] in withheld else {})}
             for d in decisions
         ],
         "residual_check": {
@@ -2632,7 +3239,7 @@ def cmd_run(args) -> int:
         },
         "columns_needing_decision": [
             {"index": d["index"], "column": None if d["index"] in withheld else d["column"]}
-            for d in decisions if d["kind"] == "unverified" and d["action"] != "keep"
+            for d in pending
         ],
         "kept_text_columns": [
             {"index": d["index"], "column": None if d["index"] in withheld else d["column"],
@@ -2640,15 +3247,16 @@ def cmd_run(args) -> int:
              "script_without_case": bool(d.get("caseless"))}
             for d in kept_text_columns(decisions)
         ],
-        "kept_unverified_text_columns": [
+        "kept_unverified_columns": [
             {"index": d["index"], "column": None if d["index"] in withheld else d["column"],
-             "script_without_case": bool(d.get("caseless"))}
+             "kept_over": d["finding"], "text": d["text"], "script_without_case": bool(d.get("caseless"))}
             for d in kept_unverified_columns(decisions)
         ],
-        "kept_text_note": ("A default run keeps only text it verifies: every value a number, a code, a "
-                           "date, a common category word or a state or country name. Text the person "
-                           "kept with --keep (kept_unverified_text_columns) was not verified. " +
-                           KEPT_TEXT_WARNING),
+        "kept_text_note": ("A default run keeps only values it verifies: a measurement (a decimal, a whole "
+                           "number of up to three digits, or a longer one under a column name that names "
+                           "a measurement), a code, a date reduced to the year, a common category word or "
+                           "a state or country name. Columns the person kept with --keep "
+                           "(kept_unverified_columns) were not verified. " + KEPT_TEXT_WARNING),
         "mapping_written": False,
         "human_review": ("Automated de-identification is not a Safe Harbor determination. A person "
                          "must spot-check the output, confirm that no remaining information could "
@@ -2677,6 +3285,9 @@ def cmd_run(args) -> int:
               "once the person confirms it holds no identifiers. Do not read the input to find out why.")
         return 3
 
+    # A column name that looks like a value or a name (a patient's record read as the header row,
+    # a ZIP code) is not copied into the output; every other column name is copied as it is.
+    rows = [{out_names[c]: row[c] for c in headers} for row in rows]
     upstream.save_tabular(rows, out_path, upstream.detect_format(input_path))
     if not out_path.exists():  # save_tabular falls back to CSV when openpyxl is missing
         alt = out_path.with_suffix(".csv")
@@ -2704,10 +3315,8 @@ def cmd_run(args) -> int:
         print(f"Kept on the person's word, scrubbed for patterns only ({len(on_word)}): "
               + ", ".join(display_name(d, withheld) for d in on_word))
         print(KEPT_TEXT_WARNING)
-    pending = [d for d in decisions if d["kind"] == "unverified" and d["action"] != "keep"
-               and not d["forced_redaction"]]
     if pending:
-        print(f"Redacted as text the script cannot verify ({len(pending)}); keep one with --keep "
+        print(f"Changed because the script cannot verify them ({len(pending)}); keep one with --keep "
               "COLUMN once the person confirms it: " + ", ".join(display_name(d, withheld) for d in pending))
     print(f"Output: {out_path}")
     print(f"Report: {report_path}")
@@ -2745,7 +3354,7 @@ def cmd_verify(args) -> int:
     path = Path(args.input_file)
     if not path.is_file():
         raise UsageError(f"file not found: {path}")
-    data, meta = upstream.load_tabular(path)
+    data, meta = read_table(path, args.encoding, locale.get("code", "us"))
     headers = list(meta.get("headers") or [])
     refuse_other_separator(headers)
     withheld = {i for i, h in enumerate(headers, start=1) if header_looks_like_value(h, scrubber)}
@@ -2780,6 +3389,9 @@ def build_parser() -> argparse.ArgumentParser:
         g.add_argument("--locale-file", metavar="PATH", help="a custom locale pack")
         sp.add_argument("--reference-year", type=int, default=date.today().year, metavar="YYYY",
                         help="year that ages are computed against (default: this year)")
+        sp.add_argument("--encoding", metavar="NAME",
+                        help="text encoding of a CSV or TSV file that is not UTF-8 (for example cp1252, "
+                             "latin-1, utf-16-le, euc-kr); the output is always UTF-8")
 
     for name, help_text in (("plan", "show what would happen to each column; writes nothing"),
                             ("run", "de-identify the file")):
