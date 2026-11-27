@@ -10,20 +10,48 @@
 // upstream path is recorded, only commits touching it count: the newest commit
 // on the path is compared with the pin (the compare API's file list stops at
 // 300 files, so it cannot answer that question for a busy repository).
+//
+// Format 2 rows: only sources with a repo and a commit can be compared. Sources
+// with a url and no repo, with a version and no commit, or with neither pin are
+// skipped and counted, and a lab-owned source (owner "lab") is labelled.
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { REPO_ROOT } from './lib/repo.mjs';
+import { PROVENANCE_FORMAT, isLabOwned, provenanceFormat } from './lib/catalog-rules.mjs';
 
-const json = process.argv.includes('--json');
-const catalog = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'catalog.json'), 'utf8'));
-const cache = new Map();
+/**
+ * The upstream pins to compare: { targets: [{ id, format, repo, commit, path,
+ * owner (format 2 only) }], skipped: { urlOnly, versionOnly, unpinned } }.
+ * Active rows not maintained here only. Format 1 rows give every upstream with
+ * a commit, as before format 2, and count nothing they skip.
+ */
+export function driftTargets(catalog) {
+  const targets = [];
+  const skipped = { urlOnly: 0, versionOnly: 0, unpinned: 0 };
+  for (const r of (catalog.items ?? []).filter((x) => x.status === 'active' && !x.source?.maintained_here)) {
+    const format = provenanceFormat(r, catalog.format);
+    for (const u of r.source?.upstreams ?? []) {
+      if (format !== PROVENANCE_FORMAT) {
+        if (u.commit) targets.push({ id: r.id, format, repo: u.repo, commit: u.commit, path: u.path ?? null });
+        continue;
+      }
+      if (!u.repo) skipped.urlOnly++;
+      else if (!u.commit) skipped[u.version ? 'versionOnly' : 'unpinned']++;
+      else targets.push({ id: r.id, format, repo: u.repo, commit: u.commit, path: u.path ?? null, owner: isLabOwned(u) ? 'lab' : 'external' });
+    }
+  }
+  return { targets, skipped };
+}
 
 function ghJson(args) {
   const out = execFileSync('gh', ['api', ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   return JSON.parse(out);
 }
+
+const cache = new Map();
 
 function compare(repo, commit, upstreamPath) {
   const key = `${repo}@${commit}:${upstreamPath ?? ''}`;
@@ -48,22 +76,29 @@ function compare(repo, commit, upstreamPath) {
   return value;
 }
 
-const rows = [];
-for (const r of catalog.items.filter((x) => x.status === 'active' && !x.source?.maintained_here)) {
-  for (const u of r.source?.upstreams ?? []) {
-    if (!u.commit) continue;
-    const c = compare(u.repo, u.commit, u.path);
+function main(argv) {
+  const json = argv.includes('--json');
+  const catalog = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'catalog.json'), 'utf8'));
+  const { targets, skipped } = driftTargets(catalog);
+  const rows = [];
+  for (const t of targets) {
+    const owner = t.format === PROVENANCE_FORMAT ? { owner: t.owner } : {};
+    const c = compare(t.repo, t.commit, t.path);
     if (c.error) {
-      rows.push({ id: r.id, repo: u.repo, commit: u.commit, state: 'error', detail: c.error });
+      rows.push({ id: t.id, repo: t.repo, commit: t.commit, state: 'error', detail: c.error, ...owner });
       continue;
     }
-    rows.push({ id: r.id, repo: u.repo, commit: u.commit.slice(0, 7), path: u.path ?? null, state: c.ahead === 0 ? 'current' : c.pathMoved ? 'moved' : 'unrelated-changes', ahead: c.ahead, latest: c.latest ?? null });
+    rows.push({ id: t.id, repo: t.repo, commit: t.commit.slice(0, 7), path: t.path, state: c.ahead === 0 ? 'current' : c.pathMoved ? 'moved' : 'unrelated-changes', ahead: c.ahead, latest: c.latest ?? null, ...owner });
   }
+  if (json) console.log(JSON.stringify(rows, null, 2));
+  else {
+    for (const x of rows)
+      console.log(`${x.state.padEnd(17)} ${x.id.padEnd(36)} ${x.repo}@${x.commit}${x.path ? ` ${x.path}` : ''}${x.owner === 'lab' ? ' [lab-owned]' : ''}${x.state === 'error' ? ` ${x.detail}` : ` (repository ahead ${x.ahead}${x.latest ? `, newest commit on the path ${x.latest}` : ''})`}`);
+    const moved = rows.filter((x) => x.state === 'moved').length;
+    const skips = skipped.urlOnly + skipped.versionOnly + skipped.unpinned;
+    console.log(`${rows.length} upstream pins; ${moved} moved under their path${skips ? `; skipped ${skips} format 2 source(s) that cannot be compared (${skipped.urlOnly} url only, ${skipped.versionOnly} version only, ${skipped.unpinned} unpinned)` : ''}`);
+  }
+  return 0;
 }
-if (json) console.log(JSON.stringify(rows, null, 2));
-else {
-  for (const x of rows)
-    console.log(`${x.state.padEnd(17)} ${x.id.padEnd(36)} ${x.repo}@${x.commit}${x.path ? ` ${x.path}` : ''}${x.error ? ` ${x.detail}` : ` (repository ahead ${x.ahead}${x.latest ? `, newest commit on the path ${x.latest}` : ''})`}`);
-  const moved = rows.filter((x) => x.state === 'moved').length;
-  console.log(`${rows.length} upstream pins; ${moved} moved under their path`);
-}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) process.exitCode = main(process.argv.slice(2));

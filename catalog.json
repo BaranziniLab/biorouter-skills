@@ -4147,7 +4147,7 @@
       "kind": "skill",
       "category": "developer",
       "path": "code-simplifier",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "status": "active",
       "aliases": [],
       "job": "code.simplification",
@@ -4175,14 +4175,14 @@
           }
         ],
         "maintained_here": false,
-        "changes": "The plugin's commands and subagents folded into one SKILL.md; shell routed through the Developer extension."
+        "changes": "The plugin's subagent prompt (agents/code-simplifier.md) rewritten as a user-invoked SKILL.md in close paraphrase: its list of one project's coding standards replaced by the project's own instructions and the python-scripting, r-scripting and bio-skills skills, its instruction to act on its own after every edit dropped, and an output section with before and after examples added."
       },
       "licence": "Apache-2.0",
-      "notice_file": null,
+      "notice_file": "LICENSE-UPSTREAM",
       "release": {
         "tag": "skill-code-simplifier",
         "asset": "code-simplifier.zip",
-        "sha256": "485a45b980e62140c02372bb04b575fbdf3304ff13bd8ab2573b31795b15360e"
+        "sha256": null
       },
       "components": null,
       "history": [
@@ -4195,6 +4195,11 @@
           "version": "1.1.0",
           "date": "2026-11-22",
           "note": "metadata pass: version and upstream provenance recorded, Biorouter spelling"
+        },
+        {
+          "version": "1.1.1",
+          "date": "2026-11-27",
+          "note": "licence fix: LICENSE-UPSTREAM ships the Apache-2.0 text and credits the plugin's authors"
         }
       ]
     },
@@ -4507,7 +4512,7 @@
       "kind": "skill",
       "category": "developer",
       "path": "playground",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "status": "active",
       "aliases": [],
       "job": "design.interactive-html-playgrounds",
@@ -4536,14 +4541,14 @@
           }
         ],
         "maintained_here": false,
-        "changes": "The plugin's commands and subagents folded into one SKILL.md; shell routed through the Developer extension."
+        "changes": "SKILL.md kept close to the upstream skill with Claude replaced by Biorouter; the six templates (templates/*.md) condensed into one section of SKILL.md, a paragraph and a layout sketch per playground type, and not included; a defaults object, an empty-state prompt and a copy button pattern added."
       },
       "licence": "Apache-2.0",
-      "notice_file": null,
+      "notice_file": "LICENSE-UPSTREAM",
       "release": {
         "tag": "skill-playground",
         "asset": "playground.zip",
-        "sha256": "9f5cb4f5d099a4966215fe8a85258d99717919646eeb2fa0eb01373283411ef8"
+        "sha256": null
       },
       "components": null,
       "history": [
@@ -4556,6 +4561,11 @@
           "version": "1.1.0",
           "date": "2026-11-22",
           "note": "metadata pass: version and upstream provenance recorded, Biorouter spelling"
+        },
+        {
+          "version": "1.1.1",
+          "date": "2026-11-27",
+          "note": "licence fix: LICENSE-UPSTREAM ships the Apache-2.0 text and credits the plugin's authors"
         }
       ]
     },
