@@ -1,5 +1,9 @@
 #!/usr/bin/env node
-// Checks catalog.json against the skill folders and the BAAM duplicate rules.
+// Checks catalog.json against the skill folders, the BAAM duplicate rules and
+// the provenance rules (PV1 to PV13; the row rules live in lib/catalog-rules.mjs,
+// the folder halves of PV7 to PV11 and PV13 here). Failures that exist today are
+// accepted from catalog.json's baseline_violations and, for the provenance
+// rules, from provenance-baseline.json.
 //
 //   node scripts/check-catalog.mjs                       # this repository alone
 //   node scripts/check-catalog.mjs --jobs <jobs.json> --extensions <extensions.json>
@@ -15,15 +19,29 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  ALLOWED_LICENCES,
   DEFAULT_COMPONENT_SIMILARITY_THRESHOLD,
   DEFAULT_GENERIC_WORDS,
   DEFAULT_SIMILARITY_THRESHOLD,
   COMPONENT_STATUS_PATTERN,
+  FORMAT1_NOTICE_LICENCES,
+  FORMAT1_ORIGINS,
   JOB_PATTERN,
+  ORIGINS,
+  PROVENANCE_FORMAT,
   STATUS_PATTERN,
   applyBaseline,
+  componentOfFile,
+  containsCopyright,
+  fixedTextProblems,
+  folderProvenanceWanted,
+  frontmatterCredits,
+  licenceTokens,
   lookalikeScores,
   methodSkillWarnings,
+  missingLicenceTexts,
+  noticeSources,
+  provenanceFormat,
   ruleD1,
   ruleD2,
   ruleD3,
@@ -31,20 +49,37 @@ import {
   ruleD5,
   ruleD6,
   ruleG1,
+  ruleProvenance,
+  shippedSources,
+  sourceKey,
+  subjectId,
+  upstreamNoticeMarker,
 } from './lib/catalog-rules.mjs';
+import {
+  PROVENANCE_BASELINE_ROWS,
+  PROVENANCE_BASELINE_ROWS_SHA256,
+  PROVENANCE_BASELINE_SINCE,
+  PROVENANCE_WORK_PACKAGES,
+  readProvenanceBaseline,
+} from './lib/provenance-baseline.mjs';
+import { PROVENANCE_FILE, renderProvenanceMd } from './lib/provenance-md.mjs';
 import { REPO_ROOT, bundleComponents, discoverFolders, readSkillFile, skillFilesIn, listTree } from './lib/repo.mjs';
 import { stubFiles } from './lib/stub.mjs';
 
-export const ALLOWED_LICENCES = new Set([
-  'MIT', 'Apache-2.0', 'BSD-2-Clause', 'BSD-3-Clause', 'ISC', 'BlueOak-1.0.0', 'CC0-1.0', 'CC-BY-4.0',
-]);
-// Upstream licences whose text and copyright line must travel inside the zip.
-export const NOTICE_LICENCES = new Set(['MIT', 'BSD-2-Clause', 'BSD-3-Clause', 'ISC', 'BlueOak-1.0.0', 'CC-BY-4.0']);
+// The licence lists and the SPDX reader moved to lib/catalog-rules.mjs, which
+// landing shares; they are re-exported here so nothing that imports them breaks.
+export { ALLOWED_LICENCES, licenceTokens };
+/** Upstream licences whose text and copyright line a format 1 notice file had to carry. */
+export const NOTICE_LICENCES = FORMAT1_NOTICE_LICENCES;
 export const CATEGORIES = new Set(['core', 'developer', 'biomedical']);
-export const ORIGINS = new Set(['native', 'lab', 'adapted']);
 const SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 const ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const SHA256 = /^[0-9a-f]{64}$/;
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+/** The rules a provenance baseline entry may name. */
+export const PROVENANCE_BASELINE_RULE = /^PV(?:[1-9]|1[0-3])$/;
+/** Any provenance rule, PV14 and later included (landing's): none may sit in catalog.json. */
+export const PROVENANCE_RULE = /^PV\d+$/;
 
 function cmpSemver(a, b) {
   const pa = a.split('.').map(Number);
@@ -53,22 +88,21 @@ function cmpSemver(a, b) {
   return 0;
 }
 
-export function licenceTokens(expr) {
-  return String(expr ?? '')
-    .replace(/[()]/g, ' ')
-    .split(/\s+(?:AND|OR|WITH)\s+|\s+/)
-    .filter(Boolean)
-    .filter((t) => t !== 'AND' && t !== 'OR');
-}
-
 function readJson(p) {
   return JSON.parse(fs.readFileSync(p, 'utf8'));
 }
 
 const fail = (rule, subject, message, refs = []) => ({ rule, subject, message, refs });
+const list = (x) => (Array.isArray(x) ? x : []);
+const str = (x) => typeof x === 'string' && x.trim().length > 0;
 
-/** Structural checks of one row's fields, independent of the folder. */
-export function checkRowShape(row) {
+/**
+ * Structural checks of one row's fields, independent of the folder. A format 2
+ * row (its own source.format 2, or any row of a format 2 catalog) takes the
+ * four format 2 origins and leaves its sources to PV6; a format 1 row is
+ * checked as before.
+ */
+export function checkRowShape(row, catalogFormat = 1) {
   const out = [];
   const s = (sub, msg) => out.push(fail('row', `${sub}:${row.id}`, `${row.id}: ${msg}`, [`skill:${row.id}`]));
   if (!ID.test(row.id ?? '')) s('id', `id "${row.id}" is not kebab-case`);
@@ -87,14 +121,20 @@ export function checkRowShape(row) {
   const expectedPath = row.category === 'biomedical' ? `bio-skills/${row.id}` : row.id;
   if (row.path !== expectedPath) s('path', `path must be "${expectedPath}" for a ${row.category} item`);
   const src = row.source ?? {};
-  if (!ORIGINS.has(src.origin)) s('origin', `source.origin "${src.origin}" is not native, lab or adapted`);
-  if (!Array.isArray(src.upstreams)) s('upstreams', 'source.upstreams must be a list');
-  if (typeof src.maintained_here !== 'boolean') s('maintained-here', 'source.maintained_here must be true or false');
-  if (src.origin === 'adapted' && !(src.upstreams ?? []).length) s('upstreams', 'an adapted item names its upstreams');
-  for (const u of src.upstreams ?? []) {
-    if (!u.repo || !u.licence) s('upstream', `an upstream needs repo and licence`);
-    if (u.licence && !ALLOWED_LICENCES.has(u.licence)) s('upstream-licence', `upstream ${u.repo} is ${u.licence}, which may not be integrated`);
-    if (u.commit && !/^[0-9a-f]{7,40}$/.test(u.commit)) s('upstream-commit', `upstream ${u.repo} commit "${u.commit}" is not a hex sha`);
+  if (provenanceFormat(row, catalogFormat) === PROVENANCE_FORMAT) {
+    // Every other source field is PV1 to PV6's (lib/catalog-rules.mjs).
+    if (!ORIGINS.includes(src.origin)) s('origin', `source.origin "${src.origin}" is not ${ORIGINS.join(', ')}`);
+    if (typeof src.maintained_here !== 'boolean') s('maintained-here', 'source.maintained_here must be true or false');
+  } else {
+    if (!FORMAT1_ORIGINS.includes(src.origin)) s('origin', `source.origin "${src.origin}" is not native, lab or adapted`);
+    if (!Array.isArray(src.upstreams)) s('upstreams', 'source.upstreams must be a list');
+    if (typeof src.maintained_here !== 'boolean') s('maintained-here', 'source.maintained_here must be true or false');
+    if (src.origin === 'adapted' && !(src.upstreams ?? []).length) s('upstreams', 'an adapted item names its upstreams');
+    for (const u of src.upstreams ?? []) {
+      if (!u.repo || !u.licence) s('upstream', `an upstream needs repo and licence`);
+      if (u.licence && !ALLOWED_LICENCES.has(u.licence)) s('upstream-licence', `upstream ${u.repo} is ${u.licence}, which may not be integrated`);
+      if (u.commit && !/^[0-9a-f]{7,40}$/.test(u.commit)) s('upstream-commit', `upstream ${u.repo} commit "${u.commit}" is not a hex sha`);
+    }
   }
   for (const t of licenceTokens(row.licence)) if (!ALLOWED_LICENCES.has(t)) s('licence', `licence "${row.licence}" contains ${t}, which is not allowed`);
   const rel = row.release ?? {};
@@ -113,35 +153,133 @@ export function checkRowShape(row) {
   return out;
 }
 
-/** Folder, frontmatter, version, licence, notice and stub checks for one row. */
-export function checkRowFolder(root, row, catalog) {
+/** The ways a stub folder differs from the files it should hold, or none. */
+function stubMismatches(abs, expected) {
+  const tree = listTree(abs);
+  const have = tree.files.map((x) => x.rel).sort();
+  const want = Object.keys(expected).sort();
+  if (have.join('\n') !== want.join('\n') || tree.dirs.length) return [`folder holds ${have.join(', ') || 'nothing'}`];
+  return want.filter((name) => fs.readFileSync(path.join(abs, name), 'utf8') !== expected[name]).map((name) => `${name} differs`);
+}
+
+/**
+ * PV7, the notice file, for every active row: the copyright line, the licence
+ * text and (format 2) the Apache NOTICE of each source the notice file must
+ * carry, and no top-level LICENSE in a format 2 folder (the archive builder
+ * adds Biorouter's own there). Returns [subject, message] pairs.
+ */
+export function noticeProblems(abs, row, catalogFormat = 1) {
+  const out = [];
+  const id = row.id;
+  const fmt2 = provenanceFormat(row, catalogFormat) === PROVENANCE_FORMAT;
+  if (fmt2 && fs.existsSync(path.join(abs, 'LICENSE'))) {
+    out.push([`reserved-licence:${id}`, 'the folder has its own top-level LICENSE; the archive builder adds Biorouter\'s LICENSE there, so name a source\'s licence file LICENSE-UPSTREAM']);
+  }
+  const sources = noticeSources(row, catalogFormat);
+  const apache = fmt2 ? shippedSources(row, catalogFormat).filter((u) => u?.upstream_notice === true) : [];
+  const wanted = [...sources, ...apache.filter((u) => !sources.includes(u))];
+  const file = row.notice_file ? path.join(abs, row.notice_file) : null;
+  if (!wanted.length) {
+    if (file && !fs.existsSync(file)) out.push([`notice:${id}`, `notice_file ${row.notice_file} is missing from the folder`]);
+    return out;
+  }
+  if (!file) {
+    out.push([`notice:${id}`, `has ${wanted.map((u) => `${sourceKey(u)} (${u.licence})`).join(', ')} upstream material but no notice_file`]);
+    return out;
+  }
+  if (!fs.existsSync(file)) {
+    out.push([`notice:${id}`, `notice_file ${row.notice_file} is missing from the folder`]);
+    return out;
+  }
+  const text = fs.readFileSync(file, 'utf8');
+  const licences = [...new Set(sources.flatMap((u) => licenceTokens(u.licence)))];
+  for (const lic of missingLicenceTexts(text, licences)) {
+    out.push([`notice-licence:${id}:${lic}`, `${row.notice_file} lacks the ${lic} licence text${lic === 'BSD-3-Clause' ? ' (with its non-endorsement clause)' : ''}`]);
+  }
+  // One failure per repository. A format 1 upstream under an old notice
+  // licence (MIT, BSD, ISC, BlueOak, CC-BY) must record its copyright line, as
+  // the format 1 rule always asked; in format 2 a null copyright is PV6's to
+  // judge (it needs a copyright_note), so PV7 has no line to look for.
+  const byRepo = new Map();
+  for (const u of sources) {
+    const key = sourceKey(u);
+    if (!byRepo.has(key)) byRepo.set(key, { lines: [], unrecorded: [] });
+    if (str(u?.copyright)) byRepo.get(key).lines.push(u.copyright);
+    else if (!fmt2 && FORMAT1_NOTICE_LICENCES.has(u?.licence)) byRepo.get(key).unrecorded.push(u.licence);
+  }
+  for (const [key, { lines, unrecorded }] of byRepo) {
+    const missing = [...new Set(lines)].filter((c) => !containsCopyright(text, c));
+    const said = [];
+    if (missing.length) said.push(`${row.notice_file} lacks the copyright line of ${key}: ${missing.map((c) => `"${c}"`).join(', ')}`);
+    if (unrecorded.length) said.push(`the row records no copyright line for ${key}, whose ${[...new Set(unrecorded)].join(', ')} licence names its holder, so ${row.notice_file} cannot be checked for it`);
+    if (said.length) out.push([`notice-copyright:${id}:${key}`, said.join('; ')]);
+  }
+  const marked = new Set();
+  for (const u of apache) {
+    const key = sourceKey(u);
+    if (marked.has(key)) continue;
+    marked.add(key);
+    const marker = upstreamNoticeMarker(u.repo ?? key);
+    if (!text.includes(marker)) out.push([`notice-apache:${id}:${key}`, `${key} publishes a NOTICE file (upstream_notice), but ${row.notice_file} has no "${marker}" section carrying it`]);
+  }
+  return out;
+}
+
+/** The files of a format 2 row's folder that PV13 reads: the notice file, every SKILL.md and PROVENANCE.md. */
+function fixedTextFiles(abs, row, skillFiles) {
+  const rels = [...new Set([row.notice_file, ...skillFiles.map((s) => s.rel), PROVENANCE_FILE].filter(Boolean))];
+  return rels.filter((rel) => fs.existsSync(path.join(abs, rel)));
+}
+
+/**
+ * Folder, frontmatter, version, licence, notice and stub checks for one row,
+ * and the folder halves of the provenance rules: PV7 for every active row;
+ * PV8's front matter part, PV9, PV10, PV11's file part and PV13's file part
+ * for format 2 rows. `provenance` is the parsed provenance-baseline.json: a
+ * row whose PV9 entry defers its folder files keeps today's stub.
+ */
+export function checkRowFolder(root, row, catalog, provenance = readProvenanceBaseline(root)) {
   const out = [];
   const ref = `skill:${row.id}`;
+  const id = row.id;
   const f = (rule, sub, msg) => out.push(fail(rule, `${sub}:${row.id}`, `${row.id}: ${msg}`, [ref]));
+  const pv = (rule, subject, msg) => out.push(fail(rule, subject, `${id}: ${msg}`, [ref]));
   const abs = path.join(root, row.path ?? '');
   if (!row.path || !fs.existsSync(abs)) {
     f('folder', 'missing', `folder ${row.path} does not exist`);
     return out;
   }
+  const catalogFormat = catalog?.format ?? 1;
+  const fmt2 = provenanceFormat(row, catalogFormat) === PROVENANCE_FORMAT;
   const active = row.status === 'active';
   if (!active) {
-    // A merged or retired item's folder is exactly its generated stub.
+    // A merged or retired item's folder is exactly its generated stub: with
+    // its credit lines once its folder files are due, today's text until then.
+    const wanted = folderProvenanceWanted(row, { catalogFormat, baseline: provenance });
     let expected;
     try {
-      expected = stubFiles(row, catalog);
+      expected = stubFiles(row, catalog, { provenance: wanted });
     } catch (e) {
       f('stub', 'stub', e.message);
       return out;
     }
-    const tree = listTree(abs);
-    const have = tree.files.map((x) => x.rel).sort();
-    const want = Object.keys(expected).sort();
-    if (have.join('\n') !== want.join('\n') || tree.dirs.length) {
-      f('stub', 'stub', `folder holds ${have.join(', ') || 'nothing'}; a ${row.status} item holds only its generated stub (run node scripts/write-stubs.mjs)`);
+    const mismatches = stubMismatches(abs, expected);
+    if (mismatches.length && mismatches[0].startsWith('folder holds')) {
+      f('stub', 'stub', `${mismatches[0]}; a ${row.status} item holds only its generated stub (run node scripts/write-stubs.mjs)`);
     } else {
-      for (const name of want)
-        if (fs.readFileSync(path.join(abs, name), 'utf8') !== expected[name])
-          f('stub', 'stub', `${name} differs from the generated stub (run node scripts/write-stubs.mjs)`);
+      for (const m of mismatches) f('stub', 'stub', `${m.replace(/ differs$/, '')} differs from the generated stub (run node scripts/write-stubs.mjs)`);
+    }
+    // PV9: the stub with its credit lines, whether or not the row is deferred,
+    // so a deferral whose stub is already written is stale.
+    if (fmt2) {
+      let full = null;
+      try {
+        full = stubFiles(row, catalog, { provenance: true });
+      } catch (e) {
+        pv('PV9', `folder:${id}`, `the stub generator failed: ${e.message}`);
+      }
+      const m = full ? stubMismatches(abs, full) : [];
+      if (m.length) pv('PV9', `folder:${id}`, `the folder is not its format 2 stub with credit lines (${m.join('; ')}); node scripts/write-stubs.mjs writes it once the row's folder files are due`);
     }
     return out;
   }
@@ -198,22 +336,89 @@ export function checkRowFolder(root, row, catalog) {
     const effective = declared ?? (row.version === '1.0.0' ? '1.0.0' : undefined);
     if (effective !== row.version)
       f('version', `version-${s.rel}`, `${s.rel} has metadata.version ${declared ?? '(none)'}, the row says ${row.version}`);
-    if (fm.license !== row.licence) f('licence', `licence-${s.rel}`, `${s.rel} declares license "${fm.license}", the row says "${row.licence}"`);
+    if (!fmt2) {
+      if (fm.license !== row.licence) f('licence', `licence-${s.rel}`, `${s.rel} declares license "${fm.license}", the row says "${row.licence}"`);
+      continue;
+    }
+    // PV8: a component file declares its component's licence, else the row's.
+    const folder = componentOfFile(row, s.rel);
+    const own = folder ? row.components[folder]?.licence : null;
+    const want = own ?? row.licence;
+    if (fm.license !== want)
+      pv('PV8', `frontmatter-licence:${id}:${s.rel}`, `${s.rel} declares license "${fm.license}"; ${own ? `its component ${folder}` : 'the row'} says "${want}"`);
   }
-  const needsNotice = (row.source?.upstreams ?? []).filter((u) => NOTICE_LICENCES.has(u.licence));
-  if (needsNotice.length) {
-    if (!row.notice_file) f('notice', 'notice', `has ${needsNotice.map((u) => `${u.repo} (${u.licence})`).join(', ')} upstream text but no notice_file`);
-    else {
-      const p = path.join(abs, row.notice_file);
-      if (!fs.existsSync(p)) f('notice', 'notice', `notice_file ${row.notice_file} is missing from the folder`);
-      else {
-        const text = fs.readFileSync(p, 'utf8');
-        for (const u of needsNotice)
-          if (!u.copyright || !text.includes(u.copyright)) f('notice', 'notice', `${row.notice_file} lacks the copyright line of ${u.repo}`);
+
+  // PV7, the notice file.
+  for (const [subject, msg] of noticeProblems(abs, row, catalogFormat)) pv('PV7', subject, msg);
+  if (!fmt2) return out;
+
+  // PV9: PROVENANCE.md is the generator's, whether or not the row is deferred.
+  let expected = null;
+  try {
+    expected = renderProvenanceMd(row, catalog);
+  } catch (e) {
+    pv('PV9', `folder:${id}`, `the ${PROVENANCE_FILE} generator failed: ${e.message}`);
+  }
+  if (expected != null) {
+    const p = path.join(abs, PROVENANCE_FILE);
+    if (!fs.existsSync(p)) pv('PV9', `folder:${id}`, `has no ${PROVENANCE_FILE}; node scripts/render-readme.mjs writes it once the row's folder files are due`);
+    else if (fs.readFileSync(p, 'utf8') !== expected) pv('PV9', `folder:${id}`, `${PROVENANCE_FILE} differs from the catalog (run node scripts/render-readme.mjs)`);
+  }
+
+  // PV10: each SKILL.md carries the generated credits.
+  const off = [];
+  for (const s of skillFiles) {
+    const meta = s.frontmatter?.metadata && typeof s.frontmatter.metadata === 'object' ? s.frontmatter.metadata : {};
+    const want = frontmatterCredits(row, s.rel);
+    const keys = ['origin', 'credit', 'curated_by'].filter((k) => meta[k] !== want[k]);
+    if (keys.length) off.push(`${s.rel} (${keys.map((k) => `metadata.${k}`).join(', ')})`);
+  }
+  if (off.length) pv('PV10', `frontmatter:${id}`, `front matter credits differ from the catalog in ${off.join(', ')}; node scripts/render-readme.mjs writes them once the row's folder files are due`);
+
+  // PV11: the files a component lists as written for Biorouter exist.
+  if (row.kind === 'bundle') {
+    for (const [folder, comp] of Object.entries(row.components ?? {})) {
+      if (comp?.status !== 'active') continue;
+      for (const w of list(comp.written_for_biorouter)) {
+        const rel = String(w?.path ?? '');
+        const norm = path.posix.normalize(rel);
+        const inside = str(rel) && !path.posix.isAbsolute(rel) && norm === rel && !norm.startsWith('../') && norm !== '..';
+        if (!inside || !fs.existsSync(path.join(abs, folder, rel)) || !fs.statSync(path.join(abs, folder, rel)).isFile()) {
+          pv('PV11', `written-file:${id}/${folder}:${rel}`, `component ${folder} lists ${rel || '(no path)'} under written_for_biorouter, but ${inside ? 'that file is not in the folder' : 'the path is not a plain path inside the component folder'}`);
+        }
       }
     }
-  } else if (row.notice_file && !fs.existsSync(path.join(abs, row.notice_file))) {
-    f('notice', 'notice', `notice_file ${row.notice_file} is missing from the folder`);
+  }
+
+  // PV13: no file states a fixed text differently from its constant.
+  const allowed = list(row.source?.upstreams).map((u) => u?.copyright).filter(str);
+  for (const rel of fixedTextFiles(abs, row, skillFiles)) {
+    const problems = fixedTextProblems(fs.readFileSync(path.join(abs, rel), 'utf8'), { allowed });
+    if (problems.length) {
+      pv('PV13', `fixed-text:${id}:${rel}`, `${rel} states a fixed text differently: ${problems.map((p) => `line ${p.line} "${p.text}" (write "${p.expected}")`).join('; ')}`);
+    }
+  }
+  return out;
+}
+
+/**
+ * PV10's warnings for a format 2 active row: older provenance keys in a
+ * SKILL.md's metadata that the generated credits replace.
+ */
+export function frontmatterWarnings(root, row, catalog) {
+  if (row.status !== 'active' || !row.path) return [];
+  if (provenanceFormat(row, catalog?.format ?? 1) !== PROVENANCE_FORMAT) return [];
+  const abs = path.join(root, row.path);
+  if (!fs.existsSync(abs)) return [];
+  const files = row.kind === 'skill' ? [{ rel: 'SKILL.md', ...readSkillFile(path.join(abs, 'SKILL.md')) }] : skillFilesIn(root, row.path);
+  const repos = list(row.source?.upstreams).flatMap((u) => [u?.repo, u?.url]).filter(str).map((x) => x.toLowerCase());
+  const out = [];
+  for (const s of files) {
+    const meta = s.frontmatter?.metadata && typeof s.frontmatter.metadata === 'object' ? s.frontmatter.metadata : {};
+    for (const k of ['upstream_licence', 'upstream_author', 'source'])
+      if (meta[k] !== undefined) out.push(`${row.id}: ${s.rel} metadata.${k} is an older provenance key; the catalog and metadata.credit carry it now`);
+    if (meta.upstream !== undefined && !repos.some((r) => String(meta.upstream).toLowerCase().includes(r)))
+      out.push(`${row.id}: ${s.rel} metadata.upstream "${meta.upstream}" names no upstream of the row`);
   }
   return out;
 }
@@ -288,11 +493,84 @@ export function templatePredicate(root) {
   return (line) => set.has(crypto.createHash('sha256').update(line).digest('hex').slice(0, 16));
 }
 
-export function runCheck({ root = REPO_ROOT, catalog, builtins, jobs = null, extensions = null } = {}) {
+/** The SHA-256 of a sorted id list joined with newlines: what PROVENANCE_BASELINE_ROWS_SHA256 freezes. */
+export function provenanceRowsDigest(ids) {
+  return crypto.createHash('sha256').update([...ids].sort().join('\n')).digest('hex');
+}
+
+/**
+ * The guard of the provenance baseline. Only the rows that existed when the
+ * provenance rules landed may be baselined, every entry is a dated PV1 to PV13
+ * entry owned by PROV-S1 or PROV-S4 (PV9 and PV10, the folder files waiting for
+ * a release, by PROV-S4 alone), and catalog.json, which landing mirrors, holds
+ * no provenance entry. Returns { problems, entries }: the guard's failures and
+ * the entries that may be applied. A refused entry is never applied, so the
+ * failure it named shows too.
+ */
+export function provenanceBaselineProblems(provenance, catalog, frozenRows = { count: PROVENANCE_BASELINE_ROWS, sha256: PROVENANCE_BASELINE_ROWS_SHA256 }, { extensions = null } = {}) {
+  const problems = [];
+  const g = (subject, message) => problems.push(fail('provenance-baseline', subject, message));
+  const rows = list(provenance?.rows);
+  const entries = list(provenance?.baseline_violations);
+  if (rows.length || entries.length) {
+    const canonical = [...new Set(rows.filter((r) => typeof r === 'string'))].sort();
+    if (canonical.length !== rows.length || canonical.join('\n') !== rows.join('\n')) {
+      g('rows', 'provenance-baseline.json rows must be a sorted list of unique row ids');
+    } else if (rows.length !== frozenRows.count || provenanceRowsDigest(rows) !== frozenRows.sha256) {
+      g('rows', `provenance-baseline.json rows (${rows.length} ids) are not the ${frozenRows.count} rows frozen when the provenance rules landed; a row added later passes every provenance rule and is never baselined`);
+    }
+  }
+  const known = new Set(rows);
+  const valid = [];
+  for (const b of entries) {
+    const p = [];
+    if (!PROVENANCE_BASELINE_RULE.test(String(b?.rule ?? ''))) p.push(`rule "${b?.rule}" is not one of PV1 to PV13`);
+    if (!Object.hasOwn(PROVENANCE_WORK_PACKAGES, String(b?.wp ?? ''))) p.push(`work package "${b?.wp}" is not ${Object.keys(PROVENANCE_WORK_PACKAGES).join(' or ')}`);
+    else if ((b.rule === 'PV9' || b.rule === 'PV10') && b.wp !== 'PROV-S4') p.push(`${b.rule} entries belong to PROV-S4 (folder files that wait for the item's next release)`);
+    if (!DATE.test(String(b?.since ?? '')) || b.since < PROVENANCE_BASELINE_SINCE) p.push(`since "${b?.since}" is not a date on or after ${PROVENANCE_BASELINE_SINCE}`);
+    const rowId = subjectId(b?.subject);
+    if (!rowId || !known.has(rowId)) p.push(`${rowId ? `row ${rowId}` : 'its subject names no row and'} is not among the rows frozen when the provenance rules landed`);
+    if (p.length) g(`entry:${b?.rule}::${b?.subject}`, `provenance-baseline.json lists ${b?.rule} ${b?.subject}: ${p.join('; ')}`);
+    else valid.push(b);
+  }
+  for (const b of list(catalog?.baseline_violations)) {
+    if (PROVENANCE_RULE.test(String(b?.rule ?? ''))) {
+      g(`catalog-entry:${b.rule}::${b.subject}`, `catalog.json's baseline_violations lists ${b.rule} ${b.subject}; provenance entries belong in provenance-baseline.json, because catalog.json is mirrored into landing`);
+    }
+  }
+  // The extension catalog's provenance entries are never applied here: this
+  // check runs the provenance rules on skill rows only, and a skill row's
+  // entries belong in provenance-baseline.json, behind the guard above. An
+  // entry for one of landing's own extension rows is landing's to apply and is
+  // passed over; any other provenance entry there is refused, so the extension
+  // catalog cannot baseline a skill row the guard would refuse.
+  const skillIds = new Set(list(catalog?.items).map((r) => r?.id));
+  const extensionIds = new Set(list(extensions?.items).map((r) => r?.id));
+  for (const b of list(extensions?.baseline_violations)) {
+    if (!PROVENANCE_RULE.test(String(b?.rule ?? ''))) continue;
+    const rowId = subjectId(b?.subject);
+    if (rowId && extensionIds.has(rowId) && !skillIds.has(rowId)) continue;
+    const names = rowId && skillIds.has(rowId) ? `names the skill row ${rowId}` : 'names no row of the extension catalog';
+    g(`extensions-entry:${b?.rule}::${b?.subject}`, `the extension catalog's baseline_violations lists ${b?.rule} ${b?.subject}, which ${names}; a skill row's provenance entries belong in provenance-baseline.json, and only the rows frozen when the provenance rules landed may have them`);
+  }
+  return { problems, entries: valid };
+}
+
+/** The entries of the extension catalog's baseline this check applies: every one but the provenance entries. */
+export function extensionBaselineEntries(extensions) {
+  return list(extensions?.baseline_violations).filter((b) => !PROVENANCE_RULE.test(String(b?.rule ?? '')));
+}
+
+export function runCheck({
+  root = REPO_ROOT, catalog, builtins, jobs = null, extensions = null,
+  provenance = readProvenanceBaseline(root),
+  frozenRows = { count: PROVENANCE_BASELINE_ROWS, sha256: PROVENANCE_BASELINE_ROWS_SHA256 },
+} = {}) {
   const errors = [];
   const warnings = [];
   const raw = [];
-  if (catalog?.format !== 1) raw.push(fail('row', 'format:catalog', 'catalog.json must have "format": 1'));
+  const catalogFormat = catalog?.format;
+  if (catalogFormat !== 1 && catalogFormat !== PROVENANCE_FORMAT) raw.push(fail('row', 'format:catalog', 'catalog.json must have "format": 1 or 2'));
   const rows = catalog?.items ?? [];
 
   // Ids are unique, and every folder has exactly one row.
@@ -305,10 +583,16 @@ export function runCheck({ root = REPO_ROOT, catalog, builtins, jobs = null, ext
   const byPath = new Map(rows.map((r) => [r.path, r]));
   for (const f of folders) if (!byPath.has(f.path)) raw.push(fail('folder', `unlisted:${f.path}`, `folder ${f.path} has no catalog row`));
   for (const r of rows) {
-    raw.push(...checkRowShape(r));
-    raw.push(...checkRowFolder(root, r, catalog));
+    raw.push(...checkRowShape(r, catalogFormat));
+    raw.push(...checkRowFolder(root, r, catalog, provenance));
     warnings.push(...brandWarnings(root, r));
+    warnings.push(...frontmatterWarnings(root, r, catalog));
   }
+
+  // The provenance row rules (PV1 to PV6, PV8, PV11 to PV13).
+  const prov = ruleProvenance(rows, { catalogFormat: catalogFormat === PROVENANCE_FORMAT ? PROVENANCE_FORMAT : 1, catalog: 'skills' });
+  raw.push(...prov.failures);
+  warnings.push(...prov.warnings);
 
   // The duplicate rules.
   const threshold = jobs?.similarity_threshold ?? DEFAULT_SIMILARITY_THRESHOLD;
@@ -359,13 +643,20 @@ export function runCheck({ root = REPO_ROOT, catalog, builtins, jobs = null, ext
     warnings.push(...g.warnings);
   }
 
-  const baseline = [...(catalog?.baseline_violations ?? []), ...(extensions?.baseline_violations ?? [])];
-  const done = [...(catalog?.done_work_packages ?? []), ...(extensions?.done_work_packages ?? [])];
+  // The baselines: catalog.json's and the extension catalog's (no provenance
+  // entry of a skill row may sit in either) and provenance-baseline.json's,
+  // after its guard.
+  const guard = provenanceBaselineProblems(provenance, catalog, frozenRows, { extensions });
+  const catalogBaseline = list(catalog?.baseline_violations).filter((b) => !PROVENANCE_RULE.test(String(b?.rule ?? '')));
+  const baseline = [...catalogBaseline, ...guard.entries, ...extensionBaselineEntries(extensions)];
+  const done = [...(catalog?.done_work_packages ?? []), ...list(provenance?.done_work_packages), ...(extensions?.done_work_packages ?? [])];
   // Cross-kind entries (they need jobs.json or the extension catalog) only
   // apply when those were given.
   const relevant = baseline.filter((b) => (extensions || jobs) || !b.cross_kind);
   const result = applyBaseline(raw, relevant, done);
   errors.push(...result.errors);
+  // The guard's own failures are never baselined.
+  errors.push(...guard.problems);
   return { errors, warnings, accepted: result.accepted, raw, threshold };
 }
 
@@ -389,7 +680,9 @@ function parseArgs(argv) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help) {
-    console.log(fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1, 11).map((l) => l.replace(/^\/\/ ?/, '')).join('\n'));
+    const lines = fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1);
+    const header = lines.slice(0, lines.findIndex((l) => !l.startsWith('//')));
+    console.log(header.map((l) => l.replace(/^\/\/ ?/, '')).join('\n'));
     return 0;
   }
   const catalog = readJson(args.catalog ?? path.join(args.root, 'catalog.json'));

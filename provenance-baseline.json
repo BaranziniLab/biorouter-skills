@@ -1,0 +1,1226 @@
+{
+  "format": 1,
+  "description": "Baseline of the provenance rules PV1 to PV13 (see README, The catalog). Kept beside catalog.json because the catalog is mirrored into landing.",
+  "since": "2026-11-27",
+  "rows": [
+    "alignment",
+    "alignment-files",
+    "alternative-splicing",
+    "anti-ai-writing",
+    "arbor-optimization",
+    "atac-seq",
+    "autoskill-workflow-discovery",
+    "bids-neuroimaging",
+    "biomedical-imaging-pathology",
+    "causal-genomics",
+    "causal-heterogeneity-policy-learning",
+    "causal-identification-gates",
+    "chemoinformatics",
+    "chip-seq",
+    "citation-library-management",
+    "citation-temporal-integrity",
+    "claim-evidence-integrity",
+    "clinical-ai-modeling",
+    "clinical-biostatistics",
+    "clinical-databases",
+    "clinical-decision-support-review",
+    "clip-seq",
+    "code-modernization",
+    "code-review",
+    "code-simplifier",
+    "commit-commands",
+    "comparative-genomics",
+    "computational-fluid-dynamics",
+    "copy-number",
+    "crispr-screens",
+    "data-visualization",
+    "database-access",
+    "develop-biorouter-extension",
+    "differential-expression",
+    "drug-discovery-benchmarks",
+    "ecological-genomics",
+    "econ-finance-data-sources",
+    "econometrics-toolkit",
+    "empirical-benchmark-harness",
+    "empirical-paper-submission-rr",
+    "empirical-research-router",
+    "epidemiological-genomics",
+    "epitranscriptomics",
+    "experimental-design",
+    "exploratory-data-analysis",
+    "expression-matrix",
+    "figure-qa",
+    "financial-accounting-econometrics",
+    "flow-cytometry",
+    "frontend-design",
+    "gene-regulatory-networks",
+    "general-time-series-forecasting",
+    "genome-annotation",
+    "genome-assembly",
+    "genome-engineering",
+    "genome-intervals",
+    "geospatial-science",
+    "ggplot-visualization",
+    "gpu-compute-optimization",
+    "grant-funding-strategy",
+    "hi-c-analysis",
+    "high-performance-r",
+    "hookify",
+    "hugging-science-resource-discovery",
+    "imaging-mass-cytometry",
+    "immunoinformatics",
+    "interactive-dashboards",
+    "julia-development",
+    "laboratory-automation-planning",
+    "liquid-biopsy",
+    "long-read-sequencing",
+    "machine-learning",
+    "manuscript-peer-review",
+    "materials-informatics",
+    "metabolic-modeling-cobrapy",
+    "metabolomics",
+    "metagenomics",
+    "methylation-analysis",
+    "microbiome",
+    "microscopy-image-analysis",
+    "molecular-dynamics",
+    "multi-omics-integration",
+    "neurophysiology-analysis",
+    "open-science-review",
+    "pathway-analysis",
+    "phasing-imputation",
+    "phi-deidentification",
+    "phylogenetics",
+    "physical-science-computing",
+    "playground",
+    "population-genetics",
+    "primer-design",
+    "proteomics",
+    "psychometrics-sem-measurement",
+    "python-scripting",
+    "python-visualization",
+    "qualitative-thematic-analysis",
+    "quantum-scientific-computing",
+    "r-package-development",
+    "r-scripting",
+    "ralph",
+    "read-alignment",
+    "read-qc",
+    "regulatory-quality-systems",
+    "replication-package-audit",
+    "reporting",
+    "research-code-hardening",
+    "research-evaluation-venues",
+    "restriction-analysis",
+    "ribo-seq",
+    "rna-quantification",
+    "rna-structure",
+    "science-superpowers",
+    "scientific-artifacts",
+    "scientific-data-engineering",
+    "scientific-machine-learning",
+    "scientific-manuscript-writing",
+    "scientific-problem-selection",
+    "scientific-prose-review",
+    "scientific-python-development",
+    "scientific-research",
+    "scientific-visual-communication",
+    "sequence-io",
+    "sequence-manipulation",
+    "simulation-optimization",
+    "single-cell",
+    "skill-creator",
+    "small-rna-seq",
+    "social-science-text-as-data",
+    "spatial-transcriptomics",
+    "stata-research-workbench",
+    "statistical-modeling-bayes",
+    "structural-biology",
+    "structural-economics-theory",
+    "superpowers",
+    "survey-weights-complex-samples",
+    "systematic-review-prisma",
+    "systems-biology",
+    "taste-skill",
+    "tcr-bcr-analysis",
+    "temporal-genomics",
+    "ucsf-hpc",
+    "variant-calling",
+    "workflow-management",
+    "workflows"
+  ],
+  "done_work_packages": [],
+  "baseline_violations": [
+    {
+      "rule": "PV1",
+      "subject": "format:scientific-research",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "scientific-research: records its provenance in format 1 (origin \"lab\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:empirical-research-router",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "empirical-research-router: records its provenance in format 1 (origin \"native\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:causal-identification-gates",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "causal-identification-gates: records its provenance in format 1 (origin \"native\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:replication-package-audit",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "replication-package-audit: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:claim-evidence-integrity",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "claim-evidence-integrity: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:citation-temporal-integrity",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "citation-temporal-integrity: records its provenance in format 1 (origin \"native\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:empirical-benchmark-harness",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "empirical-benchmark-harness: records its provenance in format 1 (origin \"native\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:scientific-artifacts",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "scientific-artifacts: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:open-science-review",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "open-science-review: records its provenance in format 1 (origin \"native\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:scientific-data-engineering",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "scientific-data-engineering: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:statistical-modeling-bayes",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "statistical-modeling-bayes: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:scientific-machine-learning",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "scientific-machine-learning: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:geospatial-science",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "geospatial-science: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:neurophysiology-analysis",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "neurophysiology-analysis: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:quantum-scientific-computing",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "quantum-scientific-computing: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:materials-informatics",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "materials-informatics: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:biomedical-imaging-pathology",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "biomedical-imaging-pathology: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:citation-library-management",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "citation-library-management: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:laboratory-automation-planning",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "laboratory-automation-planning: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:econometrics-toolkit",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "econometrics-toolkit: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:systematic-review-prisma",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "systematic-review-prisma: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:taste-skill",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "taste-skill: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:simulation-optimization",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "simulation-optimization: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:physical-science-computing",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "physical-science-computing: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:metabolic-modeling-cobrapy",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "metabolic-modeling-cobrapy: records its provenance in format 1 (origin \"native\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:drug-discovery-benchmarks",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "drug-discovery-benchmarks: records its provenance in format 1 (origin \"native\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:clinical-decision-support-review",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "clinical-decision-support-review: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:scientific-visual-communication",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "scientific-visual-communication: records its provenance in format 1 (origin \"native\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:grant-funding-strategy",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "grant-funding-strategy: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:regulatory-quality-systems",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "regulatory-quality-systems: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:gpu-compute-optimization",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "gpu-compute-optimization: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:research-evaluation-venues",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "research-evaluation-venues: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:qualitative-thematic-analysis",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "qualitative-thematic-analysis: records its provenance in format 1 (origin \"native\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:financial-accounting-econometrics",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "financial-accounting-econometrics: records its provenance in format 1 (origin \"native\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:stata-research-workbench",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "stata-research-workbench: records its provenance in format 1 (origin \"native\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:survey-weights-complex-samples",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "survey-weights-complex-samples: records its provenance in format 1 (origin \"native\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:psychometrics-sem-measurement",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "psychometrics-sem-measurement: records its provenance in format 1 (origin \"native\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:social-science-text-as-data",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "social-science-text-as-data: records its provenance in format 1 (origin \"native\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:econ-finance-data-sources",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "econ-finance-data-sources: records its provenance in format 1 (origin \"native\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:empirical-paper-submission-rr",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "empirical-paper-submission-rr: records its provenance in format 1 (origin \"native\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:structural-economics-theory",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "structural-economics-theory: records its provenance in format 1 (origin \"native\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:causal-heterogeneity-policy-learning",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "causal-heterogeneity-policy-learning: records its provenance in format 1 (origin \"native\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:autoskill-workflow-discovery",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "autoskill-workflow-discovery: records its provenance in format 1 (origin \"native\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:arbor-optimization",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "arbor-optimization: records its provenance in format 1 (origin \"native\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:hugging-science-resource-discovery",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "hugging-science-resource-discovery: records its provenance in format 1 (origin \"native\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:molecular-dynamics",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "molecular-dynamics: records its provenance in format 1 (origin \"native\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:general-time-series-forecasting",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "general-time-series-forecasting: records its provenance in format 1 (origin \"native\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:bids-neuroimaging",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "bids-neuroimaging: records its provenance in format 1 (origin \"native\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:clinical-ai-modeling",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "clinical-ai-modeling: records its provenance in format 1 (origin \"native\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:computational-fluid-dynamics",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "computational-fluid-dynamics: records its provenance in format 1 (origin \"native\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:anti-ai-writing",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "anti-ai-writing: records its provenance in format 1 (origin \"lab\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:ggplot-visualization",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "ggplot-visualization: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:r-scripting",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "r-scripting: records its provenance in format 1 (origin \"lab\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:python-scripting",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "python-scripting: records its provenance in format 1 (origin \"lab\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:ralph",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "ralph: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:superpowers",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "superpowers: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:ucsf-hpc",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "ucsf-hpc: records its provenance in format 1 (origin \"lab\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:code-review",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "code-review: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:code-simplifier",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "code-simplifier: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:commit-commands",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "commit-commands: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:skill-creator",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "skill-creator: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:develop-biorouter-extension",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "develop-biorouter-extension: records its provenance in format 1 (origin \"lab\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:hookify",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "hookify: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:code-modernization",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "code-modernization: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:playground",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "playground: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:frontend-design",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "frontend-design: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:alignment",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "alignment: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:alignment-files",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "alignment-files: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:alternative-splicing",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "alternative-splicing: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:atac-seq",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "atac-seq: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:causal-genomics",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "causal-genomics: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:chemoinformatics",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "chemoinformatics: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:chip-seq",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "chip-seq: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:clinical-biostatistics",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "clinical-biostatistics: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:clinical-databases",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "clinical-databases: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:clip-seq",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "clip-seq: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:comparative-genomics",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "comparative-genomics: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:copy-number",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "copy-number: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:crispr-screens",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "crispr-screens: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:data-visualization",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "data-visualization: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:database-access",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "database-access: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:differential-expression",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "differential-expression: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:ecological-genomics",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "ecological-genomics: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:epidemiological-genomics",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "epidemiological-genomics: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:epitranscriptomics",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "epitranscriptomics: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:experimental-design",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "experimental-design: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:expression-matrix",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "expression-matrix: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:flow-cytometry",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "flow-cytometry: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:gene-regulatory-networks",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "gene-regulatory-networks: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:genome-annotation",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "genome-annotation: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:genome-assembly",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "genome-assembly: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:genome-engineering",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "genome-engineering: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:genome-intervals",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "genome-intervals: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:hi-c-analysis",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "hi-c-analysis: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:imaging-mass-cytometry",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "imaging-mass-cytometry: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:immunoinformatics",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "immunoinformatics: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:liquid-biopsy",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "liquid-biopsy: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:long-read-sequencing",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "long-read-sequencing: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:machine-learning",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "machine-learning: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:metabolomics",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "metabolomics: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:metagenomics",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "metagenomics: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:methylation-analysis",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "methylation-analysis: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:microbiome",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "microbiome: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:multi-omics-integration",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "multi-omics-integration: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:pathway-analysis",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "pathway-analysis: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:phasing-imputation",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "phasing-imputation: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:phylogenetics",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "phylogenetics: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:population-genetics",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "population-genetics: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:primer-design",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "primer-design: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:proteomics",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "proteomics: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:read-alignment",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "read-alignment: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:read-qc",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "read-qc: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:reporting",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "reporting: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:restriction-analysis",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "restriction-analysis: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:ribo-seq",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "ribo-seq: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:rna-quantification",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "rna-quantification: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:rna-structure",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "rna-structure: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:sequence-io",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "sequence-io: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:sequence-manipulation",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "sequence-manipulation: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:single-cell",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "single-cell: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:small-rna-seq",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "small-rna-seq: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:spatial-transcriptomics",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "spatial-transcriptomics: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:structural-biology",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "structural-biology: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:systems-biology",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "systems-biology: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:tcr-bcr-analysis",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "tcr-bcr-analysis: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:temporal-genomics",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "temporal-genomics: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:variant-calling",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "variant-calling: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:workflow-management",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "workflow-management: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:workflows",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "workflows: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:exploratory-data-analysis",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "exploratory-data-analysis: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:figure-qa",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "figure-qa: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:high-performance-r",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "high-performance-r: records its provenance in format 1 (origin \"lab\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:interactive-dashboards",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "interactive-dashboards: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:julia-development",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "julia-development: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:manuscript-peer-review",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "manuscript-peer-review: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:microscopy-image-analysis",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "microscopy-image-analysis: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:python-visualization",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "python-visualization: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:r-package-development",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "r-package-development: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:research-code-hardening",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "research-code-hardening: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:science-superpowers",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "science-superpowers: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:scientific-manuscript-writing",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "scientific-manuscript-writing: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:scientific-problem-selection",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "scientific-problem-selection: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:scientific-prose-review",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "scientific-prose-review: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:scientific-python-development",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "scientific-python-development: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV1",
+      "subject": "format:phi-deidentification",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "phi-deidentification: records its provenance in format 1 (origin \"adapted\"); write it in format 2 (source.format 2, one of in-house, ideas-derived, adapted, third-party, contributors)"
+    },
+    {
+      "rule": "PV7",
+      "subject": "notice-copyright:scientific-artifacts:K-Dense-AI/scientific-agent-skills",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "scientific-artifacts: LICENSE-UPSTREAM lacks the copyright line of K-Dense-AI/scientific-agent-skills: \"per-skill licence Apache-2.0; ported from SuperiorByteWorks-LLC/agent-project\""
+    },
+    {
+      "rule": "PV7",
+      "subject": "notice-copyright:code-review:anthropics/claude-plugins-official",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "code-review: LICENSE-UPSTREAM lacks the copyright line of anthropics/claude-plugins-official: \"Copyright Anthropic, PBC (Apache License 2.0, no NOTICE file)\""
+    },
+    {
+      "rule": "PV7",
+      "subject": "notice-copyright:commit-commands:anthropics/claude-plugins-official",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "commit-commands: LICENSE-UPSTREAM lacks the copyright line of anthropics/claude-plugins-official: \"Copyright Anthropic, PBC (Apache License 2.0, no NOTICE file)\""
+    },
+    {
+      "rule": "PV7",
+      "subject": "notice:hookify",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "hookify: has anthropics/claude-plugins-official (Apache-2.0) upstream material but no notice_file"
+    },
+    {
+      "rule": "PV7",
+      "subject": "notice-copyright:code-modernization:anthropics/claude-plugins-official",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "code-modernization: LICENSE-UPSTREAM lacks the copyright line of anthropics/claude-plugins-official: \"Copyright Anthropic, PBC (Apache License 2.0, no NOTICE file)\""
+    },
+    {
+      "rule": "PV7",
+      "subject": "notice-copyright:frontend-design:anthropics/skills",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "frontend-design: LICENSE-UPSTREAM lacks the copyright line of anthropics/skills: \"Copyright Anthropic, PBC (LICENSE.txt in the skill folder)\""
+    },
+    {
+      "rule": "PV7",
+      "subject": "notice-copyright:reporting:openai/skills",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "reporting: LICENSE-UPSTREAM lacks the copyright line of openai/skills: \"none stated in the upstream LICENSE.txt (Apache License 2.0 text only)\""
+    },
+    {
+      "rule": "PV7",
+      "subject": "notice-copyright:reporting:marimo-team/skills",
+      "wp": "PROV-S1",
+      "since": "2026-11-27",
+      "note": "reporting: LICENSE-UPSTREAM lacks the copyright line of marimo-team/skills: \"none stated in the upstream LICENSE (Apache License 2.0 text only)\""
+    }
+  ]
+}
