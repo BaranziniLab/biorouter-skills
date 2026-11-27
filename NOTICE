@@ -1,5 +1,6 @@
 Biorouter Skills
 Copyright 2026 Baranzini Lab, University of California, San Francisco
+Curated and organized by Wanjun Gu, Baranzini Lab, UCSF.
 
 Each skill and bundle carries its own licence, recorded in catalog.json and in
 the license line of its SKILL.md files. Material written here is licensed under
@@ -12,7 +13,7 @@ This file is generated from catalog.json by scripts/render-readme.mjs.
 Upstream material
 =================
 
-replication-package-audit, claim-evidence-integrity, systematic-review-prisma, clinical-biostatistics, clinical-biostatistics, clinical-biostatistics, manuscript-peer-review include material from Aperivue/medsci-skills (7 folders, one per skill named here, commit 7e9d133dd0216c29b0e030729e3719c3db5e0973),
+replication-package-audit, claim-evidence-integrity, systematic-review-prisma, clinical-biostatistics, manuscript-peer-review include material from Aperivue/medsci-skills (7 folders across the items named here, commit 7e9d133dd0216c29b0e030729e3719c3db5e0973),
 Copyright (c) 2026 Aperivue (https://aperivue.com), licensed under MIT.
 
 replication-package-audit, research-code-hardening, scientific-python-development include material from uw-ssec/savvy (plugins/ai-research-workflows/skills/ensuring-reproducibility, plugins/ai-research-workflows/skills/hardening-research-code, plugins/scientific-python-development/skills/python-testing, plugins/scientific-python-development/skills/python-packaging, plugins/scientific-python-development/skills/code-quality-tools, plugins/scientific-python-development/skills/scientific-documentation, plugins/scientific-python-development/skills/pixi-package-manager, commit e1084bba4ef18cfe9ce16a459e69df1ebe5018b0),
@@ -25,23 +26,23 @@ Copyright (c) 2026 claesbackman, licensed under MIT.
 scientific-artifacts includes material from cathrynlavery/diagram-design (skills/diagram-design, commit d74d8c2d0c78a9e1efd43137f6a9a51182a8b5f0),
 Copyright (c) 2025 Cathryn Lavery, licensed under MIT.
 
-scientific-artifacts, scientific-artifacts, scientific-data-engineering, scientific-data-engineering, scientific-data-engineering, scientific-data-engineering, statistical-modeling-bayes, statistical-modeling-bayes, scientific-machine-learning, scientific-machine-learning, geospatial-science, geospatial-science, neurophysiology-analysis, neurophysiology-analysis, neurophysiology-analysis, quantum-scientific-computing, materials-informatics, materials-informatics, biomedical-imaging-pathology, biomedical-imaging-pathology, biomedical-imaging-pathology, citation-library-management, citation-library-management, laboratory-automation-planning, laboratory-automation-planning, systematic-review-prisma, simulation-optimization, physical-science-computing, clinical-decision-support-review, clinical-decision-support-review, clinical-decision-support-review, grant-funding-strategy, regulatory-quality-systems, regulatory-quality-systems, gpu-compute-optimization, research-evaluation-venues, research-evaluation-venues, database-access, exploratory-data-analysis, figure-qa, manuscript-peer-review, microscopy-image-analysis, python-visualization, scientific-manuscript-writing include material from K-Dense-AI/scientific-agent-skills (44 folders, one per skill named here, commit ec59a29a03d5c40f73ab40878df04860bc00e876),
+scientific-artifacts, scientific-data-engineering, statistical-modeling-bayes, scientific-machine-learning, geospatial-science, neurophysiology-analysis, quantum-scientific-computing, materials-informatics, biomedical-imaging-pathology, citation-library-management, laboratory-automation-planning, systematic-review-prisma, simulation-optimization, physical-science-computing, clinical-decision-support-review, grant-funding-strategy, regulatory-quality-systems, gpu-compute-optimization, research-evaluation-venues, database-access, exploratory-data-analysis, figure-qa, manuscript-peer-review, microscopy-image-analysis, python-visualization, scientific-manuscript-writing include material from K-Dense-AI/scientific-agent-skills (44 folders across the items named here, commit ec59a29a03d5c40f73ab40878df04860bc00e876),
 Copyright (c) 2025 K-Dense Inc., licensed under MIT.
 
 scientific-artifacts includes material from K-Dense-AI/scientific-agent-skills (skills/markdown-mermaid-writing, commit ec59a29a03d5c40f73ab40878df04860bc00e876),
 per-skill licence Apache-2.0; ported from SuperiorByteWorks-LLC/agent-project, licensed under Apache-2.0.
 
-scientific-data-engineering, statistical-modeling-bayes, scientific-machine-learning, econometrics-toolkit, physical-science-computing, physical-science-computing include material from K-Dense-AI/scientific-agent-skills (6 folders, one per skill named here, commit ec59a29a03d5c40f73ab40878df04860bc00e876),
+scientific-data-engineering, statistical-modeling-bayes, scientific-machine-learning, econometrics-toolkit, physical-science-computing include material from K-Dense-AI/scientific-agent-skills (5 folders across the items named here, commit ec59a29a03d5c40f73ab40878df04860bc00e876),
 Copyright (c) 2025 K-Dense Inc., licensed under BSD-3-Clause.
 The names of the copyright holders and contributors are not used to endorse or promote Biorouter.
 
-scientific-data-engineering, statistical-modeling-bayes, scientific-machine-learning, scientific-machine-learning, quantum-scientific-computing, quantum-scientific-computing, quantum-scientific-computing, biomedical-imaging-pathology, simulation-optimization include material from K-Dense-AI/scientific-agent-skills (9 folders, one per skill named here, commit ec59a29a03d5c40f73ab40878df04860bc00e876),
+scientific-data-engineering, statistical-modeling-bayes, scientific-machine-learning, quantum-scientific-computing, biomedical-imaging-pathology, simulation-optimization include material from K-Dense-AI/scientific-agent-skills (9 folders across the items named here, commit ec59a29a03d5c40f73ab40878df04860bc00e876),
 Copyright (c) 2025 K-Dense Inc., licensed under Apache-2.0.
 
 statistical-modeling-bayes includes material from ab604/claude-code-r-skills (.claude/skills/r-bayes, commit 529de4fcfe68fcc7c30cc56388bb625e8ddf37f0),
 Copyright (c) 2025, licensed under MIT.
 
-systematic-review-prisma, systematic-review-prisma include material from choxos/BiostatAgent (plugins/r-tidy-modeling/skills/meta-analysis, plugins/bayesian-modeling/skills/meta-analysis, commit a55c0591107181cdac9ce78813dc0abac3281caa),
+systematic-review-prisma includes material from choxos/BiostatAgent (plugins/r-tidy-modeling/skills/meta-analysis, plugins/bayesian-modeling/skills/meta-analysis, commit a55c0591107181cdac9ce78813dc0abac3281caa),
 Copyright (c) 2026 Ahmad Sofi-Mahmudi, licensed under MIT.
 
 ggplot-visualization includes material from Broccolito/ggplot-skills (SKILL_ggplot.md, commit 7f430d5),
@@ -50,7 +51,7 @@ Copyright (c) 2026 Wanjun Gu, licensed under MIT.
 ggplot-visualization, workflow-management, r-package-development include material from jsperger/llm-r-skills (skills/ggplot2, skills/targets-pipelines, skills/tidy-evaluation, skills/rlang-conditions, commit 7a10126fafd6d19b340da2661c7559b120264ffb),
 Copyright (c) 2026 John Sperger, licensed under MIT.
 
-ggplot-visualization, alignment, alignment-files, alternative-splicing, atac-seq, causal-genomics, chemoinformatics, chip-seq, clinical-biostatistics, clinical-databases, clip-seq, comparative-genomics, copy-number, crispr-screens, data-visualization, database-access, differential-expression, ecological-genomics, epidemiological-genomics, epitranscriptomics, experimental-design, expression-matrix, flow-cytometry, gene-regulatory-networks, genome-annotation, genome-assembly, genome-engineering, genome-intervals, hi-c-analysis, imaging-mass-cytometry, immunoinformatics, liquid-biopsy, long-read-sequencing, machine-learning, metabolomics, metagenomics, methylation-analysis, microbiome, multi-omics-integration, pathway-analysis, phasing-imputation, phylogenetics, population-genetics, primer-design, proteomics, read-alignment, read-qc, reporting, restriction-analysis, ribo-seq, rna-quantification, rna-structure, sequence-io, sequence-manipulation, single-cell, small-rna-seq, spatial-transcriptomics, structural-biology, systems-biology, tcr-bcr-analysis, temporal-genomics, variant-calling, workflow-management, workflows, python-visualization include material from GPTomics/bioSkills (65 folders, one per skill named here, commit d91ed3d563019e649dc854c56ccd62551359488a),
+ggplot-visualization, alignment, alignment-files, alternative-splicing, atac-seq, causal-genomics, chemoinformatics, chip-seq, clinical-biostatistics, clinical-databases, clip-seq, comparative-genomics, copy-number, crispr-screens, data-visualization, database-access, differential-expression, ecological-genomics, epidemiological-genomics, epitranscriptomics, experimental-design, expression-matrix, flow-cytometry, gene-regulatory-networks, genome-annotation, genome-assembly, genome-engineering, genome-intervals, hi-c-analysis, imaging-mass-cytometry, immunoinformatics, liquid-biopsy, long-read-sequencing, machine-learning, metabolomics, metagenomics, methylation-analysis, microbiome, multi-omics-integration, pathway-analysis, phasing-imputation, phylogenetics, population-genetics, primer-design, proteomics, read-alignment, read-qc, reporting, restriction-analysis, ribo-seq, rna-quantification, rna-structure, sequence-io, sequence-manipulation, single-cell, small-rna-seq, spatial-transcriptomics, structural-biology, systems-biology, tcr-bcr-analysis, temporal-genomics, variant-calling, workflow-management, workflows, python-visualization include material from GPTomics/bioSkills (65 folders across the items named here, commit d91ed3d563019e649dc854c56ccd62551359488a),
 Copyright (c) 2026 GPTomics, licensed under MIT.
 
 ralph includes material from snarktank/ralph (skills/prd, skills/ralph, prompt.md, commit 6c53cb0b831ebe8739c6a003e22af14902d8b0b5),
@@ -59,18 +60,20 @@ Copyright (c) 2026 snarktank, licensed under MIT.
 superpowers includes material from obra/superpowers (skills/ (13 of 15; using-superpowers and diagnosing-superpowers left out), commit 22f0b463e7a5e579904dd6211a520321035526f7),
 Copyright (c) 2025 Jesse Vincent, licensed under MIT.
 
-code-review, code-review, code-review, commit-commands, code-modernization include material from anthropics/claude-plugins-official (5 folders, one per skill named here, commit 73c8cf3ea7e296057b467990f2f5d61b4c922260),
+code-review, commit-commands, code-modernization include material from anthropics/claude-plugins-official (5 folders across the items named here, commit 73c8cf3ea7e296057b467990f2f5d61b4c922260),
 Copyright Anthropic, PBC (Apache License 2.0, no NOTICE file), licensed under Apache-2.0.
 
-code-review, reporting, figure-qa, interactive-dashboards, r-package-development include material from posit-dev/skills (5 folders, one per skill named here, commit 951959403f4ecc9d0274adf35538fc67153b6f31),
+code-review, reporting, figure-qa, interactive-dashboards, r-package-development include material from posit-dev/skills (5 folders across the items named here, commit 951959403f4ecc9d0274adf35538fc67153b6f31),
 Copyright (c) 2025 Posit PBC, licensed under MIT.
 
-code-simplifier, playground include material from anthropics/claude-plugins-official (plugins/code-simplifier, plugins/playground, commit de573bd84695c6657b28f05ffe32c37bb54d1f55), licensed under Apache-2.0. Changes: The plugin's commands and subagents folded into one SKILL.md; shell routed through the Developer extension.
+code-simplifier includes material from anthropics/claude-plugins-official (plugins/code-simplifier, commit de573bd84695c6657b28f05ffe32c37bb54d1f55), licensed under Apache-2.0; its licence names no copyright holder. Changes: The plugin's subagent prompt (agents/code-simplifier.md) rewritten as a user-invoked SKILL.md in close paraphrase: its list of one project's coding standards replaced by the project's own instructions and the python-scripting, r-scripting and bio-skills skills, its instruction to act on its own after every edit dropped, and an output section with before and after examples added.
 
-hookify includes material from anthropics/claude-plugins-official (plugins/hookify, commit de573bd84695c6657b28f05ffe32c37bb54d1f55), licensed under Apache-2.0. Changes: Rewritten to write enforced Biorouter hooks in <project>/.biorouter/hooks.yaml.
+hookify includes material from anthropics/claude-plugins-official (plugins/hookify, commit de573bd84695c6657b28f05ffe32c37bb54d1f55), licensed under Apache-2.0; its licence names no copyright holder. Changes: Rewritten to write enforced Biorouter hooks in <project>/.biorouter/hooks.yaml.
 
 code-modernization includes material from mermaid-js/mermaid (mermaid.min.js as vendored in plugins/code-modernization/assets/vendor, commit 73c8cf3ea7e296057b467990f2f5d61b4c922260),
 Copyright (c) 2014 - 2022 Knut Sveidqvist, licensed under MIT.
+
+playground includes material from anthropics/claude-plugins-official (plugins/playground, commit de573bd84695c6657b28f05ffe32c37bb54d1f55), licensed under Apache-2.0; its licence names no copyright holder. Changes: SKILL.md kept close to the upstream skill with Claude replaced by Biorouter; the six templates (templates/*.md) condensed into one section of SKILL.md, a paragraph and a layout sketch per playground type, and not included; a defaults object, an empty-state prompt and a copy button pattern added.
 
 frontend-design includes material from anthropics/skills (skills/frontend-design, commit e4bb5d960d87126ff3b3a8af1a104b7db67560ba),
 Copyright Anthropic, PBC (LICENSE.txt in the skill folder), licensed under Apache-2.0.
@@ -81,7 +84,7 @@ Copyright (c) 2026 Leonxlnx, licensed under MIT.
 reporting includes material from openai/skills (skills/.curated/jupyter-notebook, commit 49f948faa9258a0c61caceaf225e179651397431),
 none stated in the upstream LICENSE.txt (Apache License 2.0 text only), licensed under Apache-2.0.
 
-reporting, reporting include material from marimo-team/skills (skills/marimo-notebook, skills/jupyter-to-marimo, commit d5783f16066d6b05576e8a8637466c11f2433734),
+reporting includes material from marimo-team/skills (skills/marimo-notebook, skills/jupyter-to-marimo, commit d5783f16066d6b05576e8a8637466c11f2433734),
 none stated in the upstream LICENSE (Apache License 2.0 text only), licensed under Apache-2.0.
 
 figure-qa includes material from neuromechanist/research-skills (plugins/figures/skills/figure-qa/references/figure-qa-procedure.md, plugins/figures/agents/figure-qa-scripts/check_raster.py, plugins/figures/agents/figure-qa-scripts/check_svg.py, plugins/figures/agents/figure-qa-scripts/check_plot_script.py, commit 1bbc8382711216a39cee05e6e096acbf6b1b6d65),

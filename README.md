@@ -4,7 +4,7 @@ The **skills** of [BAAM](https://biorouter.ucsf.edu/baam.html), the marketplace 
 
 Skills are instruction bundles that Biorouter loads on demand to shape how the model writes code, drafts documents, reasons about a problem and runs research. Some load automatically when a task matches their description; others are *user-invocable* and answer a slash command such as `/scientific-research` in the chat.
 
-This repository is curated by the [Baranzini Lab](https://baranzinilab.ucsf.edu/) at UCSF. Each top-level folder is one skill or a bundle of skills, `bio-skills/<id>/` holds the biomedical bundles, and [`catalog.json`](catalog.json) records every item, active or not.
+This repository is curated and organized by Wanjun Gu at the [Baranzini Lab](https://baranzinilab.ucsf.edu/), UCSF. Each top-level folder is one skill or a bundle of skills, `bio-skills/<id>/` holds the biomedical bundles, and [`catalog.json`](catalog.json) records every item, active or not.
 
 <!-- catalog:begin counts -->
 58 core skills, 12 developer skills and 63 biomedical bundles (570 skills) are active; 12 older skills have moved or retired.
@@ -95,11 +95,11 @@ Several of these are adapted from [Anthropic's official Claude Code plugins](htt
 | Skill | Version | Invocation | Licence | What it does |
 |---|---|---|---|---|
 | [`code-review`](code-review) | 1.1.0 | `/code-review` | Apache-2.0 AND MIT | Multi-stage, confidence-scored review of a pull request or local diff. Drops low-confidence findings and posts a formatted PR comment via gh. |
-| [`code-simplifier`](code-simplifier) | 1.1.0 | `/code-simplifier` | Apache-2.0 | Simplifies recently-changed code for clarity and consistency while preserving exact behavior. Defers language style to the Python and R skills. |
+| [`code-simplifier`](code-simplifier) | 1.1.1 | `/code-simplifier` | Apache-2.0 | Simplifies recently-changed code for clarity and consistency while preserving exact behavior. Defers language style to the Python and R skills. |
 | [`commit-commands`](commit-commands) | 1.1.0 | `/commit-commands` | Apache-2.0 | Three git workflows: a clean single commit; commit + push + open a PR; and cleanup of [gone] branches and their worktrees. |
 | [`hookify`](hookify) | 1.1.0 | `/hookify` | Apache-2.0 | Turns project guardrails (warn/block rules) into real Biorouter hooks in .biorouter/hooks.yaml. A block rule stops the action; a warn rule shows a notice. Requires allow_project_hooks: true. |
 | [`code-modernization`](code-modernization) | 1.1.0 | `/code-modernization` | Apache-2.0 AND MIT | Phased legacy-modernization workflow (preflight, assess, map, extract rules, brief, transform, harden, status) for COBOL, legacy Java/C++, and monoliths. |
-| [`playground`](playground) | 1.1.0 | `/playground` | Apache-2.0 | Generates self-contained single-file interactive HTML playgrounds for configuring something visually, then copying out a ready-to-use prompt. |
+| [`playground`](playground) | 1.1.1 | `/playground` | Apache-2.0 | Generates self-contained single-file interactive HTML playgrounds for configuring something visually, then copying out a ready-to-use prompt. |
 | [`frontend-design`](frontend-design) | 1.1.0 | Auto | Apache-2.0 AND MIT | Anthropic's anti-slop frontend guidance for distinctive, production-grade UIs. Complements the Taste skill above. |
 | [`high-performance-r`](high-performance-r) | 1.0.0 | Auto | Apache-2.0 |  |
 | [`julia-development`](julia-development) | 1.0.0 | Bundle, 12 skills | Apache-2.0 AND MIT |  |
@@ -209,7 +209,7 @@ A skill that was merged into another, or retired, keeps its release: its archive
 
 ## The catalog
 
-[`catalog.json`](catalog.json) is the source of truth for every BAAM skill and bundle. Each row records the item's id, display name, category, folder, version, status (`active`, `superseded_by:<id>`, `superseded_by:builtin:<name>` or `retired`), former names (`aliases`), the one job it owns (`job`, a dotted `<domain>.<task>` key), written boundaries to look-alike items (`distinct_from`), its sources and their licences, the licence of its archive, its notice file, its release and its history. A bundle's row also lists its components, each with its pinned `name` and its own job.
+[`catalog.json`](catalog.json) is the source of truth for every BAAM skill and bundle. Each row records the item's id, display name, category, folder, version, status (`active`, `superseded_by:<id>`, `superseded_by:builtin:<name>` or `retired`), former names (`aliases`), the one job it owns (`job`, a dotted `<domain>.<task>` key), written boundaries to look-alike items (`distinct_from`), where it comes from and who made it (`source` and `contributors`), the licence of its archive, its notice file, its release and its history. A bundle's row also lists its components, each with its pinned `name` and its own job.
 
 The checks run with Node and no dependencies:
 
@@ -217,14 +217,18 @@ The checks run with Node and no dependencies:
 node scripts/check-catalog.mjs              # folders, frontmatter, versions, licences, notices, stubs, D2, D3, D5, D6
 node scripts/check-catalog.mjs --jobs <biorouter>/landing/catalog/jobs.json \
   --extensions <biorouter>/landing/catalog/extensions.json   # plus D1, D4 and G1 across both catalogs
-node scripts/render-readme.mjs --check      # README tables and NOTICE match the catalog
+node scripts/render-readme.mjs --check      # README tables, NOTICE and provenance files match the catalog
 node scripts/write-stubs.mjs --check        # merged and retired folders hold their generated stub
 node --test scripts/                        # the checks' own tests
 ```
 
 The duplicate rules: **D1**, no two active items own the same job, and none claims a job Biorouter itself owns. **D2**, ids, display names, aliases and Biorouter's built-in names share one namespace. **D3**, two active items whose name, summary, keywords and description look alike (token-set Jaccard at or above the threshold in `scripts/lib/catalog-rules.mjs`) either merge or record a `distinct_from` boundary. **D4**, a merged item points at an active item that lists the old id in `aliases`. **D5**, component names are unique, and look-alike components across bundles record a boundary. **D6**, no active skill is a template shell, more than half of whose lines appear in five or more other skills. **G1**, every required job in the extension site's `jobs.json` has an owner or a plan. Rule failures that exist when a rule lands are listed in `baseline_violations`, each owned by the work package that removes it.
 
-To change a skill: edit its folder, raise `version` in its row and `metadata.version` in every `SKILL.md` of the item (a fix is a patch, new content a minor version), add a `history` entry, and run the checks. To merge one skill into another: add the old id to the target's `aliases`, set the old row's `status` to `superseded_by:<target>`, raise its version, and run `node scripts/write-stubs.mjs`. To retire one: set `status` to `retired` with `retired.reason` (and `retired.use` when something replaces it), raise the version, and run the same script. `node scripts/build-zip.mjs <id>` builds an archive, `node scripts/verify-release.mjs <id>` compares a published archive with its folder, `node scripts/upstream-drift.mjs` reports upstreams that moved, and `node scripts/release.mjs <id>` prints the release steps (`--execute` runs them).
+**Provenance, format 2.** Rows move to format 2 one at a time: a row is in format 2 when its `source.format` is 2, and every row is once the catalog itself says `"format": 2`. Its `source` records an `origin` (`in-house`, `ideas-derived`, `adapted` or `third-party`); `upstreams`, each with its `kind`, `repo` or `url`, `owner` (`external` or `lab`), how it is used (`use`: `text`, `code`, `data`, `bundled`, `bundled-modified`, `dependency` or `launched`), `what` was used and the `files` it became, a `commit` or `version`, its `licence`, the verbatim `copyright` line (or null with a `copyright_note` when the licence names no holder), the `credit` as the source publishes it and any named `people`, `via` for a source's own source, and `upstream_notice` for an Apache-2.0 source with a NOTICE file; `ideas_from`, each with `what`, the `evidence` that no text was taken, and `applies_to` (`current` or `earlier`); `data_and_services`; `references`; `refused_sources`; `changes`; and, on a merged or retired row, `content_moved_to`. `contributors` names the people who made the Biorouter side, co-authors included. A bundle component may add its own `origin`, `licence`, `sources` and `written_for_biorouter` files, and a `history` entry its `origin` and `licence`. A format 1 row keeps its `native`, `lab` or `adapted` origin and `inspired_by` until it is migrated.
+
+The provenance rules: **PV1**, a row is in format 2, with one of the four origins and no retired field; **PV2** to **PV5**, the origin agrees with the record (in-house copies nothing from outside and follows no current idea, ideas-derived follows a current idea and copies nothing, adapted and third-party name what they copy or run and what they changed); **PV6**, every source, idea, data entry and reference is complete, and a copied or bundled source is pinned, under an allowed licence, with its copyright line or a note; **PV7**, a notice file carries the licence text and copyright line of every source the item ships, and an Apache source's NOTICE; **PV8**, the row's and each component's licence cover what they ship; **PV9**, the folder's `PROVENANCE.md`, or a stub's credit lines, is the generated one; **PV10**, each `SKILL.md` carries the generated `metadata.origin`, `metadata.credit` and `metadata.curated_by`; **PV11**, a bundle's components name their lineage, and a file written for Biorouter inside a copied component is listed; **PV12**, every row names its contributors and their roles; **PV13**, a credit line fits in 120 characters, and no fixed text (the curator line, the lab's line, the lab's copyright line) is written differently. Their failures that exist when they land are listed in [`provenance-baseline.json`](provenance-baseline.json), not in `catalog.json`, because the catalog is mirrored byte for byte into the Biorouter repository. Each entry is owned by a work package: **PROV-S1**, the migration of its row to format 2, and **PROV-S4**, the item's generated folder files, which arrive with its next release. Only the rows that existed when the rules landed may be listed there, so a new row passes every rule from its first commit. A provenance entry anywhere else is refused: in `catalog.json`, and in the extension catalog's baseline when the cross-kind check reads it, except an entry for one of the extension catalog's own rows, which the Biorouter repository's check applies.
+
+To change a skill: edit its folder, raise `version` in its row and `metadata.version` in every `SKILL.md` of the item (a fix is a patch, new content a minor version), add a `history` entry, and run the checks. To merge one skill into another: add the old id to the target's `aliases`, set the old row's `status` to `superseded_by:<target>`, raise its version, and run `node scripts/write-stubs.mjs`. To retire one: set `status` to `retired` with `retired.reason` (and `retired.use` when something replaces it), raise the version, and run the same script. `node scripts/render-readme.mjs` rewrites the README tables and `NOTICE`, and, for a row in format 2, the item's `PROVENANCE.md` and the credit keys of its `SKILL.md` files. To release an item whose folder files were deferred, delete its `PROV-S4` entries from `provenance-baseline.json`, raise its patch version with a history entry that records its `origin` and `licence`, and run `node scripts/render-readme.mjs` and `node scripts/write-stubs.mjs`. `node scripts/build-zip.mjs <id>` builds an archive, `node scripts/verify-release.mjs <id>` compares a published archive with its folder, `node scripts/upstream-drift.mjs` reports upstreams that moved, and `node scripts/release.mjs <id>` prints the release steps (`--execute` runs them).
 
 ---
 
@@ -233,16 +237,19 @@ To change a skill: edit its folder, raise `version` in its row and `metadata.ver
 ```
 biorouter-skills/
 ├── catalog.json                 every skill and bundle, active or not
+├── provenance-baseline.json     provenance rule failures still open, each with its work package
 ├── builtin-skill-names.json     names Biorouter ships (scripts/builtin-names.mjs)
 ├── LICENSE                      Apache-2.0, for material written here
-├── NOTICE                       upstream attribution, generated from the catalog
+├── NOTICE                       upstream attribution and credits, generated from the catalog
 ├── scripts/                     checks, archive builder, release tools and their tests
 ├── <skill-id>/SKILL.md          one folder per single skill, with any supporting files
+├── <skill-id>/PROVENANCE.md     its sources, ideas and contributors, generated (format 2 rows)
+├── <skill-id>/LICENSE-UPSTREAM  copyright lines and licence texts of copied material
 ├── superpowers/<skill>/SKILL.md a bundle: one folder per component
 └── bio-skills/<bundle>/<skill>/SKILL.md
 ```
 
-Every `SKILL.md` has YAML frontmatter with `name`, `description`, `license`, optional `user-invocable`, and a `metadata` map with `version` (and, for adapted skills, `upstream`).
+Every `SKILL.md` has YAML frontmatter with `name`, `description`, `license`, optional `user-invocable`, and a `metadata` map with `version`. Once its row is in format 2, `node scripts/render-readme.mjs` also writes `metadata.origin`, `metadata.credit` (the item's credit line) and `metadata.curated_by` (the curator line). Older skills may still carry `upstream`, `upstream_licence` or `upstream_author`; the generator removes the last two, and `upstream` unless it names a source of the row.
 
 ---
 
@@ -259,6 +266,9 @@ Every `SKILL.md` has YAML frontmatter with `name`, `description`, `license`, opt
    user-invocable: true
    metadata:
      version: "1.0.0"
+     origin: "in-house"
+     credit: "Made by the Baranzini Lab (Wanjun Gu, UCSF)."
+     curated_by: "Curated and organized by Wanjun Gu, Baranzini Lab, UCSF."
    ---
 
    # My Skill
@@ -266,59 +276,72 @@ Every `SKILL.md` has YAML frontmatter with `name`, `description`, `license`, opt
    The body. Be concrete, give examples, and keep it to one job.
    ```
 
-3. Add its row to `catalog.json` with a job no other item owns, run the checks, and open a pull request. A maintainer cuts the `skill-<id>` release.
+   The last three `metadata` keys are generated; `node scripts/render-readme.mjs` writes them from the row.
+
+3. Add its row to `catalog.json` with a job no other item owns.
+4. Record its provenance in the row, in format 2: `source` with `"format": 2`, its `origin`, every source with what was used and how, the ideas it follows, and `changes`; and `contributors`, with a role for each person. Material copied from elsewhere also needs a `LICENSE-UPSTREAM` in the folder, with each source's copyright line and licence text, named in `notice_file`. Then run `node scripts/render-readme.mjs`, which writes the item's `PROVENANCE.md` and its `SKILL.md` credit keys.
+5. Run the checks and open a pull request. A maintainer cuts the `skill-<id>` release.
 
 ---
 
-## Sources and attribution
+## Provenance and credits
 
-Licence per skill, as the catalog records. Material written here is Apache-2.0; adapted material keeps its upstream licence, and each such archive carries the upstream copyright line and licence text. Lab-original skills are written by the [Baranzini Lab](https://baranzinilab.ucsf.edu/).
+Every skill and bundle says what it borrowed (text, code, data or ideas), from whom and under which licence, and credits the people behind that work. Each item has one of four origins, decided in this order: **third-party**, outside work kept largely as published, whose line reads "From <source> by <credit> (<licence>), packaged for Biorouter by the Baranzini Lab."; **adapted**, outside text, code or data changed for Biorouter, "Adapted from <source> by <credit> (<licence>)."; **ideas-derived**, written here with no outside text or code but following named outside work, "Made by the Baranzini Lab (Wanjun Gu, UCSF), with ideas from <source> (<credit>)."; and **in-house**, everything else, "Made by the Baranzini Lab (Wanjun Gu, UCSF)." That line is what BAAM and Biorouter show for the item, and every full record ends with the curator line: "Curated and organized by Wanjun Gu, Baranzini Lab, UCSF."
 
-<!-- catalog:begin sources -->
-| Skills | Source | Licence of the archive | What changed for Biorouter |
+The full record of an item is its `PROVENANCE.md`, generated from the catalog into its folder: each source with its commit or version, licence, credit and what was used, the files written for Biorouter, the ideas, data, services and references it credits, its contributors and its earlier versions. Copyright lines and licence texts of copied material ship in the item's `LICENSE-UPSTREAM` (its `notice_file`), and the archive of an item in format 2 carries this repository's `LICENSE` as `<id>/LICENSE`. A migrated item's folder files arrive with its next release; until then BAAM and the app show its credits from the catalog. A row not yet migrated has no `PROVENANCE.md` and shows its older record in the tables below, marked "Not yet classified".
+
+<!-- catalog:begin provenance -->
+| Skills | Origin | Sources and credit | Licence |
 |---|---|---|---|
-| `scientific-research`, `anti-ai-writing`, `r-scripting`, `python-scripting`, `ucsf-hpc`, `high-performance-r` | Lab-original | Apache-2.0 | — |
-| `empirical-research-router`, `qualitative-thematic-analysis`, `survey-weights-complex-samples`, `psychometrics-sem-measurement`, `social-science-text-as-data`, `empirical-paper-submission-rr`, `causal-heterogeneity-policy-learning`, `autoskill-workflow-discovery` | Native | Apache-2.0 | — |
-| `causal-identification-gates`, `empirical-benchmark-harness` | Native rewrite inspired by [brycewang-stanford/Auto-Empirical-Research-Skills](https://github.com/brycewang-stanford/Auto-Empirical-Research-Skills) and [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills); no upstream text copied | Apache-2.0 | — |
-| `replication-package-audit` | [Aperivue/medsci-skills](https://github.com/Aperivue/medsci-skills) (MIT), [uw-ssec/savvy](https://github.com/uw-ssec/savvy) (BSD-3-Clause), [claesbackman/AI-research-feedback](https://github.com/claesbackman/AI-research-feedback) (MIT) | Apache-2.0 AND MIT AND BSD-3-Clause AND CC-BY-4.0 AND CC0-1.0 | — |
-| `claim-evidence-integrity` | [Aperivue/medsci-skills](https://github.com/Aperivue/medsci-skills) (MIT) | Apache-2.0 AND MIT | — |
-| `scientific-artifacts` | [cathrynlavery/diagram-design](https://github.com/cathrynlavery/diagram-design) (MIT), [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (Apache-2.0) | Apache-2.0 AND MIT AND CC0-1.0 | — |
-| `scientific-data-engineering` | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (Apache-2.0) | Apache-2.0 AND MIT AND BSD-3-Clause | — |
-| `statistical-modeling-bayes` | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (Apache-2.0), [ab604/claude-code-r-skills](https://github.com/ab604/claude-code-r-skills) (MIT) | Apache-2.0 AND MIT AND BSD-3-Clause | — |
-| `scientific-machine-learning` | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (MIT) | Apache-2.0 AND MIT AND BSD-3-Clause | — |
-| `geospatial-science`, `neurophysiology-analysis`, `quantum-scientific-computing`, `materials-informatics`, `citation-library-management`, `laboratory-automation-planning`, `clinical-decision-support-review`, `regulatory-quality-systems`, `gpu-compute-optimization`, `research-evaluation-venues`, `exploratory-data-analysis`, `microscopy-image-analysis` | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (MIT) | Apache-2.0 AND MIT | — |
-| `biomedical-imaging-pathology`, `simulation-optimization` | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (Apache-2.0) | Apache-2.0 AND MIT | — |
-| `econometrics-toolkit` | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (BSD-3-Clause) | Apache-2.0 AND BSD-3-Clause | — |
-| `systematic-review-prisma` | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (MIT), [Aperivue/medsci-skills](https://github.com/Aperivue/medsci-skills) (MIT), [choxos/BiostatAgent](https://github.com/choxos/BiostatAgent) (MIT) | Apache-2.0 AND MIT | — |
-| `physical-science-computing` | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (BSD-3-Clause) | Apache-2.0 AND MIT AND BSD-3-Clause | — |
-| `grant-funding-strategy` | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (MIT), [claesbackman/AI-research-feedback](https://github.com/claesbackman/AI-research-feedback) (MIT) | Apache-2.0 AND MIT | — |
-| `arbor-optimization`, `hugging-science-resource-discovery`, `molecular-dynamics`, `general-time-series-forecasting`, `bids-neuroimaging`, `clinical-ai-modeling`, `computational-fluid-dynamics` | Native rewrite inspired by [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills); no upstream text copied | Apache-2.0 | — |
-| `ggplot-visualization` | [Broccolito/ggplot-skills](https://github.com/Broccolito/ggplot-skills) (MIT), [jsperger/llm-r-skills](https://github.com/jsperger/llm-r-skills) (MIT), [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT) | Apache-2.0 AND MIT | — |
-| `ralph` | [snarktank/ralph](https://github.com/snarktank/ralph) (MIT) | Apache-2.0 AND MIT | — |
-| `superpowers` | [obra/superpowers](https://github.com/obra/superpowers) (MIT) | Apache-2.0 AND MIT | — |
-| `code-review` | [anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official) (Apache-2.0), [posit-dev/skills](https://github.com/posit-dev/skills) (MIT) | Apache-2.0 AND MIT | — |
-| `code-simplifier`, `playground` | [anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official) (Apache-2.0) | Apache-2.0 | The plugin's commands and subagents folded into one SKILL.md; shell routed through the Developer extension. |
-| `commit-commands` | [anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official) (Apache-2.0) | Apache-2.0 | — |
-| `hookify` | [anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official) (Apache-2.0) | Apache-2.0 | Rewritten to write enforced Biorouter hooks in <project>/.biorouter/hooks.yaml. |
-| `code-modernization` | [anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official) (Apache-2.0), [mermaid-js/mermaid](https://github.com/mermaid-js/mermaid) (MIT) | Apache-2.0 AND MIT | — |
-| `frontend-design` | [anthropics/skills](https://github.com/anthropics/skills) (Apache-2.0), [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) (MIT) | Apache-2.0 AND MIT | — |
-| 59 bundles: `alignment`, `alignment-files`, `alternative-splicing`, `atac-seq`, `causal-genomics`, `chemoinformatics`, `chip-seq`, `clinical-databases`, `clip-seq`, `comparative-genomics`, `copy-number`, `crispr-screens`, `data-visualization`, `differential-expression`, `ecological-genomics`, `epidemiological-genomics`, `epitranscriptomics`, `experimental-design`, `expression-matrix`, `flow-cytometry`, `gene-regulatory-networks`, `genome-annotation`, `genome-assembly`, `genome-engineering`, `genome-intervals`, `hi-c-analysis`, `imaging-mass-cytometry`, `immunoinformatics`, `liquid-biopsy`, `long-read-sequencing`, `machine-learning`, `metabolomics`, `metagenomics`, `methylation-analysis`, `microbiome`, `multi-omics-integration`, `pathway-analysis`, `phasing-imputation`, `phylogenetics`, `population-genetics`, `primer-design`, `proteomics`, `read-alignment`, `read-qc`, `restriction-analysis`, `ribo-seq`, `rna-quantification`, `rna-structure`, `sequence-io`, `sequence-manipulation`, `single-cell`, `small-rna-seq`, `spatial-transcriptomics`, `structural-biology`, `systems-biology`, `tcr-bcr-analysis`, `temporal-genomics`, `variant-calling`, `workflows` | [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT) | Apache-2.0 AND MIT | — |
-| `clinical-biostatistics` | [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT), [Aperivue/medsci-skills](https://github.com/Aperivue/medsci-skills) (MIT) | Apache-2.0 AND MIT | — |
-| `database-access` | [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT), [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (MIT) | Apache-2.0 AND MIT | — |
-| `reporting` | [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT), [posit-dev/skills](https://github.com/posit-dev/skills) (MIT), [openai/skills](https://github.com/openai/skills) (Apache-2.0), [marimo-team/skills](https://github.com/marimo-team/skills) (Apache-2.0) | Apache-2.0 AND MIT | — |
-| `workflow-management` | [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT), [jsperger/llm-r-skills](https://github.com/jsperger/llm-r-skills) (MIT) | Apache-2.0 AND MIT | — |
-| `figure-qa` | [neuromechanist/research-skills](https://github.com/neuromechanist/research-skills) (BSD-3-Clause), [Haojae/scipilot-figure-skill](https://github.com/Haojae/scipilot-figure-skill) (MIT), [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (MIT), [posit-dev/skills](https://github.com/posit-dev/skills) (MIT) | Apache-2.0 AND MIT AND BSD-3-Clause | — |
-| `interactive-dashboards` | [rstudio/shiny](https://github.com/rstudio/shiny) (MIT), [posit-dev/skills](https://github.com/posit-dev/skills) (MIT), [streamlit/streamlit](https://github.com/streamlit/streamlit) (Apache-2.0), [Broccolito/gptr](https://github.com/Broccolito/gptr) (Apache-2.0) | Apache-2.0 AND MIT | — |
-| `julia-development` | [timholy/claude_config](https://github.com/timholy/claude_config) (MIT), [JuliaLang/DocBrowser.jl](https://github.com/JuliaLang/DocBrowser.jl) (MIT) | Apache-2.0 AND MIT | — |
-| `manuscript-peer-review` | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (MIT), [Aperivue/medsci-skills](https://github.com/Aperivue/medsci-skills) (MIT) | Apache-2.0 AND MIT | — |
-| `python-visualization` | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (MIT), [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT), [Haojae/scipilot-figure-skill](https://github.com/Haojae/scipilot-figure-skill) (MIT) | Apache-2.0 AND MIT | — |
-| `r-package-development` | [posit-dev/skills](https://github.com/posit-dev/skills) (MIT), [jsperger/llm-r-skills](https://github.com/jsperger/llm-r-skills) (MIT) | Apache-2.0 AND MIT | — |
-| `research-code-hardening`, `scientific-python-development` | [uw-ssec/savvy](https://github.com/uw-ssec/savvy) (BSD-3-Clause) | Apache-2.0 AND BSD-3-Clause | — |
-| `science-superpowers` | [K-Dense-AI/science-superpowers](https://github.com/K-Dense-AI/science-superpowers) (MIT) | Apache-2.0 AND MIT | — |
-| `scientific-manuscript-writing` | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (MIT), [timholy/claude_config](https://github.com/timholy/claude_config) (MIT) | Apache-2.0 AND MIT | — |
-| `scientific-problem-selection` | [anthropics/knowledge-work-plugins](https://github.com/anthropics/knowledge-work-plugins) (Apache-2.0) | Apache-2.0 | — |
-| `scientific-prose-review` | [labarba/sciwrite](https://github.com/labarba/sciwrite) (CC-BY-4.0) | CC-BY-4.0 | — |
-| `phi-deidentification` | [Aperivue/medsci-skills](https://github.com/Aperivue/medsci-skills) (MIT) | Apache-2.0 AND MIT | deidentify.py, its locale packs, references and tests copied (the test now points at scripts/); SKILL.md rewritten for an agent that never sees raw data; safe_harbor.py added, a non-interactive HIPAA Safe Harbor mode with a residual check and no network calls. |
-<!-- catalog:end sources -->
+| `scientific-research`, `anti-ai-writing`, `r-scripting`, `python-scripting`, `ucsf-hpc`, `high-performance-r` | Not yet classified | Lab-original | Apache-2.0 |
+| `empirical-research-router`, `qualitative-thematic-analysis`, `survey-weights-complex-samples`, `psychometrics-sem-measurement`, `social-science-text-as-data`, `empirical-paper-submission-rr`, `causal-heterogeneity-policy-learning`, `autoskill-workflow-discovery` | Not yet classified | Native | Apache-2.0 |
+| `causal-identification-gates`, `empirical-benchmark-harness` | Not yet classified | Native rewrite inspired by [brycewang-stanford/Auto-Empirical-Research-Skills](https://github.com/brycewang-stanford/Auto-Empirical-Research-Skills) and [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills); no upstream text copied | Apache-2.0 |
+| `replication-package-audit` | Not yet classified | [Aperivue/medsci-skills](https://github.com/Aperivue/medsci-skills) (MIT), [uw-ssec/savvy](https://github.com/uw-ssec/savvy) (BSD-3-Clause), [claesbackman/AI-research-feedback](https://github.com/claesbackman/AI-research-feedback) (MIT) | Apache-2.0 AND MIT AND BSD-3-Clause AND CC-BY-4.0 AND CC0-1.0 |
+| `claim-evidence-integrity`, `phi-deidentification` | Not yet classified | [Aperivue/medsci-skills](https://github.com/Aperivue/medsci-skills) (MIT) | Apache-2.0 AND MIT |
+| `scientific-artifacts` | Not yet classified | [cathrynlavery/diagram-design](https://github.com/cathrynlavery/diagram-design) (MIT), [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (MIT, Apache-2.0) | Apache-2.0 AND MIT AND CC0-1.0 |
+| `scientific-data-engineering` | Not yet classified | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (MIT, BSD-3-Clause, Apache-2.0) | Apache-2.0 AND MIT AND BSD-3-Clause |
+| `statistical-modeling-bayes` | Not yet classified | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (MIT, BSD-3-Clause, Apache-2.0), [ab604/claude-code-r-skills](https://github.com/ab604/claude-code-r-skills) (MIT) | Apache-2.0 AND MIT AND BSD-3-Clause |
+| `scientific-machine-learning` | Not yet classified | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (BSD-3-Clause, Apache-2.0, MIT) | Apache-2.0 AND MIT AND BSD-3-Clause |
+| `geospatial-science`, `neurophysiology-analysis`, `materials-informatics`, `citation-library-management`, `laboratory-automation-planning`, `clinical-decision-support-review`, `regulatory-quality-systems`, `gpu-compute-optimization`, `research-evaluation-venues`, `exploratory-data-analysis`, `microscopy-image-analysis` | Not yet classified | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (MIT) | Apache-2.0 AND MIT |
+| `quantum-scientific-computing` | Not yet classified | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (Apache-2.0, MIT) | Apache-2.0 AND MIT |
+| `biomedical-imaging-pathology`, `simulation-optimization` | Not yet classified | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (MIT, Apache-2.0) | Apache-2.0 AND MIT |
+| `econometrics-toolkit` | Not yet classified | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (BSD-3-Clause) | Apache-2.0 AND BSD-3-Clause |
+| `systematic-review-prisma` | Not yet classified | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (MIT), [Aperivue/medsci-skills](https://github.com/Aperivue/medsci-skills) (MIT), [choxos/BiostatAgent](https://github.com/choxos/BiostatAgent) (MIT) | Apache-2.0 AND MIT |
+| `physical-science-computing` | Not yet classified | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (MIT, BSD-3-Clause) | Apache-2.0 AND MIT AND BSD-3-Clause |
+| `grant-funding-strategy` | Not yet classified | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (MIT), [claesbackman/AI-research-feedback](https://github.com/claesbackman/AI-research-feedback) (MIT) | Apache-2.0 AND MIT |
+| `arbor-optimization`, `hugging-science-resource-discovery`, `molecular-dynamics`, `general-time-series-forecasting`, `bids-neuroimaging`, `clinical-ai-modeling`, `computational-fluid-dynamics` | Not yet classified | Native rewrite inspired by [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills); no upstream text copied | Apache-2.0 |
+| `ggplot-visualization` | Not yet classified | [Broccolito/ggplot-skills](https://github.com/Broccolito/ggplot-skills) (MIT), [jsperger/llm-r-skills](https://github.com/jsperger/llm-r-skills) (MIT), [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT) | Apache-2.0 AND MIT |
+| `ralph` | Not yet classified | [snarktank/ralph](https://github.com/snarktank/ralph) (MIT) | Apache-2.0 AND MIT |
+| `superpowers` | Not yet classified | [obra/superpowers](https://github.com/obra/superpowers) (MIT) | Apache-2.0 AND MIT |
+| `code-review` | Not yet classified | [anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official) (Apache-2.0), [posit-dev/skills](https://github.com/posit-dev/skills) (MIT) | Apache-2.0 AND MIT |
+| `code-simplifier`, `commit-commands`, `hookify`, `playground` | Not yet classified | [anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official) (Apache-2.0) | Apache-2.0 |
+| `code-modernization` | Not yet classified | [anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official) (Apache-2.0), [mermaid-js/mermaid](https://github.com/mermaid-js/mermaid) (MIT) | Apache-2.0 AND MIT |
+| `frontend-design` | Not yet classified | [anthropics/skills](https://github.com/anthropics/skills) (Apache-2.0), [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) (MIT) | Apache-2.0 AND MIT |
+| 59 bundles: `alignment`, `alignment-files`, `alternative-splicing`, `atac-seq`, `causal-genomics`, `chemoinformatics`, `chip-seq`, `clinical-databases`, `clip-seq`, `comparative-genomics`, `copy-number`, `crispr-screens`, `data-visualization`, `differential-expression`, `ecological-genomics`, `epidemiological-genomics`, `epitranscriptomics`, `experimental-design`, `expression-matrix`, `flow-cytometry`, `gene-regulatory-networks`, `genome-annotation`, `genome-assembly`, `genome-engineering`, `genome-intervals`, `hi-c-analysis`, `imaging-mass-cytometry`, `immunoinformatics`, `liquid-biopsy`, `long-read-sequencing`, `machine-learning`, `metabolomics`, `metagenomics`, `methylation-analysis`, `microbiome`, `multi-omics-integration`, `pathway-analysis`, `phasing-imputation`, `phylogenetics`, `population-genetics`, `primer-design`, `proteomics`, `read-alignment`, `read-qc`, `restriction-analysis`, `ribo-seq`, `rna-quantification`, `rna-structure`, `sequence-io`, `sequence-manipulation`, `single-cell`, `small-rna-seq`, `spatial-transcriptomics`, `structural-biology`, `systems-biology`, `tcr-bcr-analysis`, `temporal-genomics`, `variant-calling`, `workflows` | Not yet classified | [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT) | Apache-2.0 AND MIT |
+| `clinical-biostatistics` | Not yet classified | [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT), [Aperivue/medsci-skills](https://github.com/Aperivue/medsci-skills) (MIT) | Apache-2.0 AND MIT |
+| `database-access` | Not yet classified | [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT), [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (MIT) | Apache-2.0 AND MIT |
+| `reporting` | Not yet classified | [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT), [posit-dev/skills](https://github.com/posit-dev/skills) (MIT), [openai/skills](https://github.com/openai/skills) (Apache-2.0), [marimo-team/skills](https://github.com/marimo-team/skills) (Apache-2.0) | Apache-2.0 AND MIT |
+| `workflow-management` | Not yet classified | [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT), [jsperger/llm-r-skills](https://github.com/jsperger/llm-r-skills) (MIT) | Apache-2.0 AND MIT |
+| `figure-qa` | Not yet classified | [neuromechanist/research-skills](https://github.com/neuromechanist/research-skills) (BSD-3-Clause), [Haojae/scipilot-figure-skill](https://github.com/Haojae/scipilot-figure-skill) (MIT), [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (MIT), [posit-dev/skills](https://github.com/posit-dev/skills) (MIT) | Apache-2.0 AND MIT AND BSD-3-Clause |
+| `interactive-dashboards` | Not yet classified | [rstudio/shiny](https://github.com/rstudio/shiny) (MIT), [posit-dev/skills](https://github.com/posit-dev/skills) (MIT), [streamlit/streamlit](https://github.com/streamlit/streamlit) (Apache-2.0), [Broccolito/gptr](https://github.com/Broccolito/gptr) (Apache-2.0) | Apache-2.0 AND MIT |
+| `julia-development` | Not yet classified | [timholy/claude_config](https://github.com/timholy/claude_config) (MIT), [JuliaLang/DocBrowser.jl](https://github.com/JuliaLang/DocBrowser.jl) (MIT) | Apache-2.0 AND MIT |
+| `manuscript-peer-review` | Not yet classified | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (MIT), [Aperivue/medsci-skills](https://github.com/Aperivue/medsci-skills) (MIT) | Apache-2.0 AND MIT |
+| `python-visualization` | Not yet classified | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (MIT), [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) (MIT), [Haojae/scipilot-figure-skill](https://github.com/Haojae/scipilot-figure-skill) (MIT) | Apache-2.0 AND MIT |
+| `r-package-development` | Not yet classified | [posit-dev/skills](https://github.com/posit-dev/skills) (MIT), [jsperger/llm-r-skills](https://github.com/jsperger/llm-r-skills) (MIT) | Apache-2.0 AND MIT |
+| `research-code-hardening`, `scientific-python-development` | Not yet classified | [uw-ssec/savvy](https://github.com/uw-ssec/savvy) (BSD-3-Clause) | Apache-2.0 AND BSD-3-Clause |
+| `science-superpowers` | Not yet classified | [K-Dense-AI/science-superpowers](https://github.com/K-Dense-AI/science-superpowers) (MIT) | Apache-2.0 AND MIT |
+| `scientific-manuscript-writing` | Not yet classified | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (MIT), [timholy/claude_config](https://github.com/timholy/claude_config) (MIT) | Apache-2.0 AND MIT |
+| `scientific-problem-selection` | Not yet classified | [anthropics/knowledge-work-plugins](https://github.com/anthropics/knowledge-work-plugins) (Apache-2.0) | Apache-2.0 |
+| `scientific-prose-review` | Not yet classified | [labarba/sciwrite](https://github.com/labarba/sciwrite) (CC-BY-4.0) | CC-BY-4.0 |
+<!-- catalog:end provenance -->
 
-Maintained by the [Baranzini Lab](https://baranzinilab.ucsf.edu/) at UCSF.
+Ideas, references and earlier versions each item records:
+
+<!-- catalog:begin provenance-ideas -->
+| Skills | Ideas | References | Earlier versions |
+|---|---|---|---|
+| `causal-identification-gates`, `empirical-benchmark-harness` | [brycewang-stanford/Auto-Empirical-Research-Skills](https://github.com/brycewang-stanford/Auto-Empirical-Research-Skills), [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) |  |  |
+| `arbor-optimization`, `hugging-science-resource-discovery`, `molecular-dynamics`, `general-time-series-forecasting`, `bids-neuroimaging`, `clinical-ai-modeling`, `computational-fluid-dynamics` | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) |  |  |
+<!-- catalog:end provenance-ideas -->
+
+Curated and organized by Wanjun Gu, Baranzini Lab, UCSF.
