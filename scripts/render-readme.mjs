@@ -236,6 +236,11 @@ function copyrightAndLicence(copyright, licence) {
   const line = String(copyright).trim();
   return /\.$/.test(line) ? `${line} Licensed under ${licence}.` : `${line}, licensed under ${licence}.`;
 }
+/** A record's note as a sentence of its own: capitalised, with one full stop. */
+function noteSentence(note) {
+  const t = oneLine(note);
+  return `${t[0].toUpperCase()}${t.slice(1)}${/[.!?]$/.test(t) ? '' : '.'}`;
+}
 /** The lab's own work, which the copyright line at the top of the NOTICE covers. */
 const LAB_WORK = "the Baranzini Lab's own work, under the copyright line at the top of this file";
 
@@ -321,7 +326,7 @@ export function renderNotice(catalog, { baseline = null } = {}) {
     }
     for (const u of ups) {
       // A commit pins the source on its own; the version is the key only for a source with no commit (it is what the block prints).
-      if (shipped(u)) add(blocks, JSON.stringify([2, sourceKey(u), u.commit ?? null, u.commit ? null : u.version ?? null, u.licence ?? null, u.licence_file ?? null, u.copyright ?? null, isLabOwned(u)]), () => ({ format: 2, u }), r.id, u.path, u);
+      if (shipped(u)) add(blocks, JSON.stringify([2, sourceKey(u), u.commit ?? null, u.commit ? null : u.version ?? null, u.licence ?? null, u.licence_file ?? null, u.copyright ?? null, u.licence_note ?? null, isLabOwned(u)]), () => ({ format: 2, u }), r.id, u.path, u);
       else add(others, JSON.stringify(['source', sourceKey(u), u.version ?? null, u.licence ?? null]), () => ({ kind: 'source', u }), r.id, null);
     }
     for (const d of list(r.source?.data_and_services)) add(others, JSON.stringify(['data', d.name, d.url ?? null]), () => ({ kind: 'data', d }), r.id, null);
@@ -341,6 +346,9 @@ export function renderNotice(catalog, { baseline = null } = {}) {
     if (g.format === 2 && isLabOwned(u)) text += u.licence_file === false ? `, ${LAB_WORK}; that repository has no licence file.` : `, ${LAB_WORK}, licensed under ${u.licence}.`;
     else if (u.copyright) text += `,\n${copyrightAndLicence(u.copyright, u.licence)}`;
     else text += `, licensed under ${u.licence}; ${g.format === 2 && isPublication(u) ? HOLDERLESS_PUBLICATION : HOLDERLESS}.`;
+    // A note beside the licence says what it grants where the copyright line seems to say otherwise
+    // (a BMJ article's statement reads "No commercial re-use" while its licence paragraph grants CC BY 4.0).
+    if (g.format === 2 && !isLabOwned(u) && oneLine(u.licence_note)) text += ` ${noteSentence(u.licence_note)}`;
     if (g.format === 1 && g.changes) text += ` Changes: ${g.changes}`;
     if (g.format === 2) {
       // One block may hold the same source as several items record it: every item's credit, people and

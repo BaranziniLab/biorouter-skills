@@ -246,6 +246,12 @@ test('PV6: a source with no licence file is the lab\'s own work or is not copied
   assert.match(messages(mutant((r) => (r('alpha').source.upstreams[0].licence_file = 'none'))), /licence_file must be false/);
 });
 
+test("PV6: a source's licence_note is text, or left out", () => {
+  assert.deepEqual(subjects(mutant((r) => (r('alpha').source.upstreams[0].licence_note = 'the licence paragraph grants CC BY 4.0, commercial use included'))), []);
+  assert.deepEqual(subjects(mutant((r) => (r('alpha').source.upstreams[0].licence_note = ['CC BY 4.0']))), ['PV6:source:alpha:example-org/example-skills']);
+  assert.match(messages(mutant((r) => (r('alpha').source.upstreams[0].licence_note = ''))), /licence_note must be text, or left out/);
+});
+
 // ---------------------------------------------------------------------------
 // One mutant for each condition the tests above do not reach on its own: a
 // condition whose subject another condition can also raise is checked by its

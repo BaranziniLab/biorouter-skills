@@ -506,9 +506,16 @@ export function applyBaseline(failures, baseline = [], done = []) {
 //
 // and the row's `contributors: [{ name, affiliation, role }]`. Upstream:
 //
-//   { kind, repo, display, url, doi, path, commit, version, licence, licence_file,
-//     copyright, copyright_note, credit, people, use, what, files, via,
-//     upstream_notice, owner, taken, cite }
+//   { kind, repo, display, url, doi, path, commit, version, licence, licence_note,
+//     licence_file, copyright, copyright_note, credit, people, use, what, files,
+//     via, upstream_notice, owner, taken, cite }
+//
+// An upstream's `path` names what it takes, one path or a comma-separated list;
+// `people` are the authors of those files as the source publishes them (its
+// commits and Co-authored-by trailers on the files, its CITATION.cff, its own
+// credit for a part), never the authors of other files beside them. Its
+// `licence_note` says what the licence grants where the copyright line seems to
+// say otherwise, and NOTICE prints it after that line.
 //
 // `licence_file` is false only for a source whose repository has no licence
 // file at its pin; the generators then make no licence claim for it. Only the
@@ -1036,6 +1043,7 @@ function checkSource(u, ctx) {
   if (!str(u?.credit)) p.push('no credit');
   if (!str(u?.what)) p.push('no what');
   if (!str(u?.licence)) p.push('no licence');
+  if (u?.licence_note != null && !str(u.licence_note)) p.push('licence_note must be text, or left out');
   if (u?.licence_file != null && typeof u.licence_file !== 'boolean') p.push('licence_file must be false (no licence file at the pin) or left out');
   if (u?.licence_file === false && shipped && !isLabOwned(u)) p.push('has no licence file at its pin, so it may not be copied or bundled');
   if (u?.people != null && (!Array.isArray(u.people) || u.people.some((x) => !str(x)))) p.push('people must be a list of names');

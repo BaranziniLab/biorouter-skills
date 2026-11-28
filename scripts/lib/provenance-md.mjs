@@ -136,7 +136,7 @@ function licenceCell(u, row) {
     if (u.upstream_notice === true) parts.push(`its NOTICE file ships with this item${has(row.notice_file) ? ` in ${mdText(row.notice_file)}` : ''}`);
     return parts.join('; ');
   }
-  const parts = [mdText(u.licence) || 'licence not recorded'];
+  const parts = [`${mdText(u.licence) || 'licence not recorded'}${has(u.licence_note) ? ` (${mdText(u.licence_note)})` : ''}`];
   // With no copyright line, the note (when there is one) says why, in the record's words; the fixed sentence
   // is for a source whose record gives no reason.
   if (has(u.copyright)) parts.push(`${mdText(u.copyright)}${has(u.copyright_note) ? ` (${mdText(u.copyright_note)})` : ''}`);

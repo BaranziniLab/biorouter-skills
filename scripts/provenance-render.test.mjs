@@ -423,6 +423,25 @@ test('NOTICE: one source at one commit is one block whether or not an entry reco
   assert.ok(!dotted.includes('Holy.,'));
 });
 
+test("NOTICE and PROVENANCE.md: a source's licence note follows its copyright line as a sentence of its own", () => {
+  const bmj = upstream({ kind: 'guideline', repo: null, display: 'PRISMA 2020', url: 'https://doi.org/10.1136/bmj.n71', doi: '10.1136/bmj.n71', path: null, commit: null,
+    version: 'PRISMA 2020', licence: 'CC-BY-4.0', licence_note: "the article's licence paragraph grants CC BY 4.0, commercial use included",
+    copyright: '\u00a9 Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY. No commercial re-use. See rights and permissions. Published by BMJ.',
+    copyright_note: 'the statement as the publisher deposited it', credit: 'Page MJ et al.', people: ['Page MJ'], cite: 'Page MJ, et al. The PRISMA 2020 statement. BMJ 2021;372:n71.' });
+  const row = adaptedRow('alpha', { source: { ...adaptedRow('alpha').source, upstreams: [upstream(), bmj] } });
+  const block = renderNotice(catalogOf([row])).split('\n\n').find((b) => b.includes('PRISMA 2020'));
+  assert.ok(block.includes('Published by BMJ. Licensed under CC-BY-4.0. The article\'s licence paragraph grants CC BY 4.0, commercial use included.\nCredited to Page MJ et al.'), block);
+  // A source with no note prints no extra sentence, and the note keys its block.
+  const plain = renderNotice(catalogOf([adaptedRow('alpha')])).split('\n\n').find((b) => b.includes('example-org/example-skills'));
+  assert.ok(!plain.includes('grants'), plain);
+  const twice = renderNotice(catalogOf([row, adaptedRow('omega', { source: { ...adaptedRow('omega').source, upstreams: [upstream(), { ...bmj, licence_note: undefined }] } })]));
+  assert.equal(twice.split('\n\n').filter((b) => b.includes('PRISMA 2020')).length, 2, twice);
+  const md = renderProvenanceMd(row, catalogOf([row]));
+  const line = md.split('\n').find((l) => l.startsWith('|') && l.includes('PRISMA 2020'));
+  assert.match(line, /\| CC-BY-4\.0 \(the article's licence paragraph grants CC BY 4\.0, commercial use included\); \u00a9 Author\(s\)/);
+  noLeaks(block, 'NOTICE licence note');
+});
+
 test('NOTICE: the preamble names the items whose notice file waits for its next release', () => {
   const items = [adaptedRow('alpha'), adaptedRow('omega'), inHouseRow('epsilon')];
   const entry = (rule, subject) => ({ rule, subject, wp: 'PROV-S4', since: '2026-11-28', note: '' });
