@@ -506,9 +506,25 @@ export function applyBaseline(failures, baseline = [], done = []) {
 //
 // and the row's `contributors: [{ name, affiliation, role }]`. Upstream:
 //
-//   { kind, repo, display, url, path, commit, version, licence, copyright,
+//   { kind, repo, display, url, doi, path, commit, version, licence, copyright,
 //     copyright_note, credit, people, use, what, files, via, upstream_notice,
-//     owner, taken }
+//     owner, taken, cite }
+//
+// An upstream's `kind` is a repository, package or program, or a publication:
+// a reporting guideline (STROBE, PRISMA 2020, ARRIVE 2.0) or a paper whose
+// text or method the item reproduces. A publication is known by its `doi`
+// (bare, "10.1371/journal.pmed.0040296") or `url`, and pinned by its `cite`
+// (the citation as published, authors included) rather than by a commit.
+// `cite` on any upstream is the citation its source asks for (CITATION.cff
+// preferred-citation, a README's "How to cite"), shown with the record. `via`
+// names a source's own sources, one repository or a list: each is another
+// upstream of the row (with its own licence and credit), reached through this
+// one, as Open Computer Use contains Cua Driver and yabai. `use` "hosted" is a
+// program its publisher runs on its own servers, which an extension forwards
+// calls to without running it; such an extension's line reads "Bridges to".
+// It is an extension's use only: PV6 refuses it on a skill or bundle row, in
+// any status (a skill names a hosted service under data_and_services), and a
+// skill or bundle row's line never reads "Bridges to".
 //
 // Idea: { kind, name, url, cite, licence, credit, what, evidence, version_read, applies_to }
 // Data: { kind, name, url, terms, credit, cite, how }
@@ -556,18 +572,22 @@ export const ORIGINS = Object.freeze(['in-house', 'ideas-derived', 'adapted', 't
 /** The origins a format 1 skill row records. */
 export const FORMAT1_ORIGINS = Object.freeze(['native', 'lab', 'adapted']);
 
-/** How a source is used. */
-export const USES = Object.freeze(['text', 'code', 'data', 'bundled', 'bundled-modified', 'dependency', 'launched']);
+/** How a source is used. "hosted": run by its publisher on its own servers; the extension forwards calls to it (extension rows only, PV6). */
+export const USES = Object.freeze(['text', 'code', 'data', 'bundled', 'bundled-modified', 'dependency', 'launched', 'hosted']);
 /** Outside material inside the item that decides its origin (PV2 to PV4). */
 export const ORIGIN_COPY_USES = Object.freeze(['text', 'code', 'data', 'bundled-modified']);
 /** Material redistributed with the item: licence text, copyright line and a pin are owed (PV6 to PV8). */
 export const SHIPPED_USES = Object.freeze(['text', 'code', 'data', 'bundled', 'bundled-modified']);
-/** Outside work a third-party item is made of or runs (PV5). */
-export const THIRD_PARTY_USES = Object.freeze(['text', 'code', 'data', 'bundled', 'bundled-modified', 'launched']);
-/** The program a third-party extension runs, preferred for its card line. */
+/** Outside work a third-party item is made of, runs or forwards calls to (PV5). */
+export const THIRD_PARTY_USES = Object.freeze(['text', 'code', 'data', 'bundled', 'bundled-modified', 'launched', 'hosted']);
+/** The program a third-party extension runs, preferred for its card line ("Runs"). */
 export const RUN_USES = Object.freeze(['bundled', 'bundled-modified', 'launched']);
+/** A program its publisher hosts, which a third-party extension forwards calls to: next for its card line ("Bridges to"). */
+export const BRIDGE_USES = Object.freeze(['hosted']);
 
-export const UPSTREAM_KINDS = Object.freeze(['repository', 'package', 'program']);
+export const UPSTREAM_KINDS = Object.freeze(['repository', 'package', 'program', 'guideline', 'paper']);
+/** Upstream kinds that are publications: known by a DOI or URL, pinned by their citation instead of a commit (PV6). */
+export const PUBLICATION_KINDS = Object.freeze(['guideline', 'paper']);
 export const IDEA_KINDS = Object.freeze(['repository', 'skill', 'paper', 'guideline', 'book']);
 export const DATA_KINDS = Object.freeze(['dataset', 'service']);
 export const APPLIES_TO = Object.freeze(['current', 'earlier']);
@@ -610,6 +630,7 @@ export const ORIGIN_SENTENCES = Object.freeze({
   'adapted': 'Includes text or code from the sources below, changed for Biorouter. Their licences and copyright lines ship with it.',
   'third-party': 'The sources below, kept largely as published and packaged for Biorouter. Their licences and copyright lines ship with it.',
   'third-party-extension': 'The program below does the work; the Baranzini Lab wrote the extension around it.',
+  'third-party-bridge': 'The service below, run by its publisher, does the work; the Baranzini Lab wrote the extension that forwards calls to it.',
 });
 
 /** Text a card's summary or description may never carry (PV13). */
@@ -622,6 +643,8 @@ const COMMIT = /^[0-9a-f]{7,40}$/;
 const REPO = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 const URL_PATTERN = /^https?:\/\/\S+$/;
 const UPSTREAM_PATH = /^([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+):(\S.*)$/;
+/** A bare DOI: "10.<registrant>/<suffix>", without a resolver in front. */
+const DOI = /^10\.\d{4,9}\/\S+$/;
 
 /** SPDX expression to licence ids (formerly scripts/check-catalog.mjs). */
 export function licenceTokens(expr) {
@@ -651,8 +674,24 @@ export const isLabOwned = (u) => u?.owner === 'lab';
 
 /** The key that groups upstream entries of one source (one repository can hold several entries). */
 export function sourceKey(u) {
-  return u?.repo ?? u?.url ?? u?.display ?? u?.name ?? '';
+  return u?.repo ?? u?.url ?? u?.doi ?? u?.display ?? u?.name ?? '';
 }
+
+/** A source's link: its `url`, else its DOI at doi.org, else null. */
+export function sourceUrl(u) {
+  if (str(u?.url)) return u.url;
+  if (str(u?.doi)) return `https://doi.org/${u.doi}`;
+  return null;
+}
+
+/** The repositories a source's `via` names, as a list (`via` is one repository or a list of them). */
+export function viaOf(u) {
+  if (u?.via == null) return [];
+  return Array.isArray(u.via) ? u.via : [u.via];
+}
+
+/** True for a guideline or a paper. */
+export const isPublication = (u) => PUBLICATION_KINDS.includes(u?.kind);
 
 /** The short name a line shows: `display`, else the repository's name, else `name` or the URL. */
 export function sourceName(u) {
@@ -728,9 +767,27 @@ function primarySources(row, catalog) {
   if (origin === 'third-party') {
     const made = external.filter((u) => hasAny(u, THIRD_PARTY_USES));
     if (catalog !== 'extensions') return made;
-    return [...made.filter((u) => hasAny(u, RUN_USES)), ...made.filter((u) => !hasAny(u, RUN_USES))];
+    // A program the extension runs leads, then one it forwards calls to, then the rest.
+    const runs = made.filter((u) => hasAny(u, RUN_USES));
+    const bridged = made.filter((u) => !hasAny(u, RUN_USES) && hasAny(u, BRIDGE_USES));
+    return [...runs, ...bridged, ...made.filter((u) => !runs.includes(u) && !bridged.includes(u))];
   }
   return [];
+}
+
+/** True for an extension row read for the extension catalog: the only row that may forward calls to a hosted program. */
+const isExtensionRead = (row, catalog) => catalog === 'extensions' && catalogOf(row) === 'extensions';
+
+/**
+ * True when a third-party extension's lead source is a program its publisher
+ * hosts and the extension runs nothing of its own: its line reads "Bridges
+ * to", its record opens with the bridge sentence. A skill or bundle row never
+ * bridges, whatever catalog a caller names: a skill forwards calls to nothing.
+ */
+function bridges(row, catalog, groups) {
+  if (row?.source?.origin !== 'third-party' || !isExtensionRead(row, catalog)) return false;
+  const lead = groups[0];
+  return !!lead && !lead.entries.some((u) => hasAny(u, RUN_USES)) && lead.entries.some((u) => hasAny(u, BRIDGE_USES));
 }
 
 /** Sources grouped by sourceKey, in first-appearance order, with every distinct licence. */
@@ -752,7 +809,9 @@ const UNRECORDED = 'a source not yet recorded';
 
 /**
  * The one credit line a card, an app row, the README, PROVENANCE.md and the
- * front matter all print (audit table 1.4). At most CREDIT_LINE_MAX characters
+ * front matter all print (audit table 1.4, plus "Bridges to X by Y; extension
+ * by the Baranzini Lab." for a third-party extension whose lead source is a
+ * program its publisher hosts, `use` "hosted"). At most CREDIT_LINE_MAX characters
  * when the record allows it: the "and N more" tail goes first, and a line that
  * is still too long fails PV13 (shorten the source's `display`).
  */
@@ -777,6 +836,7 @@ export function creditLine(row, { catalog = catalogOf(row) } = {}) {
       return `Provenance not recorded (origin "${origin}").`;
     }
     if (origin === 'adapted') return `Adapted from ${name} by ${credit} (${lic})${more}.`;
+    if (bridges(row, catalog, groups)) return `Bridges to ${name} by ${credit}${more}; ${EXTENSION_BY_LAB}.`;
     if (origin === 'third-party' && catalog === 'extensions') {
       const ver = first.version ? ` ${first.version}` : '';
       return `Runs ${name}${ver} by ${credit} (${lic})${more}; ${EXTENSION_BY_LAB}.`;
@@ -791,6 +851,7 @@ export function creditLine(row, { catalog = catalogOf(row) } = {}) {
 /** The origin sentence a full record opens with. */
 export function originSentence(row, { catalog = catalogOf(row) } = {}) {
   const origin = row?.source?.origin;
+  if (bridges(row, catalog, groupSources(primarySources(row, catalog)))) return ORIGIN_SENTENCES['third-party-bridge'];
   if (origin === 'third-party' && catalog === 'extensions') return ORIGIN_SENTENCES['third-party-extension'];
   return ORIGIN_SENTENCES[origin] ?? `Provenance not recorded (origin "${origin}").`;
 }
@@ -888,12 +949,23 @@ export function fixedTextProblems(text, { allowed = [] } = {}) {
 function checkSource(u, ctx) {
   const p = [];
   const shipped = hasAny(u, SHIPPED_USES);
-  if (!str(u?.repo) && !str(u?.url)) p.push('no repo or url');
+  const publication = isPublication(u);
+  if (publication) {
+    if (!str(u?.doi) && !str(u?.url)) p.push('no DOI or url');
+  } else if (!str(u?.repo) && !str(u?.url)) p.push('no repo or url');
   if (str(u?.repo) && !REPO.test(u.repo)) p.push(`repo "${u.repo}" is not <owner>/<name>`);
   if (u?.url != null && !URL_PATTERN.test(String(u.url))) p.push(`url "${u.url}" is not an http(s) URL`);
+  if (u?.doi != null && !DOI.test(String(u.doi))) p.push(`doi "${u.doi}" is not a DOI (write it bare, as 10.<registrant>/<suffix>)`);
+  // A publication is pinned by its citation; any other source may carry the one it asks for.
+  if (publication) {
+    if (!str(u?.cite)) p.push(`a ${u.kind} needs its citation in cite, with its authors as published`);
+  } else if (u?.cite != null && !str(u.cite)) p.push('cite must be the citation as text, or left out');
   if (!UPSTREAM_KINDS.includes(u?.kind)) p.push(`kind "${u?.kind}" is not ${UPSTREAM_KINDS.join(', ')}`);
   if (!OWNERS.includes(u?.owner)) p.push(`owner "${u?.owner}" is not external or lab`);
   if (!usesOf(u).length || usesOf(u).some((x) => !USES.includes(x))) p.push(`use must be a non-empty list of ${USES.join(', ')}`);
+  if (!ctx.extension && hasAny(u, BRIDGE_USES)) {
+    p.push('use "hosted" is for an extension that forwards calls to a program its publisher runs; a skill forwards nothing, so name the service under data_and_services');
+  }
   if (!str(u?.credit)) p.push('no credit');
   if (!str(u?.what)) p.push('no what');
   if (!str(u?.licence)) p.push('no licence');
@@ -901,11 +973,29 @@ function checkSource(u, ctx) {
   if (u?.files != null && (!Array.isArray(u.files) || u.files.some((x) => !str(x)))) p.push('files must be a list of paths');
   if (u?.taken != null && !DATE.test(String(u.taken))) p.push(`taken "${u.taken}" is not YYYY-MM-DD`);
   if (u?.commit != null && !COMMIT.test(String(u.commit))) p.push(`commit "${u.commit}" is not a hex sha`);
-  if (u?.via != null && !list(ctx.upstreams).some((o) => o !== u && o.repo === u.via)) p.push(`via "${u.via}" names no other upstream of the row`);
+  if (u?.via != null) {
+    // Each source reached through this one is another upstream of the row with its own licence and credit.
+    const vias = viaOf(u);
+    if (!vias.length) p.push('via is an empty list; write null when the source has no source of its own');
+    if (vias.some((v) => !str(v))) p.push('via must name repositories (<owner>/<name>), one or a list');
+    for (const v of vias.filter(str)) {
+      if (v === u?.repo) {
+        p.push(`via "${v}" names its own repository; via names the sources this one draws on`);
+        continue;
+      }
+      const named = list(ctx.upstreams).filter((o) => o !== u && o?.repo === v);
+      if (!named.length) {
+        p.push(`via "${v}" names no other upstream of the row`);
+        continue;
+      }
+      const lacks = ['licence', 'credit'].filter((k) => named.some((o) => !str(o?.[k])));
+      if (lacks.length) p.push(`via "${v}" names a source with no ${lacks.join(' or ')} of its own`);
+    }
+  }
   if (u?.upstream_notice != null && typeof u.upstream_notice !== 'boolean') p.push('upstream_notice must be true or false');
   if (u?.upstream_notice === true && !licenceTokens(u.licence).includes('Apache-2.0')) p.push('upstream_notice is set on a source that is not Apache-2.0');
   if (shipped) {
-    if (!(u?.commit && COMMIT.test(String(u.commit))) && !str(u?.version)) p.push('a copied or bundled source needs a commit or a version');
+    if (!publication && !(u?.commit && COMMIT.test(String(u.commit))) && !str(u?.version)) p.push('a copied or bundled source needs a commit or a version');
     for (const t of licenceTokens(u?.licence)) if (!ALLOWED_LICENCES.has(t)) p.push(`licence ${t} may not be copied or bundled`);
     if (u?.copyright == null && !str(u?.copyright_note)) p.push('copyright is null with no copyright_note');
     if (u?.copyright != null && !str(u.copyright)) p.push('copyright is empty; write null and a copyright_note');
@@ -993,8 +1083,9 @@ export function ruleProvenance(rows, { catalogFormat = 1, catalog = null } = {})
 
     // PV6, every source is complete.
     const upstreams = list(src.upstreams);
+    const extension = isExtensionRead(row, kind);
     upstreams.forEach((u, i) => {
-      const p = checkSource(u, { upstreams });
+      const p = checkSource(u, { upstreams, extension });
       if (p.length) fail('PV6', `source:${id}:${sourceKey(u) || `#${i}`}`, `upstream ${sourceKey(u) || `#${i}`}: ${p.join('; ')}`);
       if (hasAny(u, SHIPPED_USES) && u?.copyright == null && str(u?.copyright_note)) warn(`upstream ${sourceKey(u)} names no copyright holder (${u.copyright_note}); listed for review`);
       if (str(u?.path) && /[\s(),;]/.test(u.path)) warn(`upstream ${sourceKey(u)} path "${u.path}" reads as prose; put it in what`);

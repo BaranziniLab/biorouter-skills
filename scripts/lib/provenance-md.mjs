@@ -12,8 +12,9 @@
 //
 // The sections, in order, each only when it has something to say: the credit
 // line and origin sentence; Sources (a table of every upstream entry);
-// Written for Biorouter (a bundle's components that are not plain copied
-// material, and the files written here inside copied components); Ideas;
+// the citations its sources ask for; Written for Biorouter (a bundle's
+// components that are not plain copied material, and the files written here
+// inside copied components); Ideas;
 // Data and services; References; Contributors; Earlier versions; Licences;
 // then the curator line, last.
 
@@ -25,11 +26,15 @@ import {
   creditLine,
   currentIdeas,
   isLabOwned,
+  isPublication,
   labCopyrightLine,
   originSentence,
+  sourceKey,
   sourceName,
+  sourceUrl,
   stubCreditLines,
   usesOf,
+  viaOf,
 } from './catalog-rules.mjs';
 
 export const PROVENANCE_FILE = 'PROVENANCE.md';
@@ -98,8 +103,7 @@ const capital = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 const article = (word) => (/^[aeiou]/i.test(word) ? `an ${word}` : `a ${word}`);
 
 function upstreamUrl(u) {
-  if (has(u?.url)) return u.url;
-  return null;
+  return sourceUrl(u);
 }
 
 function sourceCell(u) {
@@ -115,6 +119,7 @@ function pinCell(u) {
   const parts = [];
   if (has(u.version)) parts.push(`version ${mdText(u.version)}`);
   else if (has(u.commit)) parts.push(`commit ${code(String(u.commit).slice(0, 12))}`);
+  else if (isPublication(u)) parts.push(has(u.doi) ? `DOI ${code(u.doi)}` : 'pinned by its citation');
   else parts.push('not pinned');
   if (has(u.taken)) parts.push(`taken ${mdText(u.taken)}`);
   return parts.join(', ');
@@ -138,14 +143,39 @@ function creditCell(u) {
   return parts.join('; ');
 }
 
+/**
+ * The Via cell of one source: the other sources of the row it was reached
+ * through, that is, those whose `via` names its repository: Cua Driver's row
+ * names iFurySt/open-computer-use, whose own `via` lists trycua/cua.
+ */
+function viaCell(u, ups) {
+  if (!has(u?.repo)) return '';
+  const through = ups.filter((o) => o !== u && o?.repo !== u.repo && viaOf(o).includes(u.repo));
+  return [...new Set(through.map((o) => o.repo ?? sourceName(o)))].map(code).join(', ');
+}
+
 function sourcesTable(ups, row) {
   const out = ['| Source | Commit or version | Licence | Credit and people | Use and what | Files | Via |', '|---|---|---|---|---|---|---|'];
   for (const u of ups) {
     const use = `${usesOf(u).map(mdText).join(', ')}: ${mdText(u.what)}`;
     const files = list(u.files).filter(has).map(code).join(', ');
-    const via = has(u.via) ? code(u.via) : '';
+    const via = viaCell(u, ups);
     // Cells are assembled from mdText pieces, then every pipe is escaped once.
     out.push(`| ${[sourceCell(u), pinCell(u), licenceCell(u, row), creditCell(u), use, files, via].map((c) => c.replace(/\|/g, '\\|')).join(' | ')} |`);
+  }
+  return out;
+}
+
+/** One line per source and citation it asks for (`cite`, as CITATION.cff's preferred-citation gives it), in source order. */
+function citationLines(ups) {
+  const seen = new Set();
+  const out = [];
+  for (const u of ups) {
+    if (!has(u?.cite)) continue;
+    const key = `${sourceKey(u)}\n${oneLine(u.cite)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(`- ${mdLink(sourceName(u), upstreamUrl(u))}: ${sentence(u.cite)}`);
   }
   return out;
 }
@@ -285,6 +315,8 @@ export function renderProvenanceMd(row, catalog) {
   const ups = list(src.upstreams);
   if (ups.length) {
     lines.push('## Sources', '', ...sourcesTable(ups, row), '');
+    const cites = citationLines(ups);
+    if (cites.length) lines.push('How each source asks to be cited:', '', ...cites, '');
     if (has(src.changes)) lines.push(`Changes for Biorouter: ${sentence(src.changes)}`, '');
     if (src.maintained_here === true) lines.push('Maintained in this repository: the copy is not resynced from its source.', '');
     const plain = row.kind === 'bundle' ? Object.entries(row.components ?? {}).filter(([, c]) => plainCopied(c)) : [];

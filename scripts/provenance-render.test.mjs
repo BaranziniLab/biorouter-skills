@@ -108,8 +108,9 @@ test('PROVENANCE.md: table cells are escaped, a holder-less source is flagged, v
   assert.ok(md.includes('Pipe \\| Org; people: Ada Lovelace, Alan Turing'), 'a pipe in a cell is escaped');
   assert.ok(md.includes('text: two lines'), 'a newline in a cell is a space');
   assert.ok(md.includes('Apache-2.0; its licence names no copyright holder (the licence names no holder); its NOTICE file ships with this item'));
-  assert.ok(md.includes('| `origin-org/origin-skills` |'), 'via names the other source');
-  assert.ok(md.includes('| origin-skills: `origin-org/origin-skills` | version 2.1.0, taken 2026-11-25 | MIT | Origin Org | dependency: installed at run time |  |  |'), 'a url-less source is not linked and an empty list is an empty cell');
+  // example-skills draws on origin-skills (its via), so origin-skills was reached through example-skills.
+  assert.ok(md.includes('| origin-skills: `origin-org/origin-skills` | version 2.1.0, taken 2026-11-25 | MIT | Origin Org | dependency: installed at run time |  | `example-org/example-skills` |'), 'a url-less source is not linked, an empty list is an empty cell, and Via names the source it was reached through');
+  assert.ok(md.split('\n').find((l) => l.startsWith('| [example-skills]')).endsWith('| `SKILL.md` |  |'), 'the source that draws on another was not reached through it');
   assert.ok(md.includes('LICENSE-UPSTREAM also reproduces the NOTICE file of example-org/example-skills, as section 4(d) of the Apache License asks.'));
   noLeaks(md, 'escaping');
 });

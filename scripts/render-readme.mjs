@@ -32,6 +32,7 @@ import {
   provenanceFormat,
   sourceKey,
   sourceName,
+  sourceUrl,
   usesOf,
 } from './lib/catalog-rules.mjs';
 import { readProvenanceBaseline } from './lib/provenance-baseline.mjs';
@@ -106,12 +107,12 @@ function sourceLabel(row) {
   return insp.length ? `Native rewrite inspired by ${insp.map(link).join(' and ')}; no upstream text copied` : 'Native';
 }
 
-const USE_NOTES = { dependency: 'a dependency', launched: 'run at run time' };
+const USE_NOTES = { dependency: 'a dependency', launched: 'run at run time', hosted: "run on its publisher's servers" };
 
 /** One source group of a format 2 row: "[name](url) by credit (licences)", noting a source that is not redistributed. */
 function groupLabel(g) {
   const u = g.entries.find((e) => e.url) ?? g.entries[0];
-  const url = u.url ?? (u.repo ? `https://github.com/${u.repo}` : null);
+  const url = sourceUrl(u) ?? (u.repo ? `https://github.com/${u.repo}` : null);
   let s = `${mdLink(g.name, url)} by ${mdText(g.credit) || 'an uncredited author'} (${g.licences.join(', ') || 'licence not recorded'})`;
   if (!g.entries.some(shipped)) {
     const notes = uniq(g.entries.flatMap(usesOf).map((x) => USE_NOTES[x] ?? x));
@@ -251,7 +252,7 @@ export function renderNotice(catalog) {
     const { u } = g;
     const subject = subjectOf(g.ids, 'includes', 'include');
     const where = whereText(g.paths);
-    const ident = g.format === 1 ? u.repo : u.repo ?? u.url ?? sourceName(u);
+    const ident = g.format === 1 ? u.repo : u.repo ?? sourceUrl(u) ?? sourceName(u);
     const said = [where, pinText(u)].filter(Boolean).join(', ');
     let text = `${subject} material from ${ident}${said ? ` (${said})` : ''}`;
     if (u.copyright) text += `,\n${u.copyright}, licensed under ${u.licence}.`;
@@ -261,6 +262,7 @@ export function renderNotice(catalog) {
     if (g.format === 2) {
       const people = list(u.people).filter(Boolean);
       text += `\nCredited to ${oneLine(u.credit) || 'an uncredited author'}${people.length ? `, with ${people.map(oneLine).join(', ')}` : ''}.`;
+      if (u.cite) text += `\nCite: ${oneLine(u.cite)}`;
     }
     if (licenceTokens(u.licence).some((x) => BSD.has(x))) text += `\nThe names of the copyright holders and contributors are not used to endorse or promote Biorouter.`;
     if (g.format === 2 && u.upstream_notice === true) text += `\nIts NOTICE file is reproduced in the notice file of each item named here.`;
@@ -272,8 +274,10 @@ export function renderNotice(catalog) {
     const subject = subjectOf(g.ids, 'uses', 'use');
     if (g.kind === 'source') {
       const { u } = g;
-      const ident = [u.repo ?? u.url, u.version ? `version ${u.version}` : null].filter(Boolean).join(', ');
-      otherText.push(`${subject} ${sourceName(u)}${ident ? ` (${ident})` : ''} by ${oneLine(u.credit) || 'an uncredited author'}, licensed under ${u.licence}: ${oneLine(u.what)} (${usesOf(u).join(', ')}, not redistributed).`);
+      const ident = [u.repo ?? sourceUrl(u), u.version ? `version ${u.version}` : null].filter(Boolean).join(', ');
+      let text = `${subject} ${sourceName(u)}${ident ? ` (${ident})` : ''} by ${oneLine(u.credit) || 'an uncredited author'}, licensed under ${u.licence}: ${oneLine(u.what)} (${usesOf(u).join(', ')}, not redistributed).`;
+      if (u.cite) text += ` Cite: ${oneLine(u.cite)}`;
+      otherText.push(text);
     } else {
       const { d } = g;
       let text = `${subject} ${oneLine(d.name)}${d.url ? ` (${d.url})` : ''}, a ${d.kind ?? 'source'}${d.credit ? ` by ${oneLine(d.credit)}` : ''}`;
