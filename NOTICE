@@ -7,15 +7,16 @@ the license line of its SKILL.md files. Material written here is licensed under
 the Apache License, Version 2.0 (see LICENSE). Material adapted from upstream
 projects keeps its upstream licence; the archive of each such skill carries the
 upstream copyright line and licence text in its notice file.
-The notice files of ggplot-visualization, interactive-dashboards and
-scientific-artifacts gain the lines they still lack at their next release.
+The notice files of ggplot-visualization, interactive-dashboards,
+replication-package-audit and scientific-artifacts gain the lines they still
+lack at their next release.
 
 This file is generated from catalog.json by scripts/render-readme.mjs.
 
 Upstream material
 =================
 
-replication-package-audit, claim-evidence-integrity, systematic-review-prisma, clinical-biostatistics, phi-deidentification include material from Aperivue/medsci-skills (7 folders across the items named here, commit 7e9d133dd0216c29b0e030729e3719c3db5e0973),
+replication-package-audit, claim-evidence-integrity, systematic-review-prisma, clinical-biostatistics, manuscript-peer-review, phi-deidentification include material from Aperivue/medsci-skills (8 folders across the items named here, commit 7e9d133dd0216c29b0e030729e3719c3db5e0973),
 Copyright (c) 2026 Aperivue (https://aperivue.com), licensed under MIT.
 Credited to Aperivue, with Yoojin Nam, Jinhoon Jeong, Namkug Kim, ANIRUDDHA ADAK, Steve Shema, Raphael Malikian, Wu Shuwen.
 Cite: Yoojin Nam, Jinhoon Jeong and Namkug Kim. Deterministic Integrity Gates for LLM-Assisted Clinical Manuscript Preparation: An Auditable Biomedical Informatics Architecture. arXiv:2606.09500 (2026).
@@ -31,31 +32,37 @@ Copyright (c) 2026 claesbackman, licensed under MIT.
 Credited to Claes Bäckman.
 Cite: Claes Bäckman. AI tools for research: Claude Code skills for feedback on and communication of academic research. doi:10.5281/zenodo.24380120
 
-replication-package-audit includes material from https://doi.org/10.1371/journal.pmed.0040296 (version STROBE 2007), licensed under CC-BY-4.0; its licence names no copyright holder.
+replication-package-audit includes material from STROBE 2007 (DOI 10.1371/journal.pmed.0040296),
+© 2007 von Elm et al. Licensed under CC-BY-4.0.
 Credited to von Elm E et al., with Altman DG, Egger M, Pocock SJ, Gøtzsche PC, Vandenbroucke JP.
 Cite: von Elm E, Altman DG, Egger M, Pocock SJ, Gøtzsche PC, Vandenbroucke JP. The Strengthening the Reporting of Observational Studies in Epidemiology (STROBE) statement. PLoS Med 2007;4(10):e296. doi:10.1371/journal.pmed.0040296
 
-replication-package-audit includes material from https://doi.org/10.1136/bmj.h5527 (version STARD 2015), licensed under CC-BY-4.0; its licence names no copyright holder.
+replication-package-audit includes material from STARD 2015 (DOI 10.1136/bmj.h5527),
+© Bossuyt et al 2015, licensed under CC-BY-4.0.
 Credited to Bossuyt PM et al., with Reitsma JB, Bruns DE, Gatsonis CA, Glasziou PP, Irwig L.
 Cite: Bossuyt PM, Reitsma JB, Bruns DE, Gatsonis CA, Glasziou PP, Irwig L, et al. STARD 2015: an updated list of essential items for reporting diagnostic accuracy studies. BMJ 2015;351:h5527. doi:10.1136/bmj.h5527
 
-replication-package-audit includes material from https://doi.org/10.1136/bmj-2023-078378 (version TRIPOD+AI 2024), licensed under CC-BY-4.0; its licence names no copyright holder.
+replication-package-audit includes material from TRIPOD+AI 2024 (DOI 10.1136/bmj-2023-078378),
+© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY. No commercial re-use. See rights and permissions. Published by BMJ. Licensed under CC-BY-4.0.
 Credited to Collins GS et al., with Moons KGM, Dhiman P.
 Cite: Collins GS, Moons KGM, Dhiman P, et al. TRIPOD+AI statement: updated guidance for reporting clinical prediction models that use regression or machine learning methods. BMJ 2024;385:e078378. doi:10.1136/bmj-2023-078378
 
-replication-package-audit includes material from https://doi.org/10.1136/bmj.n71 (version PRISMA 2020), licensed under CC-BY-4.0; its licence names no copyright holder.
+replication-package-audit includes material from PRISMA 2020 (DOI 10.1136/bmj.n71),
+© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY. No commercial re-use. See rights and permissions. Published by BMJ. Licensed under CC-BY-4.0.
 Credited to Page MJ et al., with McKenzie JE, Bossuyt PM, Boutron I, Hoffmann TC, Mulrow CD.
 Cite: Page MJ, McKenzie JE, Bossuyt PM, Boutron I, Hoffmann TC, Mulrow CD, et al. The PRISMA 2020 statement: an updated guideline for reporting systematic reviews. BMJ 2021;372:n71. doi:10.1136/bmj.n71
 
-replication-package-audit includes material from https://doi.org/10.1136/bmj-2024-081123 (version CONSORT 2025), licensed under CC-BY-4.0; its licence names no copyright holder.
+replication-package-audit includes material from CONSORT 2025 (DOI 10.1136/bmj-2024-081123),
+© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY. No commercial re-use. See rights and permissions. Published by BMJ. Licensed under CC-BY-4.0.
 Credited to Hopewell S et al., with Chan AW, Collins GS, Hróbjartsson A, Moher D, Schulz KF.
 Cite: Hopewell S, Chan AW, Collins GS, Hróbjartsson A, Moher D, Schulz KF, et al. CONSORT 2025 statement: updated guideline for reporting randomised trials. BMJ 2025;389:e081123. doi:10.1136/bmj-2024-081123
 
-replication-package-audit includes material from https://doi.org/10.1136/bmj-2024-081477 (version SPIRIT 2025), licensed under CC-BY-4.0; its licence names no copyright holder.
+replication-package-audit includes material from SPIRIT 2025 (DOI 10.1136/bmj-2024-081477),
+© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY. No commercial re-use. See rights and permissions. Published by BMJ. Licensed under CC-BY-4.0.
 Credited to Chan AW et al., with Boutron I, Hopewell S, Moher D, Schulz KF, Collins GS.
 Cite: Chan AW, Boutron I, Hopewell S, Moher D, Schulz KF, Collins GS, et al. SPIRIT 2025 statement: updated guideline for protocols of randomised trials. BMJ 2025;389:e081477. doi:10.1136/bmj-2024-081477
 
-replication-package-audit includes material from https://doi.org/10.1371/journal.pbio.3000410 (version ARRIVE 2.0), licensed under CC0-1.0; its licence names no copyright holder.
+replication-package-audit includes material from ARRIVE 2.0 (DOI 10.1371/journal.pbio.3000410), licensed under CC0-1.0; the publication names no copyright holder.
 Credited to Percie du Sert N et al., with Hurst V, Ahluwalia A, Alam S, Avey MT, Baker M.
 Cite: Percie du Sert N, Hurst V, Ahluwalia A, Alam S, Avey MT, Baker M, et al. The ARRIVE guidelines 2.0: updated guidelines for reporting animal research. PLoS Biol 2020;18(7):e3000410. doi:10.1371/journal.pbio.3000410
 
@@ -63,13 +70,13 @@ scientific-artifacts includes material from cathrynlavery/diagram-design (skills
 Copyright (c) 2025 Cathryn Lavery, licensed under MIT.
 Credited to Cathryn Lavery.
 
-scientific-artifacts, database-access, exploratory-data-analysis, figure-qa, manuscript-peer-review, microscopy-image-analysis, python-visualization, scientific-manuscript-writing include material from K-Dense-AI/scientific-agent-skills (9 folders across the items named here, commit ec59a29a03d5c40f73ab40878df04860bc00e876),
-Copyright (c) 2025 K-Dense Inc., licensed under MIT.
-Credited to K-Dense Inc., with Timothy Kassis, Vinayak Agarwal, Yuhuan He, Darshil Patel, Aubrey M. Brueckner.
+scientific-artifacts, scientific-data-engineering, statistical-modeling-bayes, scientific-machine-learning, geospatial-science, neurophysiology-analysis, quantum-scientific-computing, materials-informatics, biomedical-imaging-pathology, citation-library-management, laboratory-automation-planning, systematic-review-prisma, simulation-optimization, physical-science-computing, clinical-decision-support-review, grant-funding-strategy, regulatory-quality-systems, gpu-compute-optimization, research-evaluation-venues, database-access, exploratory-data-analysis, figure-qa, manuscript-peer-review, microscopy-image-analysis, python-visualization, scientific-manuscript-writing include material from K-Dense-AI/scientific-agent-skills (44 folders across the items named here, commit ec59a29a03d5c40f73ab40878df04860bc00e876),
+Copyright (c) 2025 K-Dense Inc. Licensed under MIT.
+Credited to K-Dense Inc., with Timothy Kassis, Vinayak Agarwal, Yuhuan He, Darshil Patel, Aubrey M. Brueckner, Dylan Pulver, Andrey Fedorov, Tai An.
 Cite: Timothy Kassis, Vinayak Agarwal, Yuhuan He, Darshil Patel and Aubrey M. Brueckner. Scientific Agent Skills: A Library of Procedural Knowledge for Research Agents. arXiv:2609.00065 (2026). doi:10.48550/arXiv.2609.00065
 
-scientific-artifacts includes material from K-Dense-AI/scientific-agent-skills (skills/markdown-mermaid-writing, commit ec59a29a03d5c40f73ab40878df04860bc00e876),
-Copyright (c) 2025 K-Dense Inc., licensed under Apache-2.0.
+scientific-artifacts, scientific-data-engineering, statistical-modeling-bayes, scientific-machine-learning, quantum-scientific-computing, biomedical-imaging-pathology, simulation-optimization include material from K-Dense-AI/scientific-agent-skills (10 folders across the items named here, commit ec59a29a03d5c40f73ab40878df04860bc00e876),
+Copyright (c) 2025 K-Dense Inc. Licensed under Apache-2.0.
 Credited to K-Dense Inc., with Timothy Kassis, Vinayak Agarwal, Yuhuan He, Darshil Patel, Aubrey M. Brueckner, Stephen Benjamin.
 Cite: Timothy Kassis, Vinayak Agarwal, Yuhuan He, Darshil Patel and Aubrey M. Brueckner. Scientific Agent Skills: A Library of Procedural Knowledge for Research Agents. arXiv:2609.00065 (2026). doi:10.48550/arXiv.2609.00065
 
@@ -93,21 +100,11 @@ scientific-artifacts includes material from devicons/devicon (icons/rstudio, ico
 Copyright (c) 2015 konpa, licensed under MIT.
 Credited to konpa.
 
-scientific-data-engineering, statistical-modeling-bayes, scientific-machine-learning, geospatial-science, neurophysiology-analysis, quantum-scientific-computing, materials-informatics, biomedical-imaging-pathology, citation-library-management, laboratory-automation-planning, systematic-review-prisma, simulation-optimization, physical-science-computing, clinical-decision-support-review, grant-funding-strategy, regulatory-quality-systems, gpu-compute-optimization, research-evaluation-venues include material from K-Dense-AI/scientific-agent-skills (35 folders across the items named here, commit ec59a29a03d5c40f73ab40878df04860bc00e876),
-Copyright (c) 2025 K-Dense Inc., licensed under MIT.
-Credited to K-Dense Inc., with Timothy Kassis, Vinayak Agarwal, Yuhuan He, Darshil Patel, Aubrey M. Brueckner, Dylan Pulver, Andrey Fedorov, Tai An.
-Cite: Timothy Kassis, Vinayak Agarwal, Yuhuan He, Darshil Patel and Aubrey M. Brueckner. Scientific Agent Skills: A Library of Procedural Knowledge for Research Agents. arXiv:2609.00065 (2026). doi:10.48550/arXiv.2609.00065
-
 scientific-data-engineering, statistical-modeling-bayes, scientific-machine-learning, econometrics-toolkit, physical-science-computing include material from K-Dense-AI/scientific-agent-skills (5 folders across the items named here, commit ec59a29a03d5c40f73ab40878df04860bc00e876),
-Copyright (c) 2025 K-Dense Inc., licensed under BSD-3-Clause.
+Copyright (c) 2025 K-Dense Inc. Licensed under BSD-3-Clause.
 Credited to K-Dense Inc., with Timothy Kassis, Vinayak Agarwal, Yuhuan He, Darshil Patel, Aubrey M. Brueckner, Kiril Klein.
 Cite: Timothy Kassis, Vinayak Agarwal, Yuhuan He, Darshil Patel and Aubrey M. Brueckner. Scientific Agent Skills: A Library of Procedural Knowledge for Research Agents. arXiv:2609.00065 (2026). doi:10.48550/arXiv.2609.00065
 The names of the copyright holders and contributors are not used to endorse or promote Biorouter.
-
-scientific-data-engineering, statistical-modeling-bayes, scientific-machine-learning, quantum-scientific-computing, biomedical-imaging-pathology, simulation-optimization include material from K-Dense-AI/scientific-agent-skills (9 folders across the items named here, commit ec59a29a03d5c40f73ab40878df04860bc00e876),
-Copyright (c) 2025 K-Dense Inc., licensed under Apache-2.0.
-Credited to K-Dense Inc., with Timothy Kassis, Vinayak Agarwal, Yuhuan He, Darshil Patel, Aubrey M. Brueckner.
-Cite: Timothy Kassis, Vinayak Agarwal, Yuhuan He, Darshil Patel and Aubrey M. Brueckner. Scientific Agent Skills: A Library of Procedural Knowledge for Research Agents. arXiv:2609.00065 (2026). doi:10.48550/arXiv.2609.00065
 
 statistical-modeling-bayes includes material from ab604/claude-code-r-skills (.claude/skills/r-bayes, commit 529de4fcfe68fcc7c30cc56388bb625e8ddf37f0), licensed under MIT; its licence names no copyright holder.
 Credited to ab604.
@@ -138,21 +135,15 @@ Credited to Jesse Vincent.
 ucsf-hpc includes material from BaranziniLab/UCSFHPCAgent (skills/ucsf-hpc-compute, commit 01b6bbeadc515663223409c8696e72bd71b748ae), the Baranzini Lab's own work, under the copyright line at the top of this file, licensed under Apache-2.0.
 Credited to Baranzini Lab (Wanjun Gu, UCSF).
 
-code-review, commit-commands include material from anthropics/claude-plugins-official (plugins/code-review (v1.0.1, c905cd8 command), plugins/commit-commands, commit 73c8cf3ea7e296057b467990f2f5d61b4c922260), licensed under Apache-2.0; its licence names no copyright holder.
-Credited to Anthropic, with Noah Zweben.
-
-code-review includes material from anthropics/claude-plugins-official (plugins/pr-review-toolkit/agents (silent-failure-hunter, pr-test-analyzer), plugins/security-guidance/hooks/llm.py (review rubric), commit 73c8cf3ea7e296057b467990f2f5d61b4c922260), licensed under Apache-2.0; its licence names no copyright holder.
-Credited to Anthropic, with Noah Zweben, Dickson Tsai, Pete Blois, Mohamed Hegazy, Octavian Guzu.
+code-review, commit-commands, code-modernization include material from anthropics/claude-plugins-official (5 folders across the items named here, commit 73c8cf3ea7e296057b467990f2f5d61b4c922260), licensed under Apache-2.0; its licence names no copyright holder.
+Credited to Anthropic, with Noah Zweben, Dickson Tsai, Pete Blois, Mohamed Hegazy, Octavian Guzu, Morgan Lunt.
 
 code-review, reporting, figure-qa, interactive-dashboards, r-package-development include material from posit-dev/skills (5 folders across the items named here, commit 951959403f4ecc9d0274adf35538fc67153b6f31),
 Copyright (c) 2025 Posit PBC, licensed under MIT.
 Credited to Posit PBC, with Garrick Aden-Buie, Mickaël Canouil, Emil Hvitfeldt, E Nelson, Simon P. Couch, Christophe Dervieux.
 
 code-simplifier, playground include material from anthropics/claude-plugins-official (plugins/code-simplifier, plugins/playground, commit de573bd84695c6657b28f05ffe32c37bb54d1f55), licensed under Apache-2.0; its licence names no copyright holder.
-Credited to Anthropic, with Boris Cherny, Thariq Shihipar.
-
-code-modernization includes material from anthropics/claude-plugins-official (plugins/code-modernization (commands, agents, scripts, references, report assets), commit 73c8cf3ea7e296057b467990f2f5d61b4c922260), licensed under Apache-2.0; its licence names no copyright holder.
-Credited to Anthropic, with Morgan Lunt.
+Credited to Anthropic, with Boris Cherny, Noah Zweben, Thariq Shihipar.
 
 code-modernization includes material from mermaid-js/mermaid (mermaid.min.js as vendored in plugins/code-modernization/assets/vendor, version 11.17.2),
 Copyright (c) 2014 - 2022 Knut Sveidqvist, licensed under MIT.
@@ -194,20 +185,15 @@ Credited to Streamlit Inc. and Snowflake Inc., with Nico Bellante, Lukas Masuch,
 Its NOTICE file ships in the notice file of interactive-dashboards from its next release.
 
 julia-development, scientific-manuscript-writing include material from timholy/claude_config (skills/freshen-package, skills/freshen-gitignore, skills/freshen-aqua, skills/freshen-explicit-imports, skills/review-api, agents/julia-api-inventory.md, skills/review-common/interview.md, skills/review-common/plan-file.md, skills/review-implement, rules/code-comments.md, skills/freshen-generic-axes, rules/julia-generic-indexing.md, skills/freshen-coverage, skills/freshen-docstrings, agents/docstring-auditor.md, julia-code/ClaudeUtils/src/audit_docstrings.jl, skills/freshen-docs, skills/profile-performance, rules/julia-inbounds.md, CLAUDE.md, skills/write-methods/SKILL.md, commit 225ce60094c1ecb823b3cb7abf2fd390185643ef),
-Copyright (c) 2026: Tim Holy., licensed under MIT.
+Copyright (c) 2026: Tim Holy. Licensed under MIT.
 Credited to Tim Holy.
 
 julia-development includes material from JuliaLang/DocBrowser.jl (skills/julia-docs, commit 0146653c42f926e309c4b1739479ad54fc0f9694),
 Copyright (c) 2026 Ian Butterworth, Kristoffer Carlsson and contributors, licensed under MIT.
 Credited to Ian Butterworth, Kristoffer Carlsson and contributors.
 
-manuscript-peer-review includes material from Aperivue/medsci-skills (skills/self-review/references/phases/phase2_systematic_check.md, skills/revise/references/r2r_voice.md, commit 7e9d133dd0216c29b0e030729e3719c3db5e0973),
-Copyright (c) 2026 Aperivue (https://aperivue.com), licensed under MIT.
-Credited to Aperivue, with Yoojin Nam, Jinhoon Jeong, Namkug Kim.
-Cite: Yoojin Nam, Jinhoon Jeong and Namkug Kim. Deterministic Integrity Gates for LLM-Assisted Clinical Manuscript Preparation: An Auditable Biomedical Informatics Architecture. arXiv:2606.09500 (2026).
-
 science-superpowers includes material from K-Dense-AI/science-superpowers (skills/framing-research-questions, skills/surveying-prior-work, skills/designing-the-analysis, skills/preregistering-analysis, skills/establishing-feasibility-first, skills/setting-up-reproducible-analysis, skills/executing-analysis, skills/investigating-anomalous-results, skills/verifying-results-before-claiming, skills/requesting-red-team-review, skills/receiving-critical-review, skills/reporting-and-archiving-findings, commit 0374bdf82c2372bdf1667e3c762146c3a29215f5),
-Copyright (c) 2026 K-Dense, Inc., licensed under MIT.
+Copyright (c) 2026 K-Dense, Inc. Licensed under MIT.
 Credited to K-Dense, Inc., with Timothy Kassis.
 
 scientific-problem-selection includes material from anthropics/knowledge-work-plugins (bio-research/skills/scientific-problem-selection, commit 0e0fcacddcc892eb92a1b7873ff9d68159c47571), licensed under Apache-2.0; its licence names no copyright holder.
@@ -217,3 +203,20 @@ scientific-prose-review includes material from labarba/sciwrite (skills/sciwrite
 Copyright (c) 2026 Lorena A. Barba, licensed under CC-BY-4.0.
 Credited to Lorena A. Barba, with Kyle Niemeyer.
 Cite: Lorena A. Barba. SciWrite: an Agent Skill for reviewing the writing quality of scientific manuscripts. doi:10.5281/zenodo.23728600
+
+Other credited work
+===================
+
+database-access uses PubMed (NCBI E-utilities) (https://eutils.ncbi.nlm.nih.gov/entrez/eutils), a service by National Center for Biotechnology Information; terms: NLM public-domain utility service; terms: https://www.ncbi.nlm.nih.gov/books/NBK25501/ (as BioMCP 0.9.3's source inventory records it, reviewed 2026-04-10).
+
+database-access uses Crossref REST API (https://api.crossref.org), a service by Crossref; terms: No sign-up is needed, almost none of the metadata is subject to copyright and it may be used for any purpose, though some abstracts may be under their publishers' or authors' copyright; the polite pool asks for a mailto address (Crossref REST API page, https://www.crossref.org/documentation/retrieve-metadata/rest-api/, read 2026-11-27).
+
+database-access uses OpenAlex API (https://api.openalex.org), a service by OurResearch; terms: OpenAlex data is under CC0, in the public domain (attribution appreciated, not required); free API use is capped at 100,000 credits a day and 100 requests a second, more on a paid plan (OpenAlex's documentation source, ourresearch/openalex-docs license.md and how-to-use-the-api/rate-limits-and-authentication.md at 8cec9db, read 2026-11-27).
+
+database-access uses Semantic Scholar Graph API (https://api.semanticscholar.org/graph/v1), a service by Allen Institute for AI; terms: custom API license agreement; terms: https://www.semanticscholar.org/product/api/license (as BioMCP 0.9.3's source inventory records it, reviewed 2026-09-27).
+
+database-access uses arXiv API (https://export.arxiv.org/api/query), a service by arXiv (Cornell University); terms: Descriptive metadata is free to use under CC0 1.0; e-prints keep their authors' or publishers' copyright, and redistributing one needs the holder's permission unless its own licence allows it; the legacy API asks for at most one request every three seconds over one connection (arXiv API terms of use, https://info.arxiv.org/help/api/tou.html, read 2026-11-27).
+
+database-access uses bioRxiv and medRxiv API (https://api.biorxiv.org), a service by Cold Spring Harbor Laboratory; terms: The API page states no terms of service; every record it returns carries its preprint's own licence, which governs reuse of that preprint (https://api.biorxiv.org/, read 2026-11-27).
+
+database-access uses Unpaywall API (https://api.unpaywall.org/v2), a service by OurResearch; terms: Not read: unpaywall.org's pages render only in a browser, and the API root (https://api.unpaywall.org/v2) names only its documentation page, whose terms were not read (checked 2026-11-27).

@@ -6452,6 +6452,48 @@
       "wp": "PROV-S4",
       "since": "2026-11-28",
       "note": "scientific-artifacts: LICENSE-UPSTREAM lacks the copyright line of devicons/devicon: \"Copyright (c) 2015 konpa\""
+    },
+    {
+      "rule": "PV7",
+      "subject": "notice-copyright:replication-package-audit:https://doi.org/10.1371/journal.pmed.0040296",
+      "wp": "PROV-S4",
+      "since": "2026-11-28",
+      "note": "replication-package-audit: LICENSE-UPSTREAM lacks the copyright line of https://doi.org/10.1371/journal.pmed.0040296: \"© 2007 von Elm et al.\""
+    },
+    {
+      "rule": "PV7",
+      "subject": "notice-copyright:replication-package-audit:https://doi.org/10.1136/bmj.h5527",
+      "wp": "PROV-S4",
+      "since": "2026-11-28",
+      "note": "replication-package-audit: LICENSE-UPSTREAM lacks the copyright line of https://doi.org/10.1136/bmj.h5527: \"© Bossuyt et al 2015\""
+    },
+    {
+      "rule": "PV7",
+      "subject": "notice-copyright:replication-package-audit:https://doi.org/10.1136/bmj-2023-078378",
+      "wp": "PROV-S4",
+      "since": "2026-11-28",
+      "note": "replication-package-audit: LICENSE-UPSTREAM lacks the copyright line of https://doi.org/10.1136/bmj-2023-078378: \"© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY. No commercial re-use. See rights and permissions. Published by BMJ.\""
+    },
+    {
+      "rule": "PV7",
+      "subject": "notice-copyright:replication-package-audit:https://doi.org/10.1136/bmj.n71",
+      "wp": "PROV-S4",
+      "since": "2026-11-28",
+      "note": "replication-package-audit: LICENSE-UPSTREAM lacks the copyright line of https://doi.org/10.1136/bmj.n71: \"© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY. No commercial re-use. See rights and permissions. Published by BMJ.\""
+    },
+    {
+      "rule": "PV7",
+      "subject": "notice-copyright:replication-package-audit:https://doi.org/10.1136/bmj-2024-081123",
+      "wp": "PROV-S4",
+      "since": "2026-11-28",
+      "note": "replication-package-audit: LICENSE-UPSTREAM lacks the copyright line of https://doi.org/10.1136/bmj-2024-081123: \"© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY. No commercial re-use. See rights and permissions. Published by BMJ.\""
+    },
+    {
+      "rule": "PV7",
+      "subject": "notice-copyright:replication-package-audit:https://doi.org/10.1136/bmj-2024-081477",
+      "wp": "PROV-S4",
+      "since": "2026-11-28",
+      "note": "replication-package-audit: LICENSE-UPSTREAM lacks the copyright line of https://doi.org/10.1136/bmj-2024-081477: \"© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY. No commercial re-use. See rights and permissions. Published by BMJ.\""
     }
   ]
 }

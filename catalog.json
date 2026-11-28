@@ -141,7 +141,7 @@
             "licence": "CC-BY-SA-4.0",
             "credit": "Bryce Wang, CoPaper.AI",
             "what": "the stage-by-stage workflow of an empirical research project, which the router follows (SKILL.md: 'ideas in the Auto-Empirical Research Skills workflow patterns')",
-            "evidence": "1 shared six-word runs between the item's current files and Auto-Empirical Research Skills at e0f6130 (4746508 words read), measured on 2026-11-27; most in docs/demos/aer-submission-preflight.md (1)",
+            "evidence": "1 shared six-word run between the item's current files and Auto-Empirical Research Skills at e0f6130 (4746508 words read), measured on 2026-11-27; most in docs/demos/aer-submission-preflight.md (1)",
             "version_read": "e0f6130670da4e442cec96745342c5a2d6455e2b",
             "applies_to": "current"
           }
@@ -223,7 +223,7 @@
             "licence": "CC-BY-SA-4.0",
             "credit": "Bryce Wang, CoPaper.AI",
             "what": "the causal-inference gates (SKILL.md, Source adaptation line)",
-            "evidence": "1 shared six-word runs between the item's current files and Auto-Empirical Research Skills at e0f6130 (4746508 words read), measured on 2026-11-27; most in skills/50-brycewang-aer-skills/docs/methods-reference.md (1)",
+            "evidence": "1 shared six-word run between the item's current files and Auto-Empirical Research Skills at e0f6130 (4746508 words read), measured on 2026-11-27; most in skills/50-brycewang-aer-skills/docs/methods-reference.md (1)",
             "version_read": "e0f6130670da4e442cec96745342c5a2d6455e2b",
             "applies_to": "current"
           },
@@ -446,8 +446,8 @@
             "commit": null,
             "version": "STROBE 2007",
             "licence": "CC-BY-4.0",
-            "copyright": null,
-            "copyright_note": "the checklist file names no copyright line for the statement; licence CC BY 4.0, confirmed by Aperivue through the PubMed Central record (PMC2020495); the article's own copyright line was not read",
+            "copyright": "© 2007 von Elm et al.",
+            "copyright_note": "the article's copyright statement as its publisher deposited it in PubMed Central (PMC2020495), read through Europe PMC on 2026-11-28; the checklist file names no copyright line for the statement; licence CC BY 4.0, confirmed by Aperivue through the PubMed Central record (PMC2020495)",
             "credit": "von Elm E et al.",
             "people": [
               "von Elm E",
@@ -481,8 +481,8 @@
             "commit": null,
             "version": "STARD 2015",
             "licence": "CC-BY-4.0",
-            "copyright": null,
-            "copyright_note": "the checklist file names no copyright line for the statement; licence CC BY 4.0, confirmed by Aperivue through the PubMed Central record (PMC4623764); the article's own copyright line was not read",
+            "copyright": "© Bossuyt et al 2015",
+            "copyright_note": "the article's copyright statement as its publisher deposited it in PubMed Central (PMC4623764), read through Europe PMC on 2026-11-28; the checklist file names no copyright line for the statement; licence CC BY 4.0, confirmed by Aperivue through the PubMed Central record (PMC4623764)",
             "credit": "Bossuyt PM et al.",
             "people": [
               "Bossuyt PM",
@@ -516,8 +516,8 @@
             "commit": null,
             "version": "TRIPOD+AI 2024",
             "licence": "CC-BY-4.0",
-            "copyright": null,
-            "copyright_note": "the checklist file names no copyright line for the statement; licence CC BY 4.0, as the checklist file states it; the article's own copyright line was not read",
+            "copyright": "© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY. No commercial re-use. See rights and permissions. Published by BMJ.",
+            "copyright_note": "the article's copyright statement as its publisher deposited it in PubMed Central (PMC11019967), read through Europe PMC on 2026-11-28; the article's licence paragraph grants CC BY 4.0 and says it 'permits others to distribute, remix, adapt and build upon this work, for commercial use, provided the original work is properly cited'; the checklist file names no copyright line for the statement; licence CC BY 4.0, as the checklist file states it",
             "credit": "Collins GS et al.",
             "people": [
               "Collins GS",
@@ -548,8 +548,8 @@
             "commit": null,
             "version": "PRISMA 2020",
             "licence": "CC-BY-4.0",
-            "copyright": null,
-            "copyright_note": "the checklist file names no copyright line for the statement; licence CC BY 4.0, as both checklist files state it; the article's own copyright line was not read",
+            "copyright": "© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY. No commercial re-use. See rights and permissions. Published by BMJ.",
+            "copyright_note": "the article's copyright statement as its publisher deposited it in PubMed Central (PMC8005924), read through Europe PMC on 2026-11-28; the article's licence paragraph grants CC BY 4.0 and says it 'permits others to distribute, remix, adapt and build upon this work, for commercial use, provided the original work is properly cited'; the checklist file names no copyright line for the statement; licence CC BY 4.0, as both checklist files state it",
             "credit": "Page MJ et al.",
             "people": [
               "Page MJ",
@@ -584,8 +584,8 @@
             "commit": null,
             "version": "CONSORT 2025",
             "licence": "CC-BY-4.0",
-            "copyright": null,
-            "copyright_note": "the checklist file names no copyright line for the statement; licence CC BY 4.0, confirmed by Aperivue through Crossref; the article's own copyright line was not read",
+            "copyright": "© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY. No commercial re-use. See rights and permissions. Published by BMJ.",
+            "copyright_note": "the article's copyright statement as its publisher deposited it in PubMed Central (PMC11995449), read through Europe PMC on 2026-11-28; the article's licence paragraph grants CC BY 4.0 and says it 'permits others to distribute, remix, adapt and build upon this work, for commercial use, provided the original work is properly cited'; the checklist file names no copyright line for the statement; licence CC BY 4.0, confirmed by Aperivue through Crossref",
             "credit": "Hopewell S et al.",
             "people": [
               "Hopewell S",
@@ -619,8 +619,8 @@
             "commit": null,
             "version": "SPIRIT 2025",
             "licence": "CC-BY-4.0",
-            "copyright": null,
-            "copyright_note": "the checklist file names no copyright line for the statement; licence CC BY 4.0, confirmed by Aperivue through Crossref; the article's own copyright line was not read",
+            "copyright": "© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY. No commercial re-use. See rights and permissions. Published by BMJ.",
+            "copyright_note": "the article's copyright statement as its publisher deposited it in PubMed Central (PMC12035670), read through Europe PMC on 2026-11-28; the article's licence paragraph grants CC BY 4.0 and says it 'permits others to distribute, remix, adapt and build upon this work, for commercial use, provided the original work is properly cited'; the checklist file names no copyright line for the statement; licence CC BY 4.0, confirmed by Aperivue through Crossref",
             "credit": "Chan AW et al.",
             "people": [
               "Chan AW",
@@ -655,7 +655,7 @@
             "version": "ARRIVE 2.0",
             "licence": "CC0-1.0",
             "copyright": null,
-            "copyright_note": "the checklist file names no copyright line for the statement; licence CC0 1.0, confirmed by Aperivue through Crossref; the article's own copyright line was not read",
+            "copyright_note": "the article carries no copyright statement in PubMed Central (PMC7360023), read through Europe PMC on 2026-11-28; its licence paragraph reads 'This is an open access article, free of all copyright, and may be freely reproduced, distributed, transmitted, modified, built upon, or otherwise used by anyone for any lawful purpose. The work is made available under the Creative Commons CC0 public domain dedication.'; the checklist file names no copyright line for the statement; licence CC0 1.0, confirmed by Aperivue through Crossref",
             "credit": "Percie du Sert N et al.",
             "people": [
               "Percie du Sert N",
@@ -843,7 +843,7 @@
             "licence": "MIT",
             "credit": "K-Dense Inc.",
             "what": "the citation patterns behind the Biorouter-original audit in SKILL.md (its Source adaptation line)",
-            "evidence": "1 shared six-word runs between the item's current files and Scientific Agent Skills at ec59a29 (2888174 words read), measured on 2026-11-27; most in skills/market-research-reports/SKILL.md (1)",
+            "evidence": "1 shared six-word run between the item's current files and Scientific Agent Skills at ec59a29 (2888174 words read), measured on 2026-11-27; most in skills/market-research-reports/SKILL.md (1)",
             "version_read": "ec59a29a03d5c40f73ab40878df04860bc00e876",
             "applies_to": "current"
           }
@@ -1779,7 +1779,7 @@
             "licence": "CC-BY-SA-4.0",
             "credit": "Bryce Wang, CoPaper.AI",
             "what": "ideas for the Biorouter-original artifact contract and exhibit mapping in SKILL.md (its Source adaptation line)",
-            "evidence": "1 shared six-word runs between the item's current files and Auto-Empirical Research Skills at e0f6130 (4746508 words read), measured on 2026-11-27; most in docs/ECOSYSTEM.md (1)",
+            "evidence": "1 shared six-word run between the item's current files and Auto-Empirical Research Skills at e0f6130 (4746508 words read), measured on 2026-11-27; most in docs/ECOSYSTEM.md (1)",
             "version_read": "e0f6130670da4e442cec96745342c5a2d6455e2b",
             "applies_to": "current"
           }
@@ -4238,9 +4238,8 @@
             "use": [
               "text"
             ],
-            "what": "skills/statsmodels at ec59a29, as this item's SKILL.md, references/statsmodels.md, references/statsmodels/references/discrete_choice.md and 8 more files",
+            "what": "skills/statsmodels at ec59a29, as this item's references/statsmodels.md, references/statsmodels/references/discrete_choice.md, references/statsmodels/references/glm.md and 7 more files",
             "files": [
-              "SKILL.md",
               "references/statsmodels.md",
               "references/statsmodels/references/discrete_choice.md",
               "references/statsmodels/references/glm.md",
@@ -4263,7 +4262,7 @@
         "data_and_services": [],
         "references": [],
         "refused_sources": [],
-        "changes": "SKILL.md is mostly written for Biorouter (101 of its 101 lines); edited: references/statsmodels.md; 1 file renamed from its source name. Of 3044 lines taken from its sources, 3036 are kept unchanged and 8 changed; 116 lines are written for Biorouter.",
+        "changes": "SKILL.md is written for Biorouter; edited: references/statsmodels.md; 1 file renamed from its source name. Of 3044 lines taken from its sources, 3036 are kept unchanged and 8 changed; 116 lines are written for Biorouter.",
         "maintained_here": false
       },
       "licence": "Apache-2.0 AND BSD-3-Clause",
@@ -6225,8 +6224,8 @@
             "cite": "Bryce Wang. Auto-Empirical Research Skills (AERS).",
             "licence": "CC-BY-SA-4.0",
             "credit": "Bryce Wang, CoPaper.AI",
-            "what": "the topic of version 1.0.0 (2026-07-01), a template shell; 1.1.0 was rewritten (WP-16)",
-            "evidence": "1.1.0 says it copies no upstream text; see the current evidence below; current files: 1 shared six-word runs between the item's current files and Auto-Empirical Research Skills at e0f6130 (4746508 words read), measured on 2026-11-27; most in skills/53-keemanxp-thematic-analysis-skill/thematic-analysis/references/coding-guide.md (1)",
+            "what": "the topic of version 1.0.0 (2026-07-01), a template shell; version 1.1.0 is a rewrite",
+            "evidence": "1.1.0 says it copies no upstream text; see the current evidence below; current files: 1 shared six-word run between the item's current files and Auto-Empirical Research Skills at e0f6130 (4746508 words read), measured on 2026-11-27; most in skills/53-keemanxp-thematic-analysis-skill/thematic-analysis/references/coding-guide.md (1)",
             "version_read": null,
             "applies_to": "earlier"
           }
@@ -6481,7 +6480,7 @@
             "cite": "Bryce Wang. Auto-Empirical Research Skills (AERS).",
             "licence": "CC-BY-SA-4.0",
             "credit": "Bryce Wang, CoPaper.AI",
-            "what": "the topic of version 1.0.0 (2026-07-01), a template shell; 1.1.0 was rewritten (WP-16)",
+            "what": "the topic of version 1.0.0 (2026-07-01), a template shell; version 1.1.0 is a rewrite",
             "evidence": "1.1.0 says it copies no upstream text; see the current evidence below; current files: 4 shared six-word runs between the item's current files and Auto-Empirical Research Skills at e0f6130 (4746508 words read), measured on 2026-11-27; most in skills/17-DAAF-Contribution-Community-daaf/dot-claude/skills/svy/references/design-weights.md (4)",
             "version_read": null,
             "applies_to": "earlier"
@@ -6564,7 +6563,7 @@
             "cite": "Bryce Wang. Auto-Empirical Research Skills (AERS).",
             "licence": "CC-BY-SA-4.0",
             "credit": "Bryce Wang, CoPaper.AI",
-            "what": "the topic of version 1.0.0 (2026-07-01), a template shell; 1.1.0 was rewritten (WP-16)",
+            "what": "the topic of version 1.0.0 (2026-07-01), a template shell; version 1.1.0 is a rewrite",
             "evidence": "1.1.0 says it copies no upstream text; see the current evidence below; current files: 0 shared six-word runs between the item's current files and Auto-Empirical Research Skills at e0f6130 (4746508 words read), measured on 2026-11-27",
             "version_read": null,
             "applies_to": "earlier"
@@ -6648,7 +6647,7 @@
             "cite": "Bryce Wang. Auto-Empirical Research Skills (AERS).",
             "licence": "CC-BY-SA-4.0",
             "credit": "Bryce Wang, CoPaper.AI",
-            "what": "the topic of version 1.0.0 (2026-07-01), a template shell; 1.1.0 was rewritten (WP-16)",
+            "what": "the topic of version 1.0.0 (2026-07-01), a template shell; version 1.1.0 is a rewrite",
             "evidence": "1.1.0 says it copies no upstream text; see the current evidence below; current files: 0 shared six-word runs between the item's current files and Auto-Empirical Research Skills at e0f6130 (4746508 words read), measured on 2026-11-27",
             "version_read": null,
             "applies_to": "earlier"
@@ -6816,7 +6815,7 @@
             "cite": "Bryce Wang. Auto-Empirical Research Skills (AERS).",
             "licence": "CC-BY-SA-4.0",
             "credit": "Bryce Wang, CoPaper.AI",
-            "what": "the topic of version 1.0.0 (2026-07-01), a template shell; 1.1.0 was rewritten (WP-16)",
+            "what": "the topic of version 1.0.0 (2026-07-01), a template shell; version 1.1.0 is a rewrite",
             "evidence": "1.1.0 says it copies no upstream text; see the current evidence below; current files: 3 shared six-word runs between the item's current files and Auto-Empirical Research Skills at e0f6130 (4746508 words read), measured on 2026-11-27; most in skills/11-James-Traina-compound-science/skills/submission-guide/references/referee-tactics.md (1)",
             "version_read": null,
             "applies_to": "earlier"
@@ -6892,8 +6891,8 @@
             "licence": "CC-BY-SA-4.0",
             "credit": "Bryce Wang, CoPaper.AI",
             "what": "the capability cluster that set the topic of version 1.0.0 (1.0.0 SKILL.md: 'inspired by Auto-Empirical Research Skills capability clusters')",
-            "evidence": "0 shared six-word runs between the item's current files and Auto-Empirical Research Skills at e0f6130 (4746508 words read), measured on 2026-11-27",
-            "version_read": "e0f6130670da4e442cec96745342c5a2d6455e2b",
+            "evidence": "not measured on the content (the folder is now a retirement notice)",
+            "version_read": null,
             "applies_to": "current"
           }
         ],
@@ -6989,8 +6988,8 @@
             "cite": "Bryce Wang. Auto-Empirical Research Skills (AERS).",
             "licence": "CC-BY-SA-4.0",
             "credit": "Bryce Wang, CoPaper.AI",
-            "what": "the topic of version 1.0.0 (2026-07-01), a template shell; 1.1.0 was rewritten (WP-16)",
-            "evidence": "1.1.0 says it copies no upstream text; see the current evidence below; current files: 1 shared six-word runs between the item's current files and Auto-Empirical Research Skills at e0f6130 (4746508 words read), measured on 2026-11-27; most in plugins/empirical-analysis-r/skills/pipeline/SKILL.md (1)",
+            "what": "the topic of version 1.0.0 (2026-07-01), a template shell; version 1.1.0 is a rewrite",
+            "evidence": "1.1.0 says it copies no upstream text; see the current evidence below; current files: 1 shared six-word run between the item's current files and Auto-Empirical Research Skills at e0f6130 (4746508 words read), measured on 2026-11-27; most in plugins/empirical-analysis-r/skills/pipeline/SKILL.md (1)",
             "version_read": null,
             "applies_to": "earlier"
           }
@@ -8680,16 +8679,19 @@
             "version": null,
             "licence": "Apache-2.0",
             "copyright": null,
-            "copyright_note": "the licence file (plugins/code-simplifier/LICENSE, LICENSE) names no copyright holder; the source has no NOTICE file",
+            "copyright_note": "the licence file (plugins/code-simplifier/LICENSE, LICENSE) names no copyright holder; the source has no NOTICE file; people: Boris Cherny is the commit author of ceb9b72 (2026-01-08), the only commit on plugins/code-simplifier/agents/code-simplifier.md, which added it with its own front matter; Noah Zweben is the commit author of 4ca561f (2025-11-20), where its body first appears, as plugins/pr-review-toolkit/agents/code-simplifier.md (the two bodies are the same at de573bd)",
             "credit": "Anthropic",
             "people": [
-              "Boris Cherny"
+              "Boris Cherny",
+              "Noah Zweben"
             ],
             "use": [
               "text"
             ],
-            "what": "plugins/code-simplifier at de573bd",
-            "files": [],
+            "what": "plugins/code-simplifier at de573bd: agents/code-simplifier.md, closely paraphrased as this item's SKILL.md; that file's body is the text of plugins/pr-review-toolkit/agents/code-simplifier.md, which Noah Zweben's commit 4ca561f (2025-11-20) added",
+            "files": [
+              "SKILL.md"
+            ],
             "via": null,
             "upstream_notice": false,
             "owner": "external",
@@ -8725,7 +8727,7 @@
         {
           "version": "1.1.1",
           "date": "2026-11-27",
-          "note": "licence fix: LICENSE-UPSTREAM ships the Apache-2.0 text and credits the plugin's authors"
+          "note": "licence fix: LICENSE-UPSTREAM ships the Apache-2.0 text and credits the plugin's authors; PROVENANCE.md, the front matter credits and the archive's LICENSE added"
         }
       ],
       "contributors": [
@@ -8872,7 +8874,7 @@
             "use": [
               "text"
             ],
-            "what": "plugins/skill-creator at de573bd",
+            "what": "plugins/skill-creator at de573bd; the plugin's skill-creator follows anthropics/skills: commit 2a40fd2 (2026-04-23), 'skill-creator: sync from anthropics/skills', ports a change from anthropics/skills so that the copy matches it",
             "files": [],
             "via": null,
             "upstream_notice": false,
@@ -9302,7 +9304,7 @@
         {
           "version": "1.1.1",
           "date": "2026-11-27",
-          "note": "licence fix: LICENSE-UPSTREAM ships the Apache-2.0 text and credits the plugin's authors"
+          "note": "licence fix: LICENSE-UPSTREAM ships the Apache-2.0 text and credits the plugin's authors; PROVENANCE.md, the front matter credits and the archive's LICENSE added"
         }
       ],
       "contributors": [
@@ -10812,7 +10814,7 @@
               "evidence": "read on 2026-11-27: no copied outside text; the pairing to the K-Dense skill rests on names and dates",
               "version_read": null,
               "applies_to": "current",
-              "licence_note": "the K-Dense skill's own licence field; the repository LICENSE.md is MIT (triage W18)"
+              "licence_note": "the K-Dense skill's own licence field; the repository LICENSE.md is MIT"
             }
           ],
           "content_moved_to": "chemoinformatics/molecular-standardization/references/datamol-medchem.md",
@@ -10958,7 +10960,7 @@
                   "evidence": "read on 2026-11-27: no copied outside text; the pairing to the K-Dense skill rests on names and dates",
                   "version_read": null,
                   "applies_to": "current",
-                  "licence_note": "the K-Dense skill's own licence field; the repository LICENSE.md is MIT (triage W18)"
+                  "licence_note": "the K-Dense skill's own licence field; the repository LICENSE.md is MIT"
                 }
               ]
             }
@@ -13846,7 +13848,71 @@
           }
         ],
         "ideas_from": [],
-        "data_and_services": [],
+        "data_and_services": [
+          {
+            "kind": "service",
+            "name": "PubMed (NCBI E-utilities)",
+            "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils",
+            "terms": "NLM public-domain utility service; terms: https://www.ncbi.nlm.nih.gov/books/NBK25501/ (as BioMCP 0.9.3's source inventory records it, reviewed 2026-04-10)",
+            "credit": "National Center for Biotechnology Information",
+            "cite": null,
+            "how": "called at run time by the open-literature-discovery component"
+          },
+          {
+            "kind": "service",
+            "name": "Crossref REST API",
+            "url": "https://api.crossref.org",
+            "terms": "No sign-up is needed, almost none of the metadata is subject to copyright and it may be used for any purpose, though some abstracts may be under their publishers' or authors' copyright; the polite pool asks for a mailto address (Crossref REST API page, https://www.crossref.org/documentation/retrieve-metadata/rest-api/, read 2026-11-27)",
+            "credit": "Crossref",
+            "cite": null,
+            "how": "called at run time by the open-literature-discovery component"
+          },
+          {
+            "kind": "service",
+            "name": "OpenAlex API",
+            "url": "https://api.openalex.org",
+            "terms": "OpenAlex data is under CC0, in the public domain (attribution appreciated, not required); free API use is capped at 100,000 credits a day and 100 requests a second, more on a paid plan (OpenAlex's documentation source, ourresearch/openalex-docs license.md and how-to-use-the-api/rate-limits-and-authentication.md at 8cec9db, read 2026-11-27)",
+            "credit": "OurResearch",
+            "cite": null,
+            "how": "called at run time by the open-literature-discovery component"
+          },
+          {
+            "kind": "service",
+            "name": "Semantic Scholar Graph API",
+            "url": "https://api.semanticscholar.org/graph/v1",
+            "terms": "custom API license agreement; terms: https://www.semanticscholar.org/product/api/license (as BioMCP 0.9.3's source inventory records it, reviewed 2026-09-27)",
+            "credit": "Allen Institute for AI",
+            "cite": null,
+            "how": "called at run time by the open-literature-discovery component"
+          },
+          {
+            "kind": "service",
+            "name": "arXiv API",
+            "url": "https://export.arxiv.org/api/query",
+            "terms": "Descriptive metadata is free to use under CC0 1.0; e-prints keep their authors' or publishers' copyright, and redistributing one needs the holder's permission unless its own licence allows it; the legacy API asks for at most one request every three seconds over one connection (arXiv API terms of use, https://info.arxiv.org/help/api/tou.html, read 2026-11-27)",
+            "credit": "arXiv (Cornell University)",
+            "cite": null,
+            "how": "called at run time by the open-literature-discovery component"
+          },
+          {
+            "kind": "service",
+            "name": "bioRxiv and medRxiv API",
+            "url": "https://api.biorxiv.org",
+            "terms": "The API page states no terms of service; every record it returns carries its preprint's own licence, which governs reuse of that preprint (https://api.biorxiv.org/, read 2026-11-27)",
+            "credit": "Cold Spring Harbor Laboratory",
+            "cite": null,
+            "how": "called at run time by the open-literature-discovery component"
+          },
+          {
+            "kind": "service",
+            "name": "Unpaywall API",
+            "url": "https://api.unpaywall.org/v2",
+            "terms": "Not read: unpaywall.org's pages render only in a browser, and the API root (https://api.unpaywall.org/v2) names only its documentation page, whose terms were not read (checked 2026-11-27)",
+            "credit": "OurResearch",
+            "cite": null,
+            "how": "called at run time by the open-literature-discovery component"
+          }
+        ],
         "references": [],
         "refused_sources": [],
         "changes": "Written for Biorouter: open-literature-discovery/SKILL.md and open-literature-discovery/usage-guide.md; edited: biomart-queries/SKILL.md, geo-data/SKILL.md and sra-data/SKILL.md. Of 9146 lines taken from its sources, 9146 are kept unchanged and 0 changed; 32 lines are written for Biorouter.",
@@ -13998,72 +14064,7 @@
           "upstream_path": null,
           "name": "database-access-open-literature-discovery",
           "origin": "in-house",
-          "licence": "Apache-2.0",
-          "data_and_services": [
-            {
-              "kind": "service",
-              "name": "PubMed (NCBI E-utilities)",
-              "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils",
-              "terms": "NLM public-domain utility service; terms: https://www.ncbi.nlm.nih.gov/books/NBK25501/ (as BioMCP 0.9.3's source inventory records it, reviewed 2026-04-10)",
-              "credit": "National Center for Biotechnology Information",
-              "cite": null,
-              "how": "called at run time"
-            },
-            {
-              "kind": "service",
-              "name": "Crossref REST API",
-              "url": "https://api.crossref.org",
-              "terms": "No sign-up is needed, almost none of the metadata is subject to copyright and it may be used for any purpose, though some abstracts may be under their publishers' or authors' copyright; the polite pool asks for a mailto address (Crossref REST API page, https://www.crossref.org/documentation/retrieve-metadata/rest-api/, read 2026-11-27)",
-              "credit": "Crossref",
-              "cite": null,
-              "how": "called at run time"
-            },
-            {
-              "kind": "service",
-              "name": "OpenAlex API",
-              "url": "https://api.openalex.org",
-              "terms": "OpenAlex data is under CC0, in the public domain (attribution appreciated, not required); free API use is capped at 100,000 credits a day and 100 requests a second, more on a paid plan (OpenAlex's documentation source, ourresearch/openalex-docs license.md and how-to-use-the-api/rate-limits-and-authentication.md at 8cec9db, read 2026-11-27)",
-              "credit": "OurResearch",
-              "cite": null,
-              "how": "called at run time"
-            },
-            {
-              "kind": "service",
-              "name": "Semantic Scholar Graph API",
-              "url": "https://api.semanticscholar.org/graph/v1",
-              "terms": "custom API license agreement; terms: https://www.semanticscholar.org/product/api/license (as BioMCP 0.9.3's source inventory records it, reviewed 2026-09-27)",
-              "credit": "Allen Institute for AI",
-              "cite": null,
-              "how": "called at run time"
-            },
-            {
-              "kind": "service",
-              "name": "arXiv API",
-              "url": "https://export.arxiv.org/api/query",
-              "terms": "Descriptive metadata is free to use under CC0 1.0; e-prints keep their authors' or publishers' copyright, and redistributing one needs the holder's permission unless its own licence allows it; the legacy API asks for at most one request every three seconds over one connection (arXiv API terms of use, https://info.arxiv.org/help/api/tou.html, read 2026-11-27)",
-              "credit": "arXiv (Cornell University)",
-              "cite": null,
-              "how": "called at run time"
-            },
-            {
-              "kind": "service",
-              "name": "bioRxiv and medRxiv API",
-              "url": "https://api.biorxiv.org",
-              "terms": "The API page states no terms of service; every record it returns carries its preprint's own licence, which governs reuse of that preprint (https://api.biorxiv.org/, read 2026-11-27)",
-              "credit": "Cold Spring Harbor Laboratory",
-              "cite": null,
-              "how": "called at run time"
-            },
-            {
-              "kind": "service",
-              "name": "Unpaywall API",
-              "url": "https://api.unpaywall.org/v2",
-              "terms": "Not read: unpaywall.org's pages render only in a browser, and the API root (https://api.unpaywall.org/v2) names only its documentation page, whose terms were not read (checked 2026-11-27)",
-              "credit": "OurResearch",
-              "cite": null,
-              "how": "called at run time"
-            }
-          ]
+          "licence": "Apache-2.0"
         },
         "ortholog-inference": {
           "status": "active",
@@ -14312,7 +14313,7 @@
             {
               "kind": "software",
               "name": "PyDESeq2",
-              "credit": "Boris Muzellec, Maria Telenczuk, Vincent Cabeli, Mathieu Andreux; Owkin",
+              "credit": "Boris Muzellec, Maria Teleńczuk, Vincent Cabeli, Mathieu Andreux; Owkin",
               "cite": "PyDESeq2: a python package for bulk RNA-seq differential expression analysis. Bioinformatics (2023)."
             },
             {
@@ -17415,6 +17416,7 @@
             {
               "kind": "software",
               "name": "EconML",
+              "url": "https://github.com/py-why/EconML",
               "credit": "Microsoft Research ALICE, now PyWhy",
               "cite": null
             },
@@ -22325,7 +22327,8 @@
             {
               "kind": "software",
               "name": "ESM",
-              "credit": "Alexander Rives, Zeming Lin and colleagues (Meta FAIR)",
+              "url": "https://github.com/facebookresearch/esm",
+              "credit": "Alexander Rives, Zeming Lin and colleagues, Meta FAIR",
               "cite": null,
               "note": "which esm package is meant (the archived fair-esm, MIT, or the newer esm) is not pinned"
             }
@@ -23371,7 +23374,7 @@
               "evidence": "read on 2026-11-27: no copied outside text; the pairing to the K-Dense skill rests on names and dates",
               "version_read": null,
               "applies_to": "current",
-              "licence_note": "the K-Dense skill's own licence field; the repository LICENSE.md is MIT (triage W18)"
+              "licence_note": "the K-Dense skill's own licence field; the repository LICENSE.md is MIT"
             }
           ],
           "content_moved_to": "workflow-management/nf-core-pipelines/references/nextflow-nfcore.md",
@@ -23420,7 +23423,7 @@
                   "evidence": "read on 2026-11-27: no copied outside text; the pairing to the K-Dense skill rests on names and dates",
                   "version_read": null,
                   "applies_to": "current",
-                  "licence_note": "the K-Dense skill's own licence field; the repository LICENSE.md is MIT (triage W18)"
+                  "licence_note": "the K-Dense skill's own licence field; the repository LICENSE.md is MIT"
                 }
               ]
             }
@@ -25736,7 +25739,7 @@
             "reason": "its frontmatter licence names BSD-3-Clause without a holder; left out to keep one clear licence, and scientific-visualization already covers seaborn"
           }
         ],
-        "changes": "K-Dense-AI/scientific-agent-skills: renamed from scientific-visualization; frontmatter rewritten for Biorouter; text kept. GPTomics/bioSkills: data-visualization/matplotlib-fundamentals copied as a reference (text exported by WP-15); frontmatter removed. Haojae/scipilot-figure-skill: references/chart_selection.md translated from Chinese to English.",
+        "changes": "K-Dense-AI/scientific-agent-skills: renamed from scientific-visualization; frontmatter rewritten for Biorouter; text kept. GPTomics/bioSkills: data-visualization/matplotlib-fundamentals copied as a reference; frontmatter removed. Haojae/scipilot-figure-skill: references/chart_selection.md translated from Chinese to English.",
         "maintained_here": false
       },
       "licence": "Apache-2.0 AND MIT",
@@ -26679,7 +26682,22 @@
         ],
         "ideas_from": [],
         "data_and_services": [],
-        "references": [],
+        "references": [
+          {
+            "name": "Problem choice and decision trees in science and engineering",
+            "url": "https://doi.org/10.1016/j.cell.2024.03.012",
+            "credit": "Michael A. Fischbach",
+            "cite": "Fischbach MA. Problem choice and decision trees in science and engineering. Cell 187(8), 1828-1833 (2024). doi:10.1016/j.cell.2024.03.012",
+            "what": "the problem choice framework the skill is based on (its SKILL.md: 'based on Fischbach & Walsh's \"Problem choice and decision trees in science and engineering\" (Cell, 2024)', and its references/01-intuition-pumps.md names Michael A. Fischbach and Christopher T. Walsh); the publisher's record at Crossref, PubMed (38608651) and Europe PMC, read on 2026-11-28, name Michael A. Fischbach as the paper's only author"
+          },
+          {
+            "name": "BIOE 395",
+            "url": null,
+            "credit": "Stanford University",
+            "cite": "BIOE 395. Stanford University.",
+            "what": "the course the skill says its framework was taught in (its SKILL.md: 'Based on course BIOE 395 taught at Stanford University')"
+          }
+        ],
         "refused_sources": [],
         "changes": "anthropics/knowledge-work-plugins: frontmatter rewritten for Biorouter; the agent named generically instead of Claude; text otherwise kept.",
         "maintained_here": false
