@@ -7,116 +7,213 @@ the license line of its SKILL.md files. Material written here is licensed under
 the Apache License, Version 2.0 (see LICENSE). Material adapted from upstream
 projects keeps its upstream licence; the archive of each such skill carries the
 upstream copyright line and licence text in its notice file.
+The notice files of ggplot-visualization, interactive-dashboards and
+scientific-artifacts gain the lines they still lack at their next release.
 
 This file is generated from catalog.json by scripts/render-readme.mjs.
 
 Upstream material
 =================
 
-replication-package-audit, claim-evidence-integrity, systematic-review-prisma, clinical-biostatistics, manuscript-peer-review include material from Aperivue/medsci-skills (7 folders across the items named here, commit 7e9d133dd0216c29b0e030729e3719c3db5e0973),
+replication-package-audit, claim-evidence-integrity, systematic-review-prisma, clinical-biostatistics, phi-deidentification include material from Aperivue/medsci-skills (7 folders across the items named here, commit 7e9d133dd0216c29b0e030729e3719c3db5e0973),
 Copyright (c) 2026 Aperivue (https://aperivue.com), licensed under MIT.
+Credited to Aperivue, with Yoojin Nam, Jinhoon Jeong, Namkug Kim, ANIRUDDHA ADAK, Steve Shema, Raphael Malikian, Wu Shuwen.
+Cite: Yoojin Nam, Jinhoon Jeong and Namkug Kim. Deterministic Integrity Gates for LLM-Assisted Clinical Manuscript Preparation: An Auditable Biomedical Informatics Architecture. arXiv:2606.09500 (2026).
 
 replication-package-audit, research-code-hardening, scientific-python-development include material from uw-ssec/savvy (plugins/ai-research-workflows/skills/ensuring-reproducibility, plugins/ai-research-workflows/skills/hardening-research-code, plugins/scientific-python-development/skills/python-testing, plugins/scientific-python-development/skills/python-packaging, plugins/scientific-python-development/skills/code-quality-tools, plugins/scientific-python-development/skills/scientific-documentation, plugins/scientific-python-development/skills/pixi-package-manager, commit e1084bba4ef18cfe9ce16a459e69df1ebe5018b0),
 Copyright (c) 2026 University of Washington, eScience Institute, Scientific Software Engineering Center, licensed under BSD-3-Clause.
+Credited to UW-SSEC, University of Washington, with Don Setiawan, Niki Burggraf, Cordero Core, Carlos Garcia Jurado Suarez, Anant Mittal, Anshul Tambay, Vraj Rajpura, Yongsin Park, Kshitij Dani, Praniket Walavalkar, Ishika Johari, David Beck, Vani Mandava.
+Cite: Don Setiawan, Niki Burggraf, Cordero Core, Carlos Garcia Jurado Suarez, Anant Mittal, Anshul Tambay, Vraj Rajpura, Yongsin Park, Kshitij Dani, Praniket Walavalkar, Ishika Johari, David Beck and Vani Mandava. savvy.
 The names of the copyright holders and contributors are not used to endorse or promote Biorouter.
 
 replication-package-audit, grant-funding-strategy include material from claesbackman/AI-research-feedback (Skills/review-paper-code, Skills/review-grant, commit 949d82792ea20c30806147539ed2c70a8898260a),
 Copyright (c) 2026 claesbackman, licensed under MIT.
+Credited to Claes Bäckman.
+Cite: Claes Bäckman. AI tools for research: Claude Code skills for feedback on and communication of academic research. doi:10.5281/zenodo.24380120
 
-scientific-artifacts includes material from cathrynlavery/diagram-design (skills/diagram-design, commit d74d8c2d0c78a9e1efd43137f6a9a51182a8b5f0),
+replication-package-audit includes material from https://doi.org/10.1371/journal.pmed.0040296 (version STROBE 2007), licensed under CC-BY-4.0; its licence names no copyright holder.
+Credited to von Elm E et al., with Altman DG, Egger M, Pocock SJ, Gøtzsche PC, Vandenbroucke JP.
+Cite: von Elm E, Altman DG, Egger M, Pocock SJ, Gøtzsche PC, Vandenbroucke JP. The Strengthening the Reporting of Observational Studies in Epidemiology (STROBE) statement. PLoS Med 2007;4(10):e296. doi:10.1371/journal.pmed.0040296
+
+replication-package-audit includes material from https://doi.org/10.1136/bmj.h5527 (version STARD 2015), licensed under CC-BY-4.0; its licence names no copyright holder.
+Credited to Bossuyt PM et al., with Reitsma JB, Bruns DE, Gatsonis CA, Glasziou PP, Irwig L.
+Cite: Bossuyt PM, Reitsma JB, Bruns DE, Gatsonis CA, Glasziou PP, Irwig L, et al. STARD 2015: an updated list of essential items for reporting diagnostic accuracy studies. BMJ 2015;351:h5527. doi:10.1136/bmj.h5527
+
+replication-package-audit includes material from https://doi.org/10.1136/bmj-2023-078378 (version TRIPOD+AI 2024), licensed under CC-BY-4.0; its licence names no copyright holder.
+Credited to Collins GS et al., with Moons KGM, Dhiman P.
+Cite: Collins GS, Moons KGM, Dhiman P, et al. TRIPOD+AI statement: updated guidance for reporting clinical prediction models that use regression or machine learning methods. BMJ 2024;385:e078378. doi:10.1136/bmj-2023-078378
+
+replication-package-audit includes material from https://doi.org/10.1136/bmj.n71 (version PRISMA 2020), licensed under CC-BY-4.0; its licence names no copyright holder.
+Credited to Page MJ et al., with McKenzie JE, Bossuyt PM, Boutron I, Hoffmann TC, Mulrow CD.
+Cite: Page MJ, McKenzie JE, Bossuyt PM, Boutron I, Hoffmann TC, Mulrow CD, et al. The PRISMA 2020 statement: an updated guideline for reporting systematic reviews. BMJ 2021;372:n71. doi:10.1136/bmj.n71
+
+replication-package-audit includes material from https://doi.org/10.1136/bmj-2024-081123 (version CONSORT 2025), licensed under CC-BY-4.0; its licence names no copyright holder.
+Credited to Hopewell S et al., with Chan AW, Collins GS, Hróbjartsson A, Moher D, Schulz KF.
+Cite: Hopewell S, Chan AW, Collins GS, Hróbjartsson A, Moher D, Schulz KF, et al. CONSORT 2025 statement: updated guideline for reporting randomised trials. BMJ 2025;389:e081123. doi:10.1136/bmj-2024-081123
+
+replication-package-audit includes material from https://doi.org/10.1136/bmj-2024-081477 (version SPIRIT 2025), licensed under CC-BY-4.0; its licence names no copyright holder.
+Credited to Chan AW et al., with Boutron I, Hopewell S, Moher D, Schulz KF, Collins GS.
+Cite: Chan AW, Boutron I, Hopewell S, Moher D, Schulz KF, Collins GS, et al. SPIRIT 2025 statement: updated guideline for protocols of randomised trials. BMJ 2025;389:e081477. doi:10.1136/bmj-2024-081477
+
+replication-package-audit includes material from https://doi.org/10.1371/journal.pbio.3000410 (version ARRIVE 2.0), licensed under CC0-1.0; its licence names no copyright holder.
+Credited to Percie du Sert N et al., with Hurst V, Ahluwalia A, Alam S, Avey MT, Baker M.
+Cite: Percie du Sert N, Hurst V, Ahluwalia A, Alam S, Avey MT, Baker M, et al. The ARRIVE guidelines 2.0: updated guidelines for reporting animal research. PLoS Biol 2020;18(7):e3000410. doi:10.1371/journal.pbio.3000410
+
+scientific-artifacts includes material from cathrynlavery/diagram-design (skills/diagram-design, THIRD_PARTY_LICENSES.md, commit d74d8c2d0c78a9e1efd43137f6a9a51182a8b5f0),
 Copyright (c) 2025 Cathryn Lavery, licensed under MIT.
+Credited to Cathryn Lavery.
 
-scientific-artifacts, scientific-data-engineering, statistical-modeling-bayes, scientific-machine-learning, geospatial-science, neurophysiology-analysis, quantum-scientific-computing, materials-informatics, biomedical-imaging-pathology, citation-library-management, laboratory-automation-planning, systematic-review-prisma, simulation-optimization, physical-science-computing, clinical-decision-support-review, grant-funding-strategy, regulatory-quality-systems, gpu-compute-optimization, research-evaluation-venues, database-access, exploratory-data-analysis, figure-qa, manuscript-peer-review, microscopy-image-analysis, python-visualization, scientific-manuscript-writing include material from K-Dense-AI/scientific-agent-skills (44 folders across the items named here, commit ec59a29a03d5c40f73ab40878df04860bc00e876),
+scientific-artifacts, database-access, exploratory-data-analysis, figure-qa, manuscript-peer-review, microscopy-image-analysis, python-visualization, scientific-manuscript-writing include material from K-Dense-AI/scientific-agent-skills (9 folders across the items named here, commit ec59a29a03d5c40f73ab40878df04860bc00e876),
 Copyright (c) 2025 K-Dense Inc., licensed under MIT.
+Credited to K-Dense Inc., with Timothy Kassis, Vinayak Agarwal, Yuhuan He, Darshil Patel, Aubrey M. Brueckner.
+Cite: Timothy Kassis, Vinayak Agarwal, Yuhuan He, Darshil Patel and Aubrey M. Brueckner. Scientific Agent Skills: A Library of Procedural Knowledge for Research Agents. arXiv:2609.00065 (2026). doi:10.48550/arXiv.2609.00065
 
 scientific-artifacts includes material from K-Dense-AI/scientific-agent-skills (skills/markdown-mermaid-writing, commit ec59a29a03d5c40f73ab40878df04860bc00e876),
-per-skill licence Apache-2.0; ported from SuperiorByteWorks-LLC/agent-project, licensed under Apache-2.0.
+Copyright (c) 2025 K-Dense Inc., licensed under Apache-2.0.
+Credited to K-Dense Inc., with Timothy Kassis, Vinayak Agarwal, Yuhuan He, Darshil Patel, Aubrey M. Brueckner, Stephen Benjamin.
+Cite: Timothy Kassis, Vinayak Agarwal, Yuhuan He, Darshil Patel and Aubrey M. Brueckner. Scientific Agent Skills: A Library of Procedural Knowledge for Research Agents. arXiv:2609.00065 (2026). doi:10.48550/arXiv.2609.00065
+
+scientific-artifacts includes material from SuperiorByteWorks-LLC/agent-project (agentic/mermaid_diagrams, commit 54b2b1e6616c8bcffd5cd082ecfb616db97e7185),
+Copyright 2026 Superior Byte Works, LLC, licensed under Apache-2.0.
+Credited to Superior Byte Works, LLC, with Clayton Young.
+Its NOTICE file ships in the notice file of scientific-artifacts from its next release.
+
+scientific-artifacts includes material from tabler/tabler-icons (icons/outline, commit 6d128ed935d4546607b1e4d5d08c8b27bdbe7758),
+Copyright (c) 2020-2026 Paweł Kuna, licensed under MIT.
+Credited to Paweł Kuna.
+
+scientific-artifacts includes material from simple-icons/simple-icons (icons, commit 0f9fa549da00e9aa6e3ef8d3d2171f481360e638), licensed under CC0-1.0; its licence names no copyright holder.
+Credited to Simple Icons Collaborators.
+
+scientific-artifacts includes material from log-z/logos (website-logos, commit 8a21f8c1e89b0ea5d83fec0f9c7e41db36aed485),
+Copyright (c) 2021 log-Z, licensed under MIT.
+Credited to log-Z.
+
+scientific-artifacts includes material from devicons/devicon (icons/rstudio, icons/spss, commit 4048944cace6430b86e2100c9a5913628418b27e),
+Copyright (c) 2015 konpa, licensed under MIT.
+Credited to konpa.
+
+scientific-data-engineering, statistical-modeling-bayes, scientific-machine-learning, geospatial-science, neurophysiology-analysis, quantum-scientific-computing, materials-informatics, biomedical-imaging-pathology, citation-library-management, laboratory-automation-planning, systematic-review-prisma, simulation-optimization, physical-science-computing, clinical-decision-support-review, grant-funding-strategy, regulatory-quality-systems, gpu-compute-optimization, research-evaluation-venues include material from K-Dense-AI/scientific-agent-skills (35 folders across the items named here, commit ec59a29a03d5c40f73ab40878df04860bc00e876),
+Copyright (c) 2025 K-Dense Inc., licensed under MIT.
+Credited to K-Dense Inc., with Timothy Kassis, Vinayak Agarwal, Yuhuan He, Darshil Patel, Aubrey M. Brueckner, Dylan Pulver, Andrey Fedorov, Tai An.
+Cite: Timothy Kassis, Vinayak Agarwal, Yuhuan He, Darshil Patel and Aubrey M. Brueckner. Scientific Agent Skills: A Library of Procedural Knowledge for Research Agents. arXiv:2609.00065 (2026). doi:10.48550/arXiv.2609.00065
 
 scientific-data-engineering, statistical-modeling-bayes, scientific-machine-learning, econometrics-toolkit, physical-science-computing include material from K-Dense-AI/scientific-agent-skills (5 folders across the items named here, commit ec59a29a03d5c40f73ab40878df04860bc00e876),
 Copyright (c) 2025 K-Dense Inc., licensed under BSD-3-Clause.
+Credited to K-Dense Inc., with Timothy Kassis, Vinayak Agarwal, Yuhuan He, Darshil Patel, Aubrey M. Brueckner, Kiril Klein.
+Cite: Timothy Kassis, Vinayak Agarwal, Yuhuan He, Darshil Patel and Aubrey M. Brueckner. Scientific Agent Skills: A Library of Procedural Knowledge for Research Agents. arXiv:2609.00065 (2026). doi:10.48550/arXiv.2609.00065
 The names of the copyright holders and contributors are not used to endorse or promote Biorouter.
 
 scientific-data-engineering, statistical-modeling-bayes, scientific-machine-learning, quantum-scientific-computing, biomedical-imaging-pathology, simulation-optimization include material from K-Dense-AI/scientific-agent-skills (9 folders across the items named here, commit ec59a29a03d5c40f73ab40878df04860bc00e876),
 Copyright (c) 2025 K-Dense Inc., licensed under Apache-2.0.
+Credited to K-Dense Inc., with Timothy Kassis, Vinayak Agarwal, Yuhuan He, Darshil Patel, Aubrey M. Brueckner.
+Cite: Timothy Kassis, Vinayak Agarwal, Yuhuan He, Darshil Patel and Aubrey M. Brueckner. Scientific Agent Skills: A Library of Procedural Knowledge for Research Agents. arXiv:2609.00065 (2026). doi:10.48550/arXiv.2609.00065
 
-statistical-modeling-bayes includes material from ab604/claude-code-r-skills (.claude/skills/r-bayes, commit 529de4fcfe68fcc7c30cc56388bb625e8ddf37f0),
-Copyright (c) 2025, licensed under MIT.
+statistical-modeling-bayes includes material from ab604/claude-code-r-skills (.claude/skills/r-bayes, commit 529de4fcfe68fcc7c30cc56388bb625e8ddf37f0), licensed under MIT; its licence names no copyright holder.
+Credited to ab604.
 
 systematic-review-prisma includes material from choxos/BiostatAgent (plugins/r-tidy-modeling/skills/meta-analysis, plugins/bayesian-modeling/skills/meta-analysis, commit a55c0591107181cdac9ce78813dc0abac3281caa),
 Copyright (c) 2026 Ahmad Sofi-Mahmudi, licensed under MIT.
-
-ggplot-visualization includes material from Broccolito/ggplot-skills (SKILL_ggplot.md, commit 7f430d5),
-Copyright (c) 2026 Wanjun Gu, licensed under MIT.
+Credited to Ahmad Sofi-Mahmudi.
 
 ggplot-visualization, workflow-management, r-package-development include material from jsperger/llm-r-skills (skills/ggplot2, skills/targets-pipelines, skills/tidy-evaluation, skills/rlang-conditions, commit 7a10126fafd6d19b340da2661c7559b120264ffb),
 Copyright (c) 2026 John Sperger, licensed under MIT.
+Credited to John Sperger.
+
+ggplot-visualization includes material from Broccolito/ggplot-skills (SKILL_ggplot.md, commit 7f430d5a2e2027b4b2b45fb9ef02c2a50be59b11), the Baranzini Lab's own work, under the copyright line at the top of this file; that repository has no licence file.
+Credited to Baranzini Lab (Wanjun Gu, UCSF).
 
 ggplot-visualization, alignment, alignment-files, alternative-splicing, atac-seq, causal-genomics, chemoinformatics, chip-seq, clinical-biostatistics, clinical-databases, clip-seq, comparative-genomics, copy-number, crispr-screens, data-visualization, database-access, differential-expression, ecological-genomics, epidemiological-genomics, epitranscriptomics, experimental-design, expression-matrix, flow-cytometry, gene-regulatory-networks, genome-annotation, genome-assembly, genome-engineering, genome-intervals, hi-c-analysis, imaging-mass-cytometry, immunoinformatics, liquid-biopsy, long-read-sequencing, machine-learning, metabolomics, metagenomics, methylation-analysis, microbiome, multi-omics-integration, pathway-analysis, phasing-imputation, phylogenetics, population-genetics, primer-design, proteomics, read-alignment, read-qc, reporting, restriction-analysis, ribo-seq, rna-quantification, rna-structure, sequence-io, sequence-manipulation, single-cell, small-rna-seq, spatial-transcriptomics, structural-biology, systems-biology, tcr-bcr-analysis, temporal-genomics, variant-calling, workflow-management, workflows, python-visualization include material from GPTomics/bioSkills (65 folders across the items named here, commit d91ed3d563019e649dc854c56ccd62551359488a),
 Copyright (c) 2026 GPTomics, licensed under MIT.
+Credited to GPTomics, with Domen Jemec.
 
 ralph includes material from snarktank/ralph (skills/prd, skills/ralph, prompt.md, commit 6c53cb0b831ebe8739c6a003e22af14902d8b0b5),
 Copyright (c) 2026 snarktank, licensed under MIT.
+Credited to snarktank, with Ryan Carson, Manav Kundra.
 
 superpowers includes material from obra/superpowers (skills/ (13 of 15; using-superpowers and diagnosing-superpowers left out), commit 22f0b463e7a5e579904dd6211a520321035526f7),
 Copyright (c) 2025 Jesse Vincent, licensed under MIT.
+Credited to Jesse Vincent.
 
-code-review, commit-commands, code-modernization include material from anthropics/claude-plugins-official (5 folders across the items named here, commit 73c8cf3ea7e296057b467990f2f5d61b4c922260),
-Copyright Anthropic, PBC (Apache License 2.0, no NOTICE file), licensed under Apache-2.0.
+ucsf-hpc includes material from BaranziniLab/UCSFHPCAgent (skills/ucsf-hpc-compute, commit 01b6bbeadc515663223409c8696e72bd71b748ae), the Baranzini Lab's own work, under the copyright line at the top of this file, licensed under Apache-2.0.
+Credited to Baranzini Lab (Wanjun Gu, UCSF).
+
+code-review, commit-commands include material from anthropics/claude-plugins-official (plugins/code-review (v1.0.1, c905cd8 command), plugins/commit-commands, commit 73c8cf3ea7e296057b467990f2f5d61b4c922260), licensed under Apache-2.0; its licence names no copyright holder.
+Credited to Anthropic, with Noah Zweben.
+
+code-review includes material from anthropics/claude-plugins-official (plugins/pr-review-toolkit/agents (silent-failure-hunter, pr-test-analyzer), plugins/security-guidance/hooks/llm.py (review rubric), commit 73c8cf3ea7e296057b467990f2f5d61b4c922260), licensed under Apache-2.0; its licence names no copyright holder.
+Credited to Anthropic, with Noah Zweben, Dickson Tsai, Pete Blois, Mohamed Hegazy, Octavian Guzu.
 
 code-review, reporting, figure-qa, interactive-dashboards, r-package-development include material from posit-dev/skills (5 folders across the items named here, commit 951959403f4ecc9d0274adf35538fc67153b6f31),
 Copyright (c) 2025 Posit PBC, licensed under MIT.
+Credited to Posit PBC, with Garrick Aden-Buie, Mickaël Canouil, Emil Hvitfeldt, E Nelson, Simon P. Couch, Christophe Dervieux.
 
-code-simplifier includes material from anthropics/claude-plugins-official (plugins/code-simplifier, commit de573bd84695c6657b28f05ffe32c37bb54d1f55), licensed under Apache-2.0; its licence names no copyright holder. Changes: The plugin's subagent prompt (agents/code-simplifier.md) rewritten as a user-invoked SKILL.md in close paraphrase: its list of one project's coding standards replaced by the project's own instructions and the python-scripting, r-scripting and bio-skills skills, its instruction to act on its own after every edit dropped, and an output section with before and after examples added.
+code-simplifier, playground include material from anthropics/claude-plugins-official (plugins/code-simplifier, plugins/playground, commit de573bd84695c6657b28f05ffe32c37bb54d1f55), licensed under Apache-2.0; its licence names no copyright holder.
+Credited to Anthropic, with Boris Cherny, Thariq Shihipar.
 
-hookify includes material from anthropics/claude-plugins-official (plugins/hookify, commit de573bd84695c6657b28f05ffe32c37bb54d1f55), licensed under Apache-2.0; its licence names no copyright holder. Changes: Rewritten to write enforced Biorouter hooks in <project>/.biorouter/hooks.yaml.
+code-modernization includes material from anthropics/claude-plugins-official (plugins/code-modernization (commands, agents, scripts, references, report assets), commit 73c8cf3ea7e296057b467990f2f5d61b4c922260), licensed under Apache-2.0; its licence names no copyright holder.
+Credited to Anthropic, with Morgan Lunt.
 
-code-modernization includes material from mermaid-js/mermaid (mermaid.min.js as vendored in plugins/code-modernization/assets/vendor, commit 73c8cf3ea7e296057b467990f2f5d61b4c922260),
+code-modernization includes material from mermaid-js/mermaid (mermaid.min.js as vendored in plugins/code-modernization/assets/vendor, version 11.17.2),
 Copyright (c) 2014 - 2022 Knut Sveidqvist, licensed under MIT.
+Credited to Knut Sveidqvist.
 
-playground includes material from anthropics/claude-plugins-official (plugins/playground, commit de573bd84695c6657b28f05ffe32c37bb54d1f55), licensed under Apache-2.0; its licence names no copyright holder. Changes: SKILL.md kept close to the upstream skill with Claude replaced by Biorouter; the six templates (templates/*.md) condensed into one section of SKILL.md, a paragraph and a layout sketch per playground type, and not included; a defaults object, an empty-state prompt and a copy button pattern added.
+frontend-design includes material from anthropics/skills (skills/frontend-design, commit e4bb5d960d87126ff3b3a8af1a104b7db67560ba), licensed under Apache-2.0; its licence names no copyright holder.
+Credited to Anthropic, with Keith Lazuka, william qian.
 
-frontend-design includes material from anthropics/skills (skills/frontend-design, commit e4bb5d960d87126ff3b3a8af1a104b7db67560ba),
-Copyright Anthropic, PBC (LICENSE.txt in the skill folder), licensed under Apache-2.0.
-
-frontend-design includes material from Leonxlnx/taste-skill (skills/taste-skill/SKILL.md (v2 single-file), commit 84ff339),
+frontend-design includes material from Leonxlnx/taste-skill (skills/taste-skill/SKILL.md (v2 single-file), commit 84ff339312d29955ce2040c02fd6e5bedb934608),
 Copyright (c) 2026 Leonxlnx, licensed under MIT.
+Credited to Leonxlnx, with Leon Lin.
 
-reporting includes material from openai/skills (skills/.curated/jupyter-notebook, commit 49f948faa9258a0c61caceaf225e179651397431),
-none stated in the upstream LICENSE.txt (Apache License 2.0 text only), licensed under Apache-2.0.
+reporting includes material from openai/skills (skills/.curated/jupyter-notebook, commit 49f948faa9258a0c61caceaf225e179651397431), licensed under Apache-2.0; its licence names no copyright holder.
+Credited to OpenAI, with Vaibhav Srivastav, Dominik Kundel, Gav Verma.
 
-reporting includes material from marimo-team/skills (skills/marimo-notebook, skills/jupyter-to-marimo, commit d5783f16066d6b05576e8a8637466c11f2433734),
-none stated in the upstream LICENSE (Apache License 2.0 text only), licensed under Apache-2.0.
+reporting includes material from marimo-team/skills (skills/marimo-notebook, skills/jupyter-to-marimo, commit d5783f16066d6b05576e8a8637466c11f2433734), licensed under Apache-2.0; its licence names no copyright holder.
+Credited to marimo, with Myles Scolnick, vincent d warmerdam, Arpit Garg, Trevor Manz, Konstantin Taletskiy.
 
 figure-qa includes material from neuromechanist/research-skills (plugins/figures/skills/figure-qa/references/figure-qa-procedure.md, plugins/figures/agents/figure-qa-scripts/check_raster.py, plugins/figures/agents/figure-qa-scripts/check_svg.py, plugins/figures/agents/figure-qa-scripts/check_plot_script.py, commit 1bbc8382711216a39cee05e6e096acbf6b1b6d65),
 Copyright (c) 2026, Seyed (Yahya) Shirazi, licensed under BSD-3-Clause.
+Credited to Seyed (Yahya) Shirazi.
+Cite: Seyed Yahya Shirazi. Research Skills. doi:10.5281/zenodo.20696515
 The names of the copyright holders and contributors are not used to endorse or promote Biorouter.
 
 figure-qa, python-visualization include material from Haojae/scipilot-figure-skill (references/publication_checklist.md, references/journal_specs.md, scripts/check_figure.py, scripts/visual_qa.py, references/chart_selection.md, commit 43098ddb9e6a6d142218540c114f9ed38922fc42),
 Copyright (c) 2026 Haojae, licensed under MIT.
+Credited to Haojae.
+
+high-performance-r, interactive-dashboards include material from Broccolito/gptr (inst/gptr/skills/high-performance-r, inst/gptr/skills/shiny-bslib/SKILL.md, commit 0280d953ee426d277021902ebebd013848f7d092), the Baranzini Lab's own work, under the copyright line at the top of this file, licensed under Apache-2.0.
+Credited to Baranzini Lab (Wanjun Gu, UCSF).
 
 interactive-dashboards includes material from rstudio/shiny (inst/skills/shiny-for-r, commit 4f2217e332c9c346295b860997612dafb5e7f319),
-Copyright (c) 2012-2025 Posit Software, PBC (shiny authors), licensed under MIT.
+Copyright (c) 2025 shiny authors, licensed under MIT.
+Credited to Posit Software, PBC, with Barret Schloerke.
 
 interactive-dashboards includes material from streamlit/streamlit (lib/streamlit/.agents/skills/developing-with-streamlit, commit 259fbb652404888bff49b923b8228bd2bd9d4888),
 Copyright (c) Streamlit Inc. (2018-2022) Snowflake Inc. (2022-2026), licensed under Apache-2.0.
+Credited to Streamlit Inc. and Snowflake Inc., with Nico Bellante, Lukas Masuch, Laura Wilby, Maya Barnes, Bob Nisco, Grant Watters.
+Its NOTICE file ships in the notice file of interactive-dashboards from its next release.
 
-interactive-dashboards includes material from Broccolito/gptr (inst/gptr/skills/shiny-bslib/SKILL.md, commit 0280d953ee426d277021902ebebd013848f7d092),
-Copyright 2026 Baranzini Lab, University of California, San Francisco, licensed under Apache-2.0.
-
-julia-development, scientific-manuscript-writing include material from timholy/claude_config (skills/freshen-package, skills/freshen-gitignore, skills/freshen-aqua, skills/freshen-explicit-imports, skills/review-api, agents/julia-api-inventory.md, skills/review-common/interview.md, skills/review-common/plan-file.md, skills/review-implement, rules/code-comments.md, skills/freshen-generic-axes, rules/julia-generic-indexing.md, skills/freshen-coverage, skills/freshen-docstrings, agents/docstring-auditor.md, julia-code/ClaudeUtils/src/audit_docstrings.jl, skills/freshen-docs, skills/profile-performance, rules/julia-inbounds.md, skills/write-methods/SKILL.md, commit 225ce60094c1ecb823b3cb7abf2fd390185643ef),
-Copyright (c) 2026 Tim Holy, licensed under MIT.
+julia-development, scientific-manuscript-writing include material from timholy/claude_config (skills/freshen-package, skills/freshen-gitignore, skills/freshen-aqua, skills/freshen-explicit-imports, skills/review-api, agents/julia-api-inventory.md, skills/review-common/interview.md, skills/review-common/plan-file.md, skills/review-implement, rules/code-comments.md, skills/freshen-generic-axes, rules/julia-generic-indexing.md, skills/freshen-coverage, skills/freshen-docstrings, agents/docstring-auditor.md, julia-code/ClaudeUtils/src/audit_docstrings.jl, skills/freshen-docs, skills/profile-performance, rules/julia-inbounds.md, CLAUDE.md, skills/write-methods/SKILL.md, commit 225ce60094c1ecb823b3cb7abf2fd390185643ef),
+Copyright (c) 2026: Tim Holy., licensed under MIT.
+Credited to Tim Holy.
 
 julia-development includes material from JuliaLang/DocBrowser.jl (skills/julia-docs, commit 0146653c42f926e309c4b1739479ad54fc0f9694),
 Copyright (c) 2026 Ian Butterworth, Kristoffer Carlsson and contributors, licensed under MIT.
+Credited to Ian Butterworth, Kristoffer Carlsson and contributors.
+
+manuscript-peer-review includes material from Aperivue/medsci-skills (skills/self-review/references/phases/phase2_systematic_check.md, skills/revise/references/r2r_voice.md, commit 7e9d133dd0216c29b0e030729e3719c3db5e0973),
+Copyright (c) 2026 Aperivue (https://aperivue.com), licensed under MIT.
+Credited to Aperivue, with Yoojin Nam, Jinhoon Jeong, Namkug Kim.
+Cite: Yoojin Nam, Jinhoon Jeong and Namkug Kim. Deterministic Integrity Gates for LLM-Assisted Clinical Manuscript Preparation: An Auditable Biomedical Informatics Architecture. arXiv:2606.09500 (2026).
 
 science-superpowers includes material from K-Dense-AI/science-superpowers (skills/framing-research-questions, skills/surveying-prior-work, skills/designing-the-analysis, skills/preregistering-analysis, skills/establishing-feasibility-first, skills/setting-up-reproducible-analysis, skills/executing-analysis, skills/investigating-anomalous-results, skills/verifying-results-before-claiming, skills/requesting-red-team-review, skills/receiving-critical-review, skills/reporting-and-archiving-findings, commit 0374bdf82c2372bdf1667e3c762146c3a29215f5),
 Copyright (c) 2026 K-Dense, Inc., licensed under MIT.
+Credited to K-Dense, Inc., with Timothy Kassis.
 
-scientific-problem-selection includes material from anthropics/knowledge-work-plugins (bio-research/skills/scientific-problem-selection, commit 0e0fcacddcc892eb92a1b7873ff9d68159c47571),
-Copyright Anthropic, PBC (the upstream licence file names no holder; attributed to the repository owner), licensed under Apache-2.0.
+scientific-problem-selection includes material from anthropics/knowledge-work-plugins (bio-research/skills/scientific-problem-selection, commit 0e0fcacddcc892eb92a1b7873ff9d68159c47571), licensed under Apache-2.0; its licence names no copyright holder.
+Credited to Anthropic, with Matt Piccolella.
 
 scientific-prose-review includes material from labarba/sciwrite (skills/sciwrite, commit 5b2ef3bb4477d69c61e0480359894ac04136bb32),
 Copyright (c) 2026 Lorena A. Barba, licensed under CC-BY-4.0.
-
-phi-deidentification includes material from Aperivue/medsci-skills (skills/deidentify, commit 7e9d133dd0216c29b0e030729e3719c3db5e0973),
-Copyright (c) 2026 Aperivue (https://aperivue.com), licensed under MIT. Changes: deidentify.py, its locale packs, references and tests copied (the test now points at scripts/); SKILL.md rewritten for an agent that never sees raw data; safe_harbor.py added, a non-interactive HIPAA Safe Harbor mode with a residual check and no network calls.
+Credited to Lorena A. Barba, with Kyle Niemeyer.
+Cite: Lorena A. Barba. SciWrite: an Agent Skill for reviewing the writing quality of scientific manuscripts. doi:10.5281/zenodo.23728600
