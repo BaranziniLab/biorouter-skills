@@ -27,9 +27,11 @@ import {
   folderProvenanceWanted,
   frontmatterCredits,
   groupSources,
+  isLabOwned,
   labCopyrightLine,
   licenceTokens,
   provenanceFormat,
+  subjectId,
   sourceKey,
   sourceName,
   sourceUrl,
@@ -211,6 +213,55 @@ function pinText(u) {
 }
 
 const HOLDERLESS = 'its licence names no copyright holder';
+/** The lab's own work, which the copyright line at the top of the NOTICE covers. */
+const LAB_WORK = "the Baranzini Lab's own work, under the copyright line at the top of this file";
+
+/** "a", "a and b", "a, b and c". */
+function joinAnd(xs) {
+  return xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`;
+}
+
+/** `text` broken into lines of at most `width` characters, at spaces. */
+function wrapText(text, width) {
+  const out = [];
+  let line = '';
+  for (const word of text.split(' ')) {
+    if (line && line.length + 1 + word.length > width) {
+      out.push(line);
+      line = word;
+    } else line = line ? `${line} ${word}` : word;
+  }
+  if (line) out.push(line);
+  return out;
+}
+
+/** True when credit line `credit` already names `person` (as a whole name, not inside another word). */
+function namesPerson(credit, person) {
+  const esc = String(person).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(^|[^\\p{L}\\p{N}])${esc}($|[^\\p{L}\\p{N}])`, 'u').test(String(credit));
+}
+
+/**
+ * The items whose notice file still lacks an upstream line, a NOTICE or a fixed
+ * text it owes (a PV7 entry, or a PV13 fixed-text entry on the notice file, in
+ * `baseline`): they gain it at their next release, and the NOTICE says so.
+ */
+function noticeFilesPending(catalog, baseline) {
+  const byId = new Map((catalog.items ?? []).map((r) => [r.id, r]));
+  const ids = new Set();
+  for (const b of list(baseline?.baseline_violations)) {
+    const id = subjectId(b?.subject);
+    const row = byId.get(id);
+    if (!row || row.status !== 'active') continue;
+    if (b.rule === 'PV7' || (b.rule === 'PV13' && String(b.subject).startsWith('fixed-text:') && String(b.subject).endsWith(`:${row.notice_file}`))) ids.add(id);
+  }
+  return [...ids].sort();
+}
+
+/** True when `baseline` defers the Apache NOTICE an item's notice file owes `key` (a PV7 notice-apache entry). */
+function noticeDeferred(baseline, id, key) {
+  return list(baseline?.baseline_violations).some((b) => b?.rule === 'PV7' && b.subject === `notice-apache:${id}:${key}`);
+}
 
 /**
  * The repository NOTICE. Format 1 rows keep the shape they always had (active
@@ -218,17 +269,22 @@ const HOLDERLESS = 'its licence names no copyright holder';
  * every source they redistribute, with its credit, and the work they use
  * without redistributing it (dependencies, programs launched at run time,
  * data and services) under "Other credited work". Each id appears once per
- * block, and a source whose licence names no holder says so.
+ * block, and a source whose licence names no holder says so. An Apache
+ * source's NOTICE (upstream_notice) is said to ship with an item only when that
+ * item's notice file carries it: an item whose PV7 notice-apache entry sits in
+ * `baseline` (provenance-baseline.json) gets it at its next release, and the
+ * line says so.
  */
-export function renderNotice(catalog) {
+export function renderNotice(catalog, { baseline = null } = {}) {
   const catalogFormat = catalog.format;
   const blocks = new Map();
   const others = new Map();
-  const add = (map, key, make, id, p) => {
-    if (!map.has(key)) map.set(key, { ...make(), ids: [], paths: [] });
+  const add = (map, key, make, id, p, u = null) => {
+    if (!map.has(key)) map.set(key, { ...make(), ids: [], paths: [], sources: [] });
     const g = map.get(key);
     if (!g.ids.includes(id)) g.ids.push(id);
     if (p && !g.paths.includes(p)) g.paths.push(p);
+    if (u) g.sources.push(u);
   };
   for (const r of (catalog.items ?? []).filter((x) => x.status === 'active')) {
     const ups = list(r.source?.upstreams);
@@ -241,7 +297,7 @@ export function renderNotice(catalog) {
       continue;
     }
     for (const u of ups) {
-      if (shipped(u)) add(blocks, JSON.stringify([2, sourceKey(u), u.commit ?? null, u.version ?? null, u.licence ?? null, u.copyright ?? null, u.copyright_note ?? null]), () => ({ format: 2, u }), r.id, u.path);
+      if (shipped(u)) add(blocks, JSON.stringify([2, sourceKey(u), u.commit ?? null, u.version ?? null, u.licence ?? null, u.licence_file ?? null, u.copyright ?? null, isLabOwned(u)]), () => ({ format: 2, u }), r.id, u.path, u);
       else add(others, JSON.stringify(['source', sourceKey(u), u.version ?? null, u.licence ?? null]), () => ({ kind: 'source', u }), r.id, null);
     }
     for (const d of list(r.source?.data_and_services)) add(others, JSON.stringify(['data', d.name, d.url ?? null]), () => ({ kind: 'data', d }), r.id, null);
@@ -255,17 +311,28 @@ export function renderNotice(catalog) {
     const ident = g.format === 1 ? u.repo : u.repo ?? sourceUrl(u) ?? sourceName(u);
     const said = [where, pinText(u)].filter(Boolean).join(', ');
     let text = `${subject} material from ${ident}${said ? ` (${said})` : ''}`;
-    if (u.copyright) text += `,\n${u.copyright}, licensed under ${u.licence}.`;
-    else if (g.format === 2 && u.copyright_note) text += `, licensed under ${u.licence}; ${HOLDERLESS} (${oneLine(u.copyright_note)}).`;
+    // The lab's own work is under the line at the top; a repository with no
+    // licence file gets no licence claim. A holder-less source gets the fixed
+    // sentence only: its copyright_note is for the item's PROVENANCE.md.
+    if (g.format === 2 && isLabOwned(u)) text += u.licence_file === false ? `, ${LAB_WORK}; that repository has no licence file.` : `, ${LAB_WORK}, licensed under ${u.licence}.`;
+    else if (u.copyright) text += `,\n${u.copyright}, licensed under ${u.licence}.`;
     else text += `, licensed under ${u.licence}; ${HOLDERLESS}.`;
     if (g.format === 1 && g.changes) text += ` Changes: ${g.changes}`;
     if (g.format === 2) {
-      const people = list(u.people).filter(Boolean);
-      text += `\nCredited to ${oneLine(u.credit) || 'an uncredited author'}${people.length ? `, with ${people.map(oneLine).join(', ')}` : ''}.`;
-      if (u.cite) text += `\nCite: ${oneLine(u.cite)}`;
+      // One block may hold the same source as several items record it: every item's credit, people and
+      // citation are printed, each once, and a person a credit already names is not repeated after it.
+      const credits = uniq(g.sources.map((x) => oneLine(x.credit)).filter(Boolean));
+      const people = uniq(g.sources.flatMap((x) => list(x.people)).map(oneLine).filter(Boolean)).filter((n) => !credits.some((c) => namesPerson(c, n)));
+      text += `\nCredited to ${credits.length ? joinAnd(credits) : 'an uncredited author'}${people.length ? `, with ${people.join(', ')}` : ''}.`;
+      for (const c of uniq(g.sources.map((x) => oneLine(x.cite)).filter(Boolean))) text += `\nCite: ${c}`;
     }
     if (licenceTokens(u.licence).some((x) => BSD.has(x))) text += `\nThe names of the copyright holders and contributors are not used to endorse or promote Biorouter.`;
-    if (g.format === 2 && u.upstream_notice === true) text += `\nIts NOTICE file is reproduced in the notice file of each item named here.`;
+    if (g.format === 2 && u.upstream_notice === true) {
+      const later = g.ids.filter((id) => noticeDeferred(baseline, id, sourceKey(u)));
+      const now = g.ids.filter((id) => !later.includes(id));
+      if (now.length) text += `\nIts NOTICE file is reproduced in the notice file of ${later.length ? now.join(', ') : 'each item named here'}.`;
+      if (later.length) text += `\nIts NOTICE file ships in the notice file of ${later.join(', ')} from ${later.length === 1 ? 'its' : 'their'} next release.`;
+    }
     shippedText.push(text);
   }
 
@@ -287,6 +354,11 @@ export function renderNotice(catalog) {
     }
   }
 
+  const pending = noticeFilesPending(catalog, baseline);
+  const one = pending.length === 1;
+  const pendingText = pending.length
+    ? wrapText(`The notice ${one ? 'file' : 'files'} of ${joinAnd(pending)} ${one ? 'gains' : 'gain'} the lines ${one ? 'it still lacks' : 'they still lack'} at ${one ? 'its' : 'their'} next release.`, 80)
+    : [];
   return [
     'Biorouter Skills',
     labCopyrightLine(2026),
@@ -297,6 +369,7 @@ export function renderNotice(catalog) {
     'the Apache License, Version 2.0 (see LICENSE). Material adapted from upstream',
     'projects keeps its upstream licence; the archive of each such skill carries the',
     'upstream copyright line and licence text in its notice file.',
+    ...pendingText,
     '',
     'This file is generated from catalog.json by scripts/render-readme.mjs.',
     '',
@@ -368,8 +441,9 @@ function main() {
   const noticePath = path.join(root, 'NOTICE');
   const readme = fs.readFileSync(readmePath, 'utf8');
   const nextReadme = applySections(readme, renderSections(catalog));
-  const nextNotice = renderNotice(catalog);
-  const files = folderFiles(root, catalog);
+  const baseline = readProvenanceBaseline(root);
+  const nextNotice = renderNotice(catalog, { baseline });
+  const files = folderFiles(root, catalog, baseline);
   const itemCount = files.filter((f) => f.rel.endsWith(`/${PROVENANCE_FILE}`)).length;
   if (check) {
     const stale = [];

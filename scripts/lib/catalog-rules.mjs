@@ -506,9 +506,16 @@ export function applyBaseline(failures, baseline = [], done = []) {
 //
 // and the row's `contributors: [{ name, affiliation, role }]`. Upstream:
 //
-//   { kind, repo, display, url, doi, path, commit, version, licence, copyright,
-//     copyright_note, credit, people, use, what, files, via, upstream_notice,
-//     owner, taken, cite }
+//   { kind, repo, display, url, doi, path, commit, version, licence, licence_file,
+//     copyright, copyright_note, credit, people, use, what, files, via,
+//     upstream_notice, owner, taken, cite }
+//
+// `licence_file` is false only for a source whose repository has no licence
+// file at its pin; the generators then make no licence claim for it. Only the
+// lab's own work (owner "lab") may be copied or bundled from such a source.
+// `copyright_note`, `changes` and every other text a record shows are written
+// for readers: PV13 refuses the campaign's process wording in them (an owner
+// answer number, a sign-off, a migration or audit step).
 //
 // An upstream's `kind` is a repository, package or program, or a publication:
 // a reporting guideline (STROBE, PRISMA 2020, ARRIVE 2.0) or a paper whose
@@ -635,6 +642,41 @@ export const ORIGIN_SENTENCES = Object.freeze({
 
 /** Text a card's summary or description may never carry (PV13). */
 export const CARD_CREDIT_PATTERN = /made by the baranzini lab|adapted from |curated and organi[sz]ed by|packaged for biorouter by/i;
+/**
+ * PV13, process wording: how a record was decided (an owner answer number, a
+ * sign-off, the migration, an audit section, a later step) is the campaign's
+ * business, not the reader's. Shown text in a row's provenance, and every
+ * generated NOTICE and PROVENANCE.md, carries none of it.
+ */
+export const PROCESS_WORDING = Object.freeze([
+  /\bowner(?:'s)? (?:answer |decision |ruling )?Q\d+/i,
+  /\bowner(?:'s)? (?:decision|ruling|sign)/i,
+  /\bsign-?off\b/i,
+  /\bbefore any generated file\b/i,
+  /\bproposed by the migration\b/i,
+  /\bby the migration\b/i,
+  /\bthe migration's\b/i,
+  /\bstep 0\b/i,
+  /\bstep \d+ reads\b/i,
+  /\bthe audit's\b/i,
+  /\baudit (?:section )?\d+(?:\.\d+)*\b/i,
+  /\bevidence\.json\b/,
+  /\bjudges'/i,
+]);
+/** The process phrases `text` carries (PROCESS_WORDING), as found. */
+export function processWordingProblems(text) {
+  const t = String(text ?? '');
+  return PROCESS_WORDING.map((re) => re.exec(t)?.[0]).filter(Boolean);
+}
+/** The keys whose text a provenance record shows (paths, URLs and ids are left out). */
+const SHOWN_TEXT_KEYS = new Set(['changes', 'what', 'copyright_note', 'evidence', 'terms', 'how', 'note', 'reason', 'role', 'version_read', 'cite', 'credit']);
+/** [where, text] for every shown text under `value` (a row's source, components and contributors). */
+function shownTexts(value, where = '') {
+  if (Array.isArray(value)) return value.flatMap((v, i) => shownTexts(v, `${where}[${i}]`));
+  if (!value || typeof value !== 'object') return [];
+  return Object.entries(value).flatMap(([k, v]) =>
+    typeof v === 'string' ? (SHOWN_TEXT_KEYS.has(k) ? [[`${where}.${k}`, v]] : []) : shownTexts(v, `${where}.${k}`));
+}
 
 const list = (x) => (Array.isArray(x) ? x : []);
 const str = (x) => typeof x === 'string' && x.trim().length > 0;
@@ -682,6 +724,20 @@ export function sourceUrl(u) {
   if (str(u?.url)) return u.url;
   if (str(u?.doi)) return `https://doi.org/${u.doi}`;
   return null;
+}
+
+/**
+ * The holder a copyright line names, as written: "Copyright (c) 2026 Aperivue (https://aperivue.com)" gives
+ * "Aperivue". The years and a trailing web address in parentheses are left out; null for no line.
+ */
+export function copyrightHolder(line) {
+  if (!str(line)) return null;
+  const h = String(line)
+    .replace(/^\s*copyright\b\s*(?:\(c\)|\u00a9)?\s*[\d\s,\u2013-]*/i, '')
+    .replace(/\s*\((?:https?:\/\/|www\.)[^)]*\)\s*$/i, '')
+    .replace(/[.,]\s*$/, '')
+    .trim();
+  return h || null;
 }
 
 /** The repositories a source's `via` names, as a list (`via` is one repository or a list of them). */
@@ -969,6 +1025,8 @@ function checkSource(u, ctx) {
   if (!str(u?.credit)) p.push('no credit');
   if (!str(u?.what)) p.push('no what');
   if (!str(u?.licence)) p.push('no licence');
+  if (u?.licence_file != null && typeof u.licence_file !== 'boolean') p.push('licence_file must be false (no licence file at the pin) or left out');
+  if (u?.licence_file === false && shipped && !isLabOwned(u)) p.push('has no licence file at its pin, so it may not be copied or bundled');
   if (u?.people != null && (!Array.isArray(u.people) || u.people.some((x) => !str(x)))) p.push('people must be a list of names');
   if (u?.files != null && (!Array.isArray(u.files) || u.files.some((x) => !str(x)))) p.push('files must be a list of paths');
   if (u?.taken != null && !DATE.test(String(u.taken))) p.push(`taken "${u.taken}" is not YYYY-MM-DD`);
@@ -1087,7 +1145,7 @@ export function ruleProvenance(rows, { catalogFormat = 1, catalog = null } = {})
     upstreams.forEach((u, i) => {
       const p = checkSource(u, { upstreams, extension });
       if (p.length) fail('PV6', `source:${id}:${sourceKey(u) || `#${i}`}`, `upstream ${sourceKey(u) || `#${i}`}: ${p.join('; ')}`);
-      if (hasAny(u, SHIPPED_USES) && u?.copyright == null && str(u?.copyright_note)) warn(`upstream ${sourceKey(u)} names no copyright holder (${u.copyright_note}); listed for review`);
+      if (hasAny(u, SHIPPED_USES) && !isLabOwned(u) && u?.copyright == null && str(u?.copyright_note)) warn(`upstream ${sourceKey(u)} names no copyright holder (${u.copyright_note}); listed for review`);
       if (str(u?.path) && /[\s(),;]/.test(u.path)) warn(`upstream ${sourceKey(u)} path "${u.path}" reads as prose; put it in what`);
     });
     const ideaLists = [[`${id}`, list(src.ideas_from)]];
@@ -1155,19 +1213,31 @@ export function ruleProvenance(rows, { catalogFormat = 1, catalog = null } = {})
         if (comp?.sources !== undefined && (!Array.isArray(comp.sources) || comp.sources.some((n) => !Number.isInteger(n) || !upstreams[n]))) p.push('sources must be indexes into the row\'s upstreams');
         if (p.length) fail('PV11', `component:${id}/${folder}`, `component ${folder}: ${p.join('; ')}`);
 
-        // A merged component written for Biorouter is listed by its host.
+        // A merged component written for Biorouter is listed by its host. The
+        // host is a component (status superseded_by:<bundle>/<x>, where x is
+        // the component's folder or its name, as D4 reads it): content_moved_to
+        // is <bundle>/<folder>/<file>, and that component lists the file under
+        // written_for_biorouter. Or the host is a whole skill the content was
+        // rewritten into (status superseded_by:<id>): content_moved_to is that
+        // id and the id has a row. The rule does not read that skill's record
+        // for the content (a whole skill lists no written_for_biorouter).
         const moved = comp?.content_moved_to;
         if (String(comp?.status ?? '').startsWith('superseded_by:') && (comp?.origin === 'in-house' || comp?.origin === 'ideas-derived')) {
           const target = String(comp.status).slice('superseded_by:'.length);
-          const parts = typeof moved === 'string' ? moved.split('/') : [];
           let problem = null;
-          if (parts.length < 3) problem = `content_moved_to "${moved}" is not <bundle>/<folder>/<file>`;
-          else if (!target.includes('/') || !moved.startsWith(`${target}/`)) problem = `content_moved_to "${moved}" is not inside ${target}`;
-          else {
-            const [hostBundle, hostFolder, ...rest] = parts;
-            const host = byId.get(hostBundle)?.components?.[hostFolder];
-            if (!host) problem = `host ${hostBundle}/${hostFolder} has no catalog entry`;
-            else if (!list(host.written_for_biorouter).some((w) => w?.path === rest.join('/'))) problem = `${hostBundle}/${hostFolder} does not list ${rest.join('/')} under written_for_biorouter`;
+          if (!target.includes('/')) {
+            if (moved !== target) problem = `content_moved_to "${moved}" is not ${target}, the skill its status names`;
+            else if (!byId.has(target)) problem = `${target} has no row in the catalog`;
+          } else {
+            const [hostBundle, x] = target.split('/');
+            const comps = byId.get(hostBundle)?.components ?? {};
+            const hostFolder = Object.hasOwn(comps, x) ? x : Object.keys(comps).find((k) => comps[k]?.name === x);
+            const parts = typeof moved === 'string' ? moved.split('/') : [];
+            const file = parts.slice(2).join('/');
+            if (!hostFolder) problem = `host ${target} has no catalog entry`;
+            else if (parts.length < 3) problem = `content_moved_to "${moved}" is not <bundle>/<folder>/<file>`;
+            else if (parts[0] !== hostBundle || parts[1] !== hostFolder) problem = `content_moved_to "${moved}" is not inside ${hostBundle}/${hostFolder}`;
+            else if (!list(comps[hostFolder].written_for_biorouter).some((w) => w?.path === file)) problem = `${hostBundle}/${hostFolder} does not list ${file} under written_for_biorouter`;
           }
           if (problem) fail('PV11', `written:${id}/${folder}`, `merged component ${folder}: ${problem}`);
         }
@@ -1191,7 +1261,17 @@ export function ruleProvenance(rows, { catalogFormat = 1, catalog = null } = {})
       ...list(src.ideas_from).map((i) => i?.credit),
       ...people.map((c) => c?.name),
     ].filter(str);
-    for (const n of [...new Set(named)]) if (accounts.has(n.toLowerCase())) warn(`"${n}" is an account name; credit the name the source publishes, if it publishes one`);
+    // A credit that is the holder its source's own licence line names is the name that source publishes.
+    const published = new Set(upstreams.map((u) => copyrightHolder(u?.copyright)).filter(str));
+    for (const n of [...new Set(named)]) {
+      if (accounts.has(n.toLowerCase()) && !published.has(n)) warn(`"${n}" is an account name; credit the name the source publishes, if it publishes one`);
+    }
+
+    // PV13, the shown texts of the record carry no process wording.
+    for (const [where, text] of shownTexts({ source: row.source, components: row.components, contributors: row.contributors })) {
+      const hits = processWordingProblems(text);
+      if (hits.length) fail('PV13', `process-text:${id}:${where.replace(/^\./, '')}`, `${where.replace(/^\./, '')} carries process wording (${hits.join(', ')}); say what is true for a reader`);
+    }
 
     // PV13, the generated line fits, and card text carries no credit.
     const line = creditLine(row, { catalog: kind });

@@ -20,6 +20,7 @@
 
 import {
   CURATED_BY,
+  LAB_COPYRIGHT_HOLDER,
   SHIPPED_USES,
   componentCreditLine,
   componentRecord,
@@ -128,6 +129,13 @@ function pinCell(u) {
 const shipped = (u) => usesOf(u).some((x) => SHIPPED_USES.includes(x));
 
 function licenceCell(u, row) {
+  // The lab's own work: its holder, and no licence claim for a repository
+  // with no licence file (licence_file false).
+  if (isLabOwned(u)) {
+    const parts = [u.licence_file === false ? 'no licence file in its repository' : mdText(u.licence) || 'licence not recorded', `held by ${LAB_COPYRIGHT_HOLDER}`];
+    if (u.upstream_notice === true) parts.push(`its NOTICE file ships with this item${has(row.notice_file) ? ` in ${mdText(row.notice_file)}` : ''}`);
+    return parts.join('; ');
+  }
   const parts = [mdText(u.licence) || 'licence not recorded'];
   if (has(u.copyright)) parts.push(`${mdText(u.copyright)}${has(u.copyright_note) ? ` (${mdText(u.copyright_note)})` : ''}`);
   else if (shipped(u) || has(u.copyright_note)) parts.push(`its licence names no copyright holder${has(u.copyright_note) ? ` (${mdText(u.copyright_note)})` : ''}`);

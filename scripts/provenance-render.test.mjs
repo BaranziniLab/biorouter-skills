@@ -15,6 +15,7 @@ import {
   creditLine,
   frontmatterCredits,
   labCopyrightLine,
+  processWordingProblems,
   stubCreditLines,
 } from './lib/catalog-rules.mjs';
 import {
@@ -33,6 +34,7 @@ import { GENERATED_MARK, PROVENANCE_FILE, mdCode, mdLink, mdText, oneLine, rende
 import { parseFrontmatter, readSkillText, retiredMetadataKey, setMetadata, splitFrontmatter } from './lib/frontmatter.mjs';
 import { STUB_LAST_BULLET, stubFiles } from './lib/stub.mjs';
 import { REPO_ROOT } from './lib/repo.mjs';
+import { readProvenanceBaseline } from './lib/provenance-baseline.mjs';
 import { renderNotice, renderSections } from './render-readme.mjs';
 
 const EM_DASH = String.fromCharCode(0x2014);
@@ -304,10 +306,109 @@ test('NOTICE: a format 2 row lists shipped sources with credit, and other credit
   });
   const n = renderNotice(catalogOf([row, inHouseRow('epsilon')]));
   assert.match(n, /\nalpha includes material from example-org\/example-skills \(skills\/example, commit 0123456789abcdef0123456789abcdef01234567\),\nCopyright \(c\) 2026 Example Org, licensed under MIT\.\nCredited to Example Org, with Ada Lovelace\./);
-  assert.match(n, /\nalpha includes material from p-org\/plugins \(plugins\/y, commit 0123456789abcdef0123456789abcdef01234567\), licensed under Apache-2\.0; its licence names no copyright holder \(the licence names no holder\)\.\nCredited to P Org\.\nIts NOTICE file is reproduced in the notice file of each item named here\./);
+  assert.match(n, /\nalpha includes material from p-org\/plugins \(plugins\/y, commit 0123456789abcdef0123456789abcdef01234567\), licensed under Apache-2\.0; its licence names no copyright holder\.\nCredited to P Org\.\nIts NOTICE file is reproduced in the notice file of each item named here\./);
   assert.match(n, /Other credited work\n===================\n\nalpha uses Runner \(r-org\/runner, version 1\.2\.3\) by R Org, licensed under MIT: the runner, fetched at run time \(launched, not redistributed\)\./);
   assert.match(n, /alpha, epsilon use Example KG 1\.0 \(https:\/\/doi\.org\/10\.0000\/example\), a dataset by A\. Author, B\. Author; terms: CC0-1\.0\. Cite: An example knowledge graph\. Example Journal 1, 1 \(2026\)\./);
   noLeaks(n, 'NOTICE format 2');
+});
+
+test('NOTICE: one block for a source several items record prints every credit, person and citation once', () => {
+  const shared = { repo: 's-org/s-skills', display: 's-skills', url: 'https://github.com/s-org/s-skills', path: 'skills/one', copyright: 'Copyright (c) 2026 S Org', credit: 'S Org' };
+  const rowOf = (id, extra) => adaptedRow(id, { source: { ...adaptedRow(id).source, upstreams: [upstream(), upstream({ ...shared, ...extra })] } });
+  const items = [
+    rowOf('alpha', { people: ['Ada Lovelace'], cite: 'S Org. S Skills.' }),
+    rowOf('omega', { path: 'skills/two', people: ['Grace Hopper', 'Ada Lovelace'], cite: 'Hopper G. S Skills, part two.' }),
+    rowOf('zeta', { path: 'skills/three', people: ['Alan Turing'] }),
+  ];
+  const block = renderNotice(catalogOf(items)).split('\n\n').find((b) => b.includes('s-org/s-skills')).trimEnd();
+  assert.match(block, /^alpha, omega, zeta include material from s-org\/s-skills /);
+  assert.match(block, /\nCredited to S Org, with Ada Lovelace, Grace Hopper, Alan Turing\.\nCite: S Org\. S Skills\.\nCite: Hopper G\. S Skills, part two\.$/);
+  // A person the credit already names is not repeated after it.
+  const guideline = adaptedRow('alpha', { source: { ...adaptedRow('alpha').source, upstreams: [upstream(), upstream({ ...shared, credit: 'von Elm E et al.', people: ['von Elm E', 'Altman DG', 'Elm'] })] } });
+  const g = renderNotice(catalogOf([guideline])).split('\n\n').find((b) => b.includes('s-org/s-skills'));
+  assert.match(g, /\nCredited to von Elm E et al\., with Altman DG\.\n?/);
+  noLeaks(g, 'NOTICE shared source');
+});
+
+test("the repository's generated NOTICE names every person every shipped source of an active row credits", () => {
+  const catalog = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'catalog.json'), 'utf8'));
+  const notice = renderNotice(catalog, { baseline: readProvenanceBaseline(REPO_ROOT) });
+  const blocks = notice.split('\n\n');
+  let checked = 0;
+  for (const row of catalog.items.filter((r) => r.status === 'active')) {
+    for (const u of row.source?.upstreams ?? []) {
+      if (!(u.use ?? []).some((x) => ['text', 'code', 'data', 'bundled', 'bundled-modified'].includes(x))) continue;
+      const ident = u.repo ?? u.url ?? u.display;
+      const mine = blocks.filter((b) => b.includes(` material from ${ident}`) && new RegExp(`(^|, )${row.id}( |,)`).test(b.split('\n')[0]));
+      assert.ok(mine.length, `${row.id}: no NOTICE block for ${ident}`);
+      for (const who of [u.credit, ...(u.people ?? [])].filter(Boolean)) {
+        assert.ok(mine.some((b) => b.includes(oneLine(who))), `${row.id}: ${ident} credits ${who}, which the NOTICE leaves out`);
+        checked += 1;
+      }
+    }
+  }
+  assert.ok(checked > 300, `only ${checked} credits checked`);
+});
+
+test("NOTICE: the lab's own work is under the top line, a repository with no licence file gets no licence claim, and a holder-less source gets the fixed sentence", () => {
+  const lab = (extra) => upstream({ repo: 'lab-org/lab-skills', display: 'lab-skills', url: 'https://github.com/lab-org/lab-skills', path: 'SKILL.md', copyright: null,
+    copyright_note: "the Baranzini Lab's own work; the repository has no licence file at 0123456", credit: 'Baranzini Lab (Wanjun Gu, UCSF)', owner: 'lab', ...extra });
+  const rowOf = (id, u) => adaptedRow(id, { source: { ...adaptedRow(id).source, upstreams: [upstream(), u] } });
+  const none = renderNotice(catalogOf([rowOf('alpha', lab({ licence_file: false }))]));
+  const block = none.split('\n\n').find((b) => b.includes('lab-org/lab-skills')).trimEnd();
+  assert.match(block, /^alpha includes material from lab-org\/lab-skills \(SKILL\.md, commit [0-9a-f]+\), the Baranzini Lab's own work, under the copyright line at the top of this file; that repository has no licence file\.\nCredited to Baranzini Lab \(Wanjun Gu, UCSF\)\.$/);
+  assert.ok(!block.includes('licensed under') && !block.includes('names no copyright holder') && !block.includes('0123456;'), block);
+  const withFile = renderNotice(catalogOf([rowOf('alpha', lab({ licence: 'Apache-2.0' }))])).split('\n\n').find((b) => b.includes('lab-org/lab-skills'));
+  assert.match(withFile, /, the Baranzini Lab's own work, under the copyright line at the top of this file, licensed under Apache-2\.0\.\n/);
+  const holderless = renderNotice(catalogOf([rowOf('alpha', upstream({ repo: 'h-org/h', display: 'h', url: 'https://github.com/h-org/h', path: 'x', copyright: null, copyright_note: 'owner Q4: a decision note', credit: 'h-org' }))]));
+  assert.match(holderless, /\nalpha includes material from h-org\/h \(x, commit [0-9a-f]+\), licensed under MIT; its licence names no copyright holder\.\nCredited to h-org\./);
+  assert.ok(!holderless.includes('a decision note'));
+  noLeaks(none, 'NOTICE lab source');
+  // PROVENANCE.md's licence cell: the lab's holder, and no licence claim without a licence file.
+  const md = renderProvenanceMd(rowOf('alpha', lab({ licence_file: false })), catalogOf([rowOf('alpha', lab({ licence_file: false }))]));
+  const labRow = md.split('\n').find((l) => l.includes('lab-org/lab-skills') && l.startsWith('|'));
+  assert.match(labRow, /\| no licence file in its repository; held by Baranzini Lab, University of California, San Francisco \|/);
+  assert.ok(!/\| MIT/.test(labRow) && !labRow.includes('names no copyright holder'), labRow);
+});
+
+test('NOTICE: the preamble names the items whose notice file waits for its next release', () => {
+  const items = [adaptedRow('alpha'), adaptedRow('omega'), inHouseRow('epsilon')];
+  const entry = (rule, subject) => ({ rule, subject, wp: 'PROV-S4', since: '2026-11-28', note: '' });
+  const head = (baseline) => renderNotice(catalogOf(items), { baseline }).split('\n\nThis file is generated')[0];
+  assert.ok(head(null).endsWith('upstream copyright line and licence text in its notice file.'));
+  assert.match(head({ baseline_violations: [entry('PV7', 'notice-copyright:omega:example-org/example-skills')] }),
+    /in its notice file\.\nThe notice file of omega gains the lines it still lacks at its next release\.$/);
+  const notice = items[0].notice_file;
+  const two = head({ baseline_violations: [entry('PV7', 'notice-apache:omega:x/y'), entry('PV13', `fixed-text:alpha:${notice}`), entry('PV9', 'folder:epsilon'), entry('PV13', 'fixed-text:epsilon:SKILL.md')] });
+  assert.match(two, /\nThe notice files of alpha and omega gain the lines they still lack at their next\nrelease\.$/);
+  for (const line of two.split('\n')) assert.ok(line.length <= 80, line);
+});
+
+test("the repository's generated NOTICE and every PROVENANCE.md carry no process wording", () => {
+  const catalog = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'catalog.json'), 'utf8'));
+  const baseline = readProvenanceBaseline(REPO_ROOT);
+  const texts = [['NOTICE', renderNotice(catalog, { baseline })]];
+  for (const row of catalog.items) if (row.source?.origin && catalog.format === 2) texts.push([`${row.id}/${PROVENANCE_FILE}`, renderProvenanceMd(row, catalog)]);
+  assert.ok(texts.length > 100);
+  for (const [label, text] of texts) {
+    for (const phrase of ['owner Q', 'sign-off', 'before any generated file', 'Proposed by the migration']) assert.ok(!text.includes(phrase), `${label} prints "${phrase}"`);
+    assert.deepEqual(processWordingProblems(text), [], `${label} prints process wording`);
+  }
+});
+
+test("NOTICE: an Apache source's NOTICE is said to ship only with the items whose notice file carries it", () => {
+  const apache = { repo: 'p-org/plugins', display: 'plugins', url: 'https://github.com/p-org/plugins', path: 'plugins/y', licence: 'Apache-2.0', copyright: 'Copyright 2026 P Org', credit: 'P Org', upstream_notice: true };
+  const rowOf = (id) => adaptedRow(id, { source: { ...adaptedRow(id).source, upstreams: [upstream(apache)] } });
+  const items = [rowOf('alpha'), rowOf('omega')];
+  const deferral = (id) => ({ rule: 'PV7', subject: `notice-apache:${id}:p-org/plugins`, wp: 'PROV-S4', since: '2026-11-28', note: '' });
+  const block = (baseline) => renderNotice(catalogOf(items), { baseline }).split('\n\n').find((b) => b.includes('p-org/plugins')).trimEnd();
+  assert.match(block(null), /\nIts NOTICE file is reproduced in the notice file of each item named here\.$/);
+  assert.match(block({ baseline_violations: [deferral('omega')] }), /\nIts NOTICE file is reproduced in the notice file of alpha\.\nIts NOTICE file ships in the notice file of omega from its next release\.$/);
+  const both = block({ baseline_violations: [deferral('alpha'), deferral('omega')] });
+  assert.match(both, /\nIts NOTICE file ships in the notice file of alpha, omega from their next release\.$/);
+  assert.ok(!both.includes('is reproduced'));
+  // Another rule's entry, or another source's, defers nothing.
+  assert.match(block({ baseline_violations: [{ ...deferral('omega'), rule: 'PV9' }, { ...deferral('omega'), subject: 'notice-apache:omega:other/repo' }] }), /reproduced in the notice file of each item named here\.$/);
 });
 
 // ---------------------------------------------------------------------------

@@ -6,9 +6,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  CURATED_BY, CREDIT_LINE_MAX, MADE_BY_LAB, containsCopyright, creditLine, fixedTextProblems,
+  CURATED_BY, CREDIT_LINE_MAX, MADE_BY_LAB, containsCopyright, copyrightHolder, creditLine, fixedTextProblems,
   folderFilesDeferred, folderProvenanceWanted, frontmatterCredits, labCopyrightLine, missingLicenceTexts,
-  noticeSources, originSentence, provenanceFormat, ruleProvenance, stubCreditLines, subjectId,
+  noticeSources, originSentence, processWordingProblems, provenanceFormat, ruleProvenance, stubCreditLines, subjectId,
 } from './lib/catalog-rules.mjs';
 import {
   adaptedRow, idea, ideasDerivedRow, inHouseRow, stubRow, thirdPartyBundleRow, thirdPartyExtensionRow,
@@ -107,18 +107,86 @@ test('PV11: components carry their own lineage', () => {
   assert.deepEqual(subjects(mutant((r) => (r('gamma').components.one.written_for_biorouter = []))), ['PV11:written:gamma/three']);
 });
 
+test('PV11: a merged component names its host component by folder or by name, or a whole skill it was rewritten into', () => {
+  // The host component addressed by its name, as D4 reads a component status (the catalog writes it so).
+  assert.deepEqual(subjects(mutant((r) => (r('gamma').components.three.status = 'superseded_by:gamma/gamma-one'))), []);
+  const noHost = mutant((r) => (r('gamma').components.three.status = 'superseded_by:gamma/gamma-nine'));
+  assert.deepEqual(subjects(noHost), ['PV11:written:gamma/three']);
+  assert.match(messages(noHost), /host gamma\/gamma-nine has no catalog entry/);
+  // The file sits in another component than the status names.
+  const otherFolder = mutant((r) => {
+    r('gamma').components.three.status = 'superseded_by:gamma/gamma-one';
+    r('gamma').components.three.content_moved_to = 'gamma/two/references/merged-notes.md';
+  });
+  assert.deepEqual(subjects(otherFolder), ['PV11:written:gamma/three']);
+  assert.match(messages(otherFolder), /is not inside gamma\/one/);
+  const noFile = mutant((r) => (r('gamma').components.three.content_moved_to = 'gamma/one'));
+  assert.deepEqual(subjects(noFile), ['PV11:written:gamma/three']);
+  assert.match(messages(noFile), /is not <bundle>\/<folder>\/<file>/);
+  // Rewritten into a whole skill row: content_moved_to is that row's id, and the row exists.
+  const intoSkill = (to, moved = to) => mutant((r) => {
+    r('gamma').components.three.status = `superseded_by:${to}`;
+    r('gamma').components.three.content_moved_to = moved;
+  });
+  assert.deepEqual(subjects(intoSkill('epsilon')), []);
+  const intoFile = intoSkill('epsilon', 'epsilon/references/merged-notes.md');
+  assert.deepEqual(subjects(intoFile), ['PV11:written:gamma/three']);
+  assert.match(messages(intoFile), /is not epsilon, the skill its status names/);
+  const missingRow = intoSkill('omega');
+  assert.deepEqual(subjects(missingRow), ['PV11:written:gamma/three']);
+  assert.match(messages(missingRow), /omega has no row in the catalog/);
+});
+
 test('PV12: every row names the people behind its Biorouter side', () => {
   assert.deepEqual(subjects(mutant((r) => (r('epsilon').contributors = []))), ['PV12:contributors:epsilon']);
   assert.deepEqual(subjects(mutant((r) => (r('epsilon').contributors = [{ name: 'Wanjun Gu' }]))), ['PV12:contributors:epsilon']);
   const account = mutant((r) => (r('alpha').source.upstreams[0].credit = 'example-org'));
   assert.deepEqual(subjects(account), []);
   assert.match(account.warnings.join('\n'), /"example-org" is an account name/);
+  // The holder the source's own licence line names is the name it publishes: no warning.
+  const holder = mutant((r) => Object.assign(r('alpha').source.upstreams[0], {
+    credit: 'example-org', copyright: 'Copyright (c) 2026 example-org (https://example.org)',
+  }));
+  assert.deepEqual(subjects(holder), []);
+  assert.doesNotMatch(holder.warnings.join('\n'), /is an account name/);
+});
+
+test('copyrightHolder reads the holder a licence line names', () => {
+  assert.equal(copyrightHolder('Copyright (c) 2026 Aperivue (https://aperivue.com)'), 'Aperivue');
+  assert.equal(copyrightHolder('Copyright (c) 2020-2026 Pawe\u0142 Kuna'), 'Pawe\u0142 Kuna');
+  assert.equal(copyrightHolder('Copyright 2026 Superior Byte Works, LLC'), 'Superior Byte Works, LLC');
+  assert.equal(copyrightHolder(null), null);
 });
 
 test('PV13: the credit line fits and card text carries no credit', () => {
   assert.deepEqual(subjects(mutant((r) => (r('alpha').source.upstreams[0].display = 'x'.repeat(100)))), ['PV13:line:alpha']);
   assert.deepEqual(subjects(mutant((r) => (r('alpha').summary = 'Adapted from example-skills by Example Org.'))), ['PV13:card-credit:alpha']);
   assert.deepEqual(subjects(mutant((r) => (r('alpha').summary = 'Made by the Baranzini lab.'))), ['PV13:card-credit:alpha']);
+});
+
+test('PV13: the texts a record shows carry no process wording', () => {
+  // The leaks fix round 1 found: an owner answer and a migration step in a copyright note, a proposal in changes.
+  const note = mutant((r) => {
+    r('alpha').source.upstreams[0].copyright = null;
+    r('alpha').source.upstreams[0].copyright_note = "owner Q9 (2026-11-27): the field stays null until the repository carries the line (repository text change, before any generated file prints it)";
+  });
+  assert.deepEqual(subjects(note), ['PV13:process-text:alpha:source.upstreams[0].copyright_note']);
+  assert.match(messages(note), /owner Q9, before any generated file/);
+  assert.deepEqual(subjects(mutant((r) => (r('alpha').source.changes = 'Proposed by the migration from the body diff: 10 of 12 lines kept.'))), ['PV13:process-text:alpha:source.changes']);
+  assert.deepEqual(subjects(mutant((r) => (r('alpha').source.changes = "Recorded as adapted by the owner's decision at the step 0 sign-off."))), ['PV13:process-text:alpha:source.changes']);
+  assert.deepEqual(subjects(mutant((r) => (r('gamma').components.one.written_for_biorouter[0].ideas_from[0].evidence = 'measured by the migration'))),
+    ['PV13:process-text:gamma:components.one.written_for_biorouter[0].ideas_from[0].evidence']);
+  // Paths and file names are not shown text, and ordinary words pass.
+  assert.deepEqual(subjects(mutant((r) => (r('alpha').source.upstreams[0].files = ['scripts/baseline_diff.py', 'references/ich-q2r2.md']))), []);
+  assert.deepEqual(processWordingProblems('the docstring audit script; Pass 6 was contributed by Kyle Niemeyer; read on 2026-11-27'), []);
+  assert.deepEqual(processWordingProblems("by owner Q4; the audit's table; audit 2.4; (evidence.json keeps its text); judges' read"), ['owner Q4', "the audit's", 'audit 2.4', 'evidence.json', "judges'"]);
+});
+
+test('PV6: a source with no licence file is the lab\'s own work or is not copied', () => {
+  assert.deepEqual(subjects(mutant((r) => (r('alpha').source.upstreams[0].licence_file = false))), ['PV6:source:alpha:example-org/example-skills']);
+  assert.match(messages(mutant((r) => (r('alpha').source.upstreams[0].licence_file = false))), /has no licence file at its pin, so it may not be copied or bundled/);
+  assert.deepEqual(subjects(mutant((r) => Object.assign(r('alpha').source.upstreams[0], { licence_file: false, owner: 'lab' }))).filter((x) => x.startsWith('PV6')), []);
+  assert.match(messages(mutant((r) => (r('alpha').source.upstreams[0].licence_file = 'none'))), /licence_file must be false/);
 });
 
 // ---------------------------------------------------------------------------
