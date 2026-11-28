@@ -1,9 +1,8 @@
-// Tests for the source shapes step 0's migration needed and the format 2
-// record lacked: publications as upstreams (a reporting guideline or a paper,
-// pinned by its citation), a source reached through another one (`via` as a
-// list), an extension that forwards calls to a program its publisher hosts
-// (`use: hosted`, the "Bridges to" line), and a source's preferred citation
-// (`cite`). Each rule has a mutant that changes one field of a valid record
+// Tests for source shapes the format 2 record takes: publications as
+// upstreams (a reporting guideline or a paper, pinned by its citation), a
+// source reached through another one (`via` as a list), an extension that
+// forwards calls to a program its publisher hosts (`use: hosted`, the
+// "Bridges to" line), and a source's preferred citation (`cite`). Each rule has a mutant that changes one field of a valid record
 // and expects exactly the failure that causes.
 
 import test from 'node:test';
@@ -45,7 +44,7 @@ const STROBE_URL = 'https://doi.org/10.1371/journal.pmed.0040296';
 const STROBE_CITE = 'von Elm E, Altman DG, Egger M, Pocock SJ, Gotzsche PC, Vandenbroucke JP. The Strengthening the Reporting of Observational Studies in Epidemiology (STROBE) statement. PLoS Med 2007;4(10):e296. doi:10.1371/journal.pmed.0040296';
 const PAPER_DOI = '10.1038/s41597-023-01960-3';
 
-/** A reporting guideline whose item text the skill reproduces (CC BY 4.0), as the migration writes it. */
+/** A reporting guideline whose item text the skill reproduces (CC BY 4.0). */
 function guideline(over = {}) {
   return upstream({
     kind: 'guideline',
@@ -545,7 +544,17 @@ test('PROVENANCE.md: a publication links its DOI and is pinned by its version or
   const row = publicationRow();
   const md = renderProvenanceMd(row, catalogOf([row]));
   const line = (name) => md.split('\n').find((l) => l.startsWith(`| [${name}]`));
-  assert.match(line('STROBE 2007'), /^\| \[STROBE 2007\]\(https:\/\/doi\.org\/10\.1371\/journal\.pmed\.0040296\) \| version STROBE 2007, taken 2026-11-22 \| CC-BY-4\.0; its licence names no copyright holder/);
+  // With no copyright line, the cell gives the record's own reason, never a claim the record does not make.
+  assert.match(line('STROBE 2007'), /^\| \[STROBE 2007\]\(https:\/\/doi\.org\/10\.1371\/journal\.pmed\.0040296\) \| version STROBE 2007, taken 2026-11-22 \| CC-BY-4\.0; no copyright line: the checklist file names no copyright line for the statement \|/);
+  assert.ok(!line('STROBE 2007').includes('its licence names no copyright holder'));
+  const bare = publicationRow();
+  bare.source.upstreams.find((u) => u.display === 'STROBE 2007').copyright_note = null;
+  const bareLine = renderProvenanceMd(bare, catalogOf([bare])).split('\n').find((l) => l.startsWith('| [STROBE 2007]'));
+  assert.match(bareLine, /\| CC-BY-4\.0; the publication names no copyright holder \|/);
+  const held = publicationRow();
+  Object.assign(held.source.upstreams.find((u) => u.display === 'STROBE 2007'), { copyright: '© 2007 von Elm et al.', copyright_note: 'as deposited in PubMed Central' });
+  const heldLine = renderProvenanceMd(held, catalogOf([held])).split('\n').find((l) => l.startsWith('| [STROBE 2007]'));
+  assert.match(heldLine, /\| CC-BY-4\.0; © 2007 von Elm et al\. \(as deposited in PubMed Central\) \|/);
   assert.match(line('PrimeKG paper'), new RegExp(`^\\| \\[PrimeKG paper\\]\\(https://doi\\.org/${PAPER_DOI.replace(/\./g, '\\.')}\\) \\| DOI \`${PAPER_DOI.replace(/\./g, '\\.')}\``));
 });
 
@@ -555,9 +564,14 @@ test('NOTICE gives the citation of each source it names, and README links a DOI'
   row.source.upstreams.push(upstream({ repo: 'o/dep', display: 'dep', path: null, use: ['dependency'], files: [], cite: 'Dep Authors. Dep. doi:10.5281/zenodo.2' }));
   const notice = renderNotice(catalogOf([row]));
   assert.ok(notice.includes('Credited to Example Org.\nCite: Example Org. Example Skills. doi:10.5281/zenodo.1'));
-  assert.ok(notice.includes(`alpha includes material from ${STROBE_URL} (version STROBE 2007)`));
+  // A publication is named by its title and its DOI or URL, and with no copyright line it claims no holder for its licence.
+  assert.ok(notice.includes(`alpha includes material from STROBE 2007 (${STROBE_URL}), licensed under CC-BY-4.0; the publication names no copyright holder.`));
   assert.ok(notice.includes(`Cite: ${STROBE_CITE}`));
-  assert.ok(notice.includes(`alpha includes material from https://doi.org/${PAPER_DOI}`), 'a DOI-only source is named by its DOI');
+  assert.ok(notice.includes(`alpha includes material from PrimeKG paper (DOI ${PAPER_DOI})`), 'a DOI-only source is named with its DOI');
+  // Its own copyright statement is kept verbatim, and a statement's full stop is not doubled.
+  const held = publicationRow();
+  Object.assign(held.source.upstreams.find((u) => u.display === 'STROBE 2007'), { copyright: '© 2007 von Elm et al.', doi: '10.1371/journal.pmed.0040296' });
+  assert.ok(renderNotice(catalogOf([held])).includes('alpha includes material from STROBE 2007 (DOI 10.1371/journal.pmed.0040296),\n© 2007 von Elm et al. Licensed under CC-BY-4.0.\n'));
   assert.match(notice, /alpha uses dep \(o\/dep\) by Example Org, licensed under MIT: [^\n]+\(dependency, not redistributed\)\. Cite: Dep Authors\. Dep\. doi:10\.5281\/zenodo\.2/);
   const readme = renderSections(catalogOf([row])).provenance;
   assert.ok(readme.includes(`[PrimeKG paper](https://doi.org/${PAPER_DOI}) by Payal Chandak et al. (CC-BY-4.0)`));

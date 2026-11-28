@@ -6,8 +6,7 @@
 // Data only: no folders. A test that needs folders writes them with
 // makeFixture() from fixture-repo.mjs and the generators.
 //
-// This module is part of the step 1 contract (designer-owned): lanes import
-// it and build further cases in their own test files from these builders.
+// The test files import these builders and build further cases from them.
 
 import { CURATED_BY } from './catalog-rules.mjs';
 

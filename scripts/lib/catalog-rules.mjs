@@ -489,7 +489,7 @@ export function applyBaseline(failures, baseline = [], done = []) {
 // ===========================================================================
 // Provenance and credits (format 2).
 //
-// The owner's rule of 2026-11-27: every skill and extension says what it
+// The rule: every skill and extension says what it
 // borrowed (text, code, data or ideas), from whom, under which licence, and
 // credits the people behind it; an item made entirely in-house says it was made
 // by the Baranzini Lab (Wanjun Gu, UCSF); every item says it is curated and
@@ -533,14 +533,23 @@ export function applyBaseline(failures, baseline = [], done = []) {
 // any status (a skill names a hosted service under data_and_services), and a
 // skill or bundle row's line never reads "Bridges to".
 //
-// Idea: { kind, name, url, cite, licence, credit, what, evidence, version_read, applies_to }
+// Idea: { kind, name, url, cite, licence, licence_note, credit, people, skills,
+//   what, evidence, version_read, applies_to }
+// `people` names the persons behind the work the idea comes from, as `people`
+// does on an upstream; `skills` names the source's own skills it draws on.
 // Data: { kind, name, url, terms, credit, cite, how }
-// Reference: { name, url, cite, credit }      Refused: { repo, url, path, reason }
+// Reference: { kind, name, url, cite, credit, what, licence, licence_note, note }
+// Refused: { repo, url, path, reason }
+// `licence_note` says where a licence was read or why it reads as it does;
+// `note` on a reference or a component is a fact for the reader. Both are
+// shown text.
 //
 // A bundle component may add { origin, licence, sources: [index into upstreams],
-// ideas_from, references, written_for_biorouter: [{ path, origin, licence,
-// what, ideas_from, references }], content_moved_to }. A history entry may add
-// { origin, licence }. Retired in format 2: row `notices`, row
+// ideas_from, references, note, written_for_biorouter: [{ path, origin, licence,
+// what, ideas_from, references }], content_moved_to }. A component's services
+// are the row's: they go under source.data_and_services, whose `how` names the
+// component (PV11 refuses data_and_services on a component). A history entry
+// may add { origin, licence }. Retired in format 2: row `notices`, row
 // `refused_sources` (moved under source) and `source.inspired_by` (now
 // `ideas_from`).
 //
@@ -550,14 +559,14 @@ export function applyBaseline(failures, baseline = [], done = []) {
 
 export const PROVENANCE_FORMAT = 2;
 
-/** The curator line. On every record, never on a card (owner answer Q1). */
+/** The curator line. On every record, never on a card. */
 export const CURATED_BY = 'Curated and organized by Wanjun Gu, Baranzini Lab, UCSF.';
-/** The card and app line of an in-house item, fixed whoever co-wrote it (owner answer Q2). */
+/** The card and app line of an in-house item, fixed whoever co-wrote it. */
 export const MADE_BY_LAB_STEM = 'Made by the Baranzini Lab (Wanjun Gu, UCSF)';
 export const MADE_BY_LAB = `${MADE_BY_LAB_STEM}.`;
 export const PACKAGED_BY_LAB = 'packaged for Biorouter by the Baranzini Lab';
 export const EXTENSION_BY_LAB = 'extension by the Baranzini Lab';
-/** The copyright holder for the lab's own work, everywhere (owner answer Q9). */
+/** The copyright holder for the lab's own work, everywhere. */
 export const LAB_COPYRIGHT_HOLDER = 'Baranzini Lab, University of California, San Francisco';
 export function labCopyrightLine(year) {
   return `Copyright ${year} ${LAB_COPYRIGHT_HOLDER}`;
@@ -566,11 +575,11 @@ export function labCopyrightLine(year) {
 export const CREDIT_LINE_MAX = 120;
 
 /**
- * Origin question 1 for a skill (owner answer Q10): third-party when at least
+ * The first origin question for a skill: third-party when at least
  * this share of its source-derived lines is unchanged and Biorouter-written
  * lines are under the second share, by a body diff against the source at its
- * pinned commit (front matter removed, whitespace collapsed). The migration
- * script applies it; a person confirms every row.
+ * pinned commit (front matter removed, whitespace collapsed). A person
+ * confirms every row the diff classifies.
  */
 export const THIRD_PARTY_MIN_KEPT_SHARE = 0.9;
 export const THIRD_PARTY_MAX_WRITTEN_SHARE = 0.1;
@@ -630,7 +639,7 @@ export function upstreamNoticeMarker(repoOrName) {
   return `NOTICE file of ${repoOrName}`;
 }
 
-/** The sentence a full record opens with, by origin (audit table 1.4). */
+/** The sentence a full record opens with, by origin. */
 export const ORIGIN_SENTENCES = Object.freeze({
   'in-house': 'Original work of the Baranzini Lab.',
   'ideas-derived': 'Written by the Baranzini Lab. The sources below shaped its design; none of their text or code is included.',
@@ -662,6 +671,8 @@ export const PROCESS_WORDING = Object.freeze([
   /\baudit (?:section )?\d+(?:\.\d+)*\b/i,
   /\bevidence\.json\b/,
   /\bjudges'/i,
+  /\bWP-\d+[a-z]?\b/,
+  /\btriage W\d+\b/i,
 ]);
 /** The process phrases `text` carries (PROCESS_WORDING), as found. */
 export function processWordingProblems(text) {
@@ -669,7 +680,7 @@ export function processWordingProblems(text) {
   return PROCESS_WORDING.map((re) => re.exec(t)?.[0]).filter(Boolean);
 }
 /** The keys whose text a provenance record shows (paths, URLs and ids are left out). */
-const SHOWN_TEXT_KEYS = new Set(['changes', 'what', 'copyright_note', 'evidence', 'terms', 'how', 'note', 'reason', 'role', 'version_read', 'cite', 'credit']);
+const SHOWN_TEXT_KEYS = new Set(['changes', 'what', 'copyright_note', 'licence_note', 'evidence', 'terms', 'how', 'note', 'reason', 'role', 'version_read', 'cite', 'credit']);
 /** [where, text] for every shown text under `value` (a row's source, components and contributors). */
 function shownTexts(value, where = '') {
   if (Array.isArray(value)) return value.flatMap((v, i) => shownTexts(v, `${where}[${i}]`));
@@ -865,7 +876,7 @@ const UNRECORDED = 'a source not yet recorded';
 
 /**
  * The one credit line a card, an app row, the README, PROVENANCE.md and the
- * front matter all print (audit table 1.4, plus "Bridges to X by Y; extension
+ * front matter all print (one form per origin, plus "Bridges to X by Y; extension
  * by the Baranzini Lab." for a third-party extension whose lead source is a
  * program its publisher hosts, `use` "hosted"). At most CREDIT_LINE_MAX characters
  * when the record allows it: the "and N more" tail goes first, and a line that
@@ -965,7 +976,7 @@ export function subjectId(subject) {
 /**
  * A row whose generated folder files (PROVENANCE.md, front matter, the stub's
  * credit, the archive's LICENSE) wait for its next release: its PV9 failure is
- * in the provenance baseline (owner answer Q5). `baseline` is the parsed
+ * in the provenance baseline. `baseline` is the parsed
  * provenance baseline file (or anything with `baseline_violations`).
  */
 export function folderFilesDeferred(baseline, id) {
@@ -1061,6 +1072,8 @@ function checkSource(u, ctx) {
   return p;
 }
 
+const isNameList = (x) => Array.isArray(x) && x.every((n) => str(n));
+
 function checkIdea(i) {
   const p = [];
   if (!str(i?.name)) p.push('no name');
@@ -1071,7 +1084,41 @@ function checkIdea(i) {
   if (!str(i?.what)) p.push('no what');
   if (!str(i?.evidence)) p.push('no evidence (how "no text" was established)');
   if (!APPLIES_TO.includes(i?.applies_to)) p.push(`applies_to "${i?.applies_to}" is not current or earlier`);
+  if (i?.people != null && !isNameList(i.people)) p.push('people must be a list of names');
+  if (i?.skills != null && !isNameList(i.skills)) p.push('skills must be a list of names');
+  if (i?.licence_note != null && !str(i.licence_note)) p.push('licence_note must be text, or left out');
   return p;
+}
+
+function checkReference(r) {
+  const p = [];
+  if (!str(r?.name) || (!str(r?.url) && !str(r?.cite))) p.push('needs a name and a url or cite');
+  if (r?.url != null && !URL_PATTERN.test(String(r.url))) p.push(`url "${r.url}" is not an http(s) URL`);
+  for (const k of ['kind', 'credit', 'what', 'licence', 'licence_note', 'note']) if (r?.[k] != null && !str(r[k])) p.push(`${k} must be text, or left out`);
+  return p;
+}
+
+/**
+ * The entries of an upstream's `path` field, as written: the field is one path
+ * or a comma-separated list of them ("skills/prd, skills/ralph, prompt.md"); a
+ * comma inside parentheses does not split it. scripts/upstream-drift.mjs reads
+ * the same list. A missing or empty field gives [].
+ */
+export function pathEntries(field) {
+  if (typeof field !== 'string') return [];
+  const entries = [];
+  let depth = 0;
+  let entry = '';
+  for (const ch of field) {
+    if (ch === '(') depth++;
+    else if (ch === ')') depth = Math.max(0, depth - 1);
+    if (ch === ',' && depth === 0) {
+      entries.push(entry);
+      entry = '';
+    } else entry += ch;
+  }
+  entries.push(entry);
+  return entries.map((e) => e.trim()).filter(Boolean);
 }
 
 /**
@@ -1100,7 +1147,6 @@ export function ruleProvenance(rows, { catalogFormat = 1, catalog = null } = {})
       continue;
     }
     if (!ORIGINS.includes(src.origin)) fail('PV1', `origin:${id}`, `source.origin "${src.origin}" is not ${ORIGINS.join(', ')}`);
-    if (catalogFormat !== PROVENANCE_FORMAT && src.format !== PROVENANCE_FORMAT) fail('PV1', `origin:${id}`, 'source.format must be 2');
     if (row.notices !== undefined) fail('PV1', `field:${id}:notices`, '`notices` is retired in format 2; the NOTICE is generated');
     if (row.refused_sources !== undefined) fail('PV1', `field:${id}:refused_sources`, '`refused_sources` moves under source in format 2');
     if (src.inspired_by !== undefined) fail('PV1', `field:${id}:inspired_by`, '`source.inspired_by` is retired in format 2; write ideas_from');
@@ -1146,7 +1192,9 @@ export function ruleProvenance(rows, { catalogFormat = 1, catalog = null } = {})
       const p = checkSource(u, { upstreams, extension });
       if (p.length) fail('PV6', `source:${id}:${sourceKey(u) || `#${i}`}`, `upstream ${sourceKey(u) || `#${i}`}: ${p.join('; ')}`);
       if (hasAny(u, SHIPPED_USES) && !isLabOwned(u) && u?.copyright == null && str(u?.copyright_note)) warn(`upstream ${sourceKey(u)} names no copyright holder (${u.copyright_note}); listed for review`);
-      if (str(u?.path) && /[\s(),;]/.test(u.path)) warn(`upstream ${sourceKey(u)} path "${u.path}" reads as prose; put it in what`);
+      // A path is one path or a comma-separated list of them; a note or a description in it is prose.
+      const prose = pathEntries(u?.path).filter((e) => /[\s();]/.test(e));
+      if (prose.length) warn(`upstream ${sourceKey(u)} path entr${prose.length === 1 ? 'y' : 'ies'} ${prose.map((e) => `"${e}"`).join(', ')} read${prose.length === 1 ? 's' : ''} as prose; keep the path in path and put the note in what`);
     });
     const ideaLists = [[`${id}`, list(src.ideas_from)]];
     for (const [folder, comp] of Object.entries(row.components ?? {})) {
@@ -1167,10 +1215,19 @@ export function ruleProvenance(rows, { catalogFormat = 1, catalog = null } = {})
       if (!str(d?.credit)) p.push('no credit');
       if (p.length) fail('PV6', `data:${id}:${d?.name ?? `#${n}`}`, `data or service ${d?.name ?? `#${n}`}: ${p.join('; ')}`);
       else if (!str(d?.terms)) warn(`data or service ${d.name} states no terms`);
+      else if (/^not read\b/i.test(d.terms)) warn(`data or service ${d.name}: its terms were not read (${d.terms}); listed for review`);
     });
-    list(src.references).forEach((r, n) => {
-      if (!str(r?.name) || (!str(r?.url) && !str(r?.cite))) fail('PV6', `reference:${id}:${r?.name ?? `#${n}`}`, `reference ${r?.name ?? `#${n}`} needs a name and a url or cite`);
-    });
+    const refLists = [[`${id}`, list(src.references)]];
+    for (const [folder, comp] of Object.entries(row.components ?? {})) {
+      refLists.push([`${id}/${folder}`, list(comp?.references)]);
+      for (const w of list(comp?.written_for_biorouter)) refLists.push([`${id}/${folder}`, list(w?.references)]);
+    }
+    for (const [where, refsHere] of refLists) {
+      refsHere.forEach((r, n) => {
+        const p = checkReference(r);
+        if (p.length) fail('PV6', `reference:${where}:${r?.name ?? `#${n}`}`, `reference ${r?.name ?? `#${n}`}: ${p.join('; ')}`);
+      });
+    }
     list(src.refused_sources).forEach((r, n) => {
       if ((!str(r?.repo) && !str(r?.url)) || !str(r?.reason)) fail('PV6', `refused:${id}:${r?.repo ?? r?.url ?? `#${n}`}`, `refused source ${r?.repo ?? r?.url ?? `#${n}`} needs a repo or url and a reason`);
     });
@@ -1211,6 +1268,8 @@ export function ruleProvenance(rows, { catalogFormat = 1, catalog = null } = {})
           else if (Array.isArray(comp.sources) && !comp.sources.some((n) => upstreams[n]?.repo === m[1])) p.push(`upstream_path names ${m[1]}, which its sources do not`);
         }
         if (comp?.sources !== undefined && (!Array.isArray(comp.sources) || comp.sources.some((n) => !Number.isInteger(n) || !upstreams[n]))) p.push('sources must be indexes into the row\'s upstreams');
+        if (comp?.data_and_services !== undefined) p.push('lists data_and_services; a component\'s services go under the row\'s source.data_and_services, with the component named in how');
+        if (comp?.note != null && !str(comp.note)) p.push('note must be text, or left out');
         if (p.length) fail('PV11', `component:${id}/${folder}`, `component ${folder}: ${p.join('; ')}`);
 
         // A merged component written for Biorouter is listed by its host. The
@@ -1258,7 +1317,7 @@ export function ruleProvenance(rows, { catalogFormat = 1, catalog = null } = {})
     }
     const named = [
       ...upstreams.flatMap((u) => [u?.credit, ...list(u?.people)]),
-      ...list(src.ideas_from).map((i) => i?.credit),
+      ...list(src.ideas_from).flatMap((i) => [i?.credit, ...list(i?.people)]),
       ...people.map((c) => c?.name),
     ].filter(str);
     // A credit that is the holder its source's own licence line names is the name that source publishes.

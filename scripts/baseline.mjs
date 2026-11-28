@@ -29,10 +29,11 @@ import {
   PROVENANCE_BASELINE_SINCE,
   PROVENANCE_WORK_PACKAGES,
   emptyProvenanceBaseline,
+  isFolderFileSubject,
   readProvenanceBaseline,
 } from './lib/provenance-baseline.mjs';
 import { REPO_ROOT } from './lib/repo.mjs';
-import { PROVENANCE_BASELINE_RULE, PROVENANCE_RULE, provenanceRowsDigest, runCheck } from './check-catalog.mjs';
+import { PROVENANCE_BASELINE_RULE, PROVENANCE_RULE, folderFileKinds, provenanceRowsDigest, runCheck } from './check-catalog.mjs';
 
 export const PROVENANCE_BASELINE_DESCRIPTION =
   'Baseline of the provenance rules PV1 to PV13 (see README, The catalog). Kept beside catalog.json because the catalog is mirrored into landing.';
@@ -50,8 +51,9 @@ export function acceptSince(today = new Date().toISOString().slice(0, 10)) {
  * Which current failures `accept --wp <wp>` records, and where. A provenance
  * work package takes PV failures only, a catalog work package everything
  * else. Returns { catalogEntries, provenanceEntries, refused }; a refused PV
- * failure (a row outside the frozen rows, or a PV9 or PV10 entry for a package
- * other than PROV-S4) means nothing should be written.
+ * failure (a row outside the frozen rows, a PV9 or PV10 entry for a package
+ * other than PROV-S4, or a row rule's failure for PROV-S4, which owns folder
+ * files only) means nothing should be written.
  */
 export function planAccept(errors, { wp, rule = null, except = [], since = acceptSince(), rows = [] } = {}) {
   if (!wp) throw new Error('accept needs --wp <work package>');
@@ -73,6 +75,7 @@ export function planAccept(errors, { wp, rule = null, except = [], since = accep
     if (!PROVENANCE_BASELINE_RULE.test(e.rule)) refused.push({ ...e, reason: `${e.rule} is not one of PV1 to PV13` });
     else if (!id || !known.has(id)) refused.push({ ...e, reason: `${id ?? 'its row'} was added after the provenance rules landed, so it must pass every provenance rule` });
     else if ((e.rule === 'PV9' || e.rule === 'PV10') && wp !== 'PROV-S4') refused.push({ ...e, reason: `${e.rule} entries belong to PROV-S4` });
+    else if (wp === 'PROV-S4' && !isFolderFileSubject(e.rule, e.subject)) refused.push({ ...e, reason: `PROV-S4 owns folder files only (${folderFileKinds()}); this is a row rule, so fix the row` });
     else provenanceEntries.push({ rule: e.rule, subject: e.subject, wp, since, note: e.message });
   }
   return { catalogEntries, provenanceEntries, refused };

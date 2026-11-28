@@ -145,8 +145,6 @@ test('PV9: an active format 2 folder holds its generated PROVENANCE.md', () => {
   assert.deepEqual(rules(run2((fx) => fx.remove('bio-skills/gamma/PROVENANCE.md'))), ['PV9:folder:gamma']);
 });
 
-// These two need lane generators' `provenance` option of stubFiles: until it
-// lands, the stub with credits and the plain stub are the same text.
 test('PV9: a format 2 stub carries its credit lines', () => {
   const res = run2((fx) => fx.write('beta/SKILL.md', stubFiles(item(fx, 'beta'), fx.catalog)['SKILL.md']));
   assert.deepEqual(rules(res), ['PV9:folder:beta', 'stub:stub:beta']);
@@ -309,6 +307,38 @@ test('PV9 and PV10 entries belong to PROV-S4, and every entry is a dated PV1 to 
   assert.deepEqual(bad(pvEntry('PV1', 'format:alpha', 'WP-17')), ['PV1:format:alpha', 'provenance-baseline:entry:PV1::format:alpha']);
   assert.deepEqual(bad(pvEntry('PV14', 'format:alpha')), ['PV1:format:alpha', 'provenance-baseline:entry:PV14::format:alpha']);
   assert.deepEqual(bad(pvEntry('licence', 'licence-SKILL.md:alpha')), ['PV1:format:alpha', 'provenance-baseline:entry:licence::licence-SKILL.md:alpha']);
+});
+
+test('PROV-S4 owns folder files only: a row rule failure under it is refused, and the failure shows', () => {
+  // The mutant: a frozen row loses its contributors, and the PV12 failure is baselined as if it waited for a release.
+  const hidden = run2((fx) => {
+    item(fx, 'alpha').contributors = [];
+    fx.regenerate();
+    return { provenance: { ...fx.provenance, baseline_violations: [pvEntry('PV12', 'contributors:alpha', 'PROV-S4')] } };
+  });
+  assert.deepEqual(rules(hidden), ['PV12:contributors:alpha', 'provenance-baseline:entry:PV12::contributors:alpha']);
+  assert.match(hidden.errors.find((e) => e.rule === 'provenance-baseline').message, /PROV-S4 owns folder files only/);
+  // Every row rule subject is refused under PROV-S4; every folder file subject is taken.
+  const fx = makeFixture2();
+  const guard = (entry) => provenanceBaselineProblems({ ...fx.provenance, baseline_violations: [entry] }, fx.catalog, fx.frozenRows).problems.map((p) => p.subject);
+  for (const [rule, subject] of [['PV1', 'origin:alpha'], ['PV4', 'adapted:alpha'], ['PV6', 'source:alpha:example-org/example-skills'], ['PV8', 'licence:alpha'],
+    ['PV11', 'component:gamma/one'], ['PV12', 'contributors:alpha'], ['PV13', 'process-text:alpha:source.changes'], ['PV13', 'line:alpha']]) {
+    assert.deepEqual(guard(pvEntry(rule, subject, 'PROV-S4')), [`entry:${rule}::${subject}`], `${rule} ${subject} is a row rule`);
+  }
+  for (const [rule, subject] of [['PV7', 'notice-copyright:alpha:example-org/example-skills'], ['PV7', 'notice-apache:alpha:p-org/plugins'], ['PV7', 'notice:alpha'],
+    ['PV8', 'frontmatter-licence:alpha:SKILL.md'], ['PV9', 'folder:alpha'], ['PV10', 'frontmatter:alpha'], ['PV11', 'written-file:gamma/one:x.md'], ['PV13', 'fixed-text:alpha:SKILL.md']]) {
+    assert.deepEqual(guard(pvEntry(rule, subject, 'PROV-S4')), [], `${rule} ${subject} is a folder file`);
+  }
+  // accept refuses the same.
+  const errors = [
+    { rule: 'PV12', subject: 'contributors:alpha', message: 'm1' },
+    { rule: 'PV7', subject: 'notice-copyright:alpha:x/y', message: 'm2' },
+    { rule: 'PV13', subject: 'fixed-text:alpha:SKILL.md', message: 'm3' },
+  ];
+  const plan = planAccept(errors, { wp: 'PROV-S4', since: '2026-11-28', rows: ['alpha'] });
+  assert.deepEqual(plan.refused.map((r) => `${r.rule}:${r.subject}`), ['PV12:contributors:alpha']);
+  assert.match(plan.refused[0].reason, /PROV-S4 owns folder files only/);
+  assert.deepEqual(plan.provenanceEntries.map((e) => `${e.rule}:${e.subject}`), ['PV7:notice-copyright:alpha:x/y', 'PV13:fixed-text:alpha:SKILL.md']);
 });
 
 test("the repository's provenance baseline holds the frozen rows and passes its guard", () => {

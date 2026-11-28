@@ -56,12 +56,19 @@ import {
   upstreamNoticeMarker,
 } from './lib/catalog-rules.mjs';
 import {
+  FOLDER_FILE_SUBJECTS,
   PROVENANCE_BASELINE_ROWS,
   PROVENANCE_BASELINE_ROWS_SHA256,
   PROVENANCE_BASELINE_SINCE,
   PROVENANCE_WORK_PACKAGES,
+  isFolderFileSubject,
   readProvenanceBaseline,
 } from './lib/provenance-baseline.mjs';
+
+/** "PV7 notice, notice-apache, ...; PV8 frontmatter-licence; ...": what PROV-S4 may own, for a message. */
+export function folderFileKinds() {
+  return Object.entries(FOLDER_FILE_SUBJECTS).map(([rule, kinds]) => `${rule} ${kinds.join(', ')}`).join('; ');
+}
 import { PROVENANCE_FILE, renderProvenanceMd } from './lib/provenance-md.mjs';
 import { REPO_ROOT, bundleComponents, discoverFolders, readSkillFile, skillFilesIn, listTree } from './lib/repo.mjs';
 import { stubFiles } from './lib/stub.mjs';
@@ -502,7 +509,8 @@ export function provenanceRowsDigest(ids) {
  * The guard of the provenance baseline. Only the rows that existed when the
  * provenance rules landed may be baselined, every entry is a dated PV1 to PV13
  * entry owned by PROV-S1 or PROV-S4 (PV9 and PV10, the folder files waiting for
- * a release, by PROV-S4 alone), and catalog.json, which landing mirrors, holds
+ * a release, by PROV-S4 alone, and PROV-S4 owns nothing but folder files:
+ * FOLDER_FILE_SUBJECTS), and catalog.json, which landing mirrors, holds
  * no provenance entry. Returns { problems, entries }: the guard's failures and
  * the entries that may be applied. A refused entry is never applied, so the
  * failure it named shows too.
@@ -527,6 +535,7 @@ export function provenanceBaselineProblems(provenance, catalog, frozenRows = { c
     if (!PROVENANCE_BASELINE_RULE.test(String(b?.rule ?? ''))) p.push(`rule "${b?.rule}" is not one of PV1 to PV13`);
     if (!Object.hasOwn(PROVENANCE_WORK_PACKAGES, String(b?.wp ?? ''))) p.push(`work package "${b?.wp}" is not ${Object.keys(PROVENANCE_WORK_PACKAGES).join(' or ')}`);
     else if ((b.rule === 'PV9' || b.rule === 'PV10') && b.wp !== 'PROV-S4') p.push(`${b.rule} entries belong to PROV-S4 (folder files that wait for the item's next release)`);
+    else if (b.wp === 'PROV-S4' && !isFolderFileSubject(b.rule, b.subject)) p.push(`PROV-S4 owns folder files only (${folderFileKinds()}); ${b.rule} ${String(b.subject ?? '').split(':')[0]} is a row rule, so fix the row`);
     if (!DATE.test(String(b?.since ?? '')) || b.since < PROVENANCE_BASELINE_SINCE) p.push(`since "${b?.since}" is not a date on or after ${PROVENANCE_BASELINE_SINCE}`);
     const rowId = subjectId(b?.subject);
     if (!rowId || !known.has(rowId)) p.push(`${rowId ? `row ${rowId}` : 'its subject names no row and'} is not among the rows frozen when the provenance rules landed`);

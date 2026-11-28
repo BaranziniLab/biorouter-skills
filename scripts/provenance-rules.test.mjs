@@ -8,12 +8,13 @@ import assert from 'node:assert/strict';
 import {
   CURATED_BY, CREDIT_LINE_MAX, MADE_BY_LAB, containsCopyright, copyrightHolder, creditLine, fixedTextProblems,
   folderFilesDeferred, folderProvenanceWanted, frontmatterCredits, labCopyrightLine, missingLicenceTexts,
-  noticeSources, originSentence, processWordingProblems, provenanceFormat, ruleProvenance, stubCreditLines, subjectId,
+  noticeSources, originSentence, pathEntries, processWordingProblems, provenanceFormat, ruleProvenance, stubCreditLines, subjectId,
 } from './lib/catalog-rules.mjs';
 import {
   adaptedRow, idea, ideasDerivedRow, inHouseRow, stubRow, thirdPartyBundleRow, thirdPartyExtensionRow,
   upstream, validSkillRows,
 } from './lib/fixture-provenance.mjs';
+import { upstreamPaths } from './upstream-drift.mjs';
 
 const subjects = (res) => res.failures.map((f) => `${f.rule}:${f.subject}`).sort();
 const byId = (rows, id) => rows.find((r) => r.id === id);
@@ -165,7 +166,7 @@ test('PV13: the credit line fits and card text carries no credit', () => {
 });
 
 test('PV13: the texts a record shows carry no process wording', () => {
-  // The leaks fix round 1 found: an owner answer and a migration step in a copyright note, a proposal in changes.
+  // Process wording in a copyright note, and a proposal in changes.
   const note = mutant((r) => {
     r('alpha').source.upstreams[0].copyright = null;
     r('alpha').source.upstreams[0].copyright_note = "owner Q9 (2026-11-27): the field stays null until the repository carries the line (repository text change, before any generated file prints it)";
@@ -180,6 +181,62 @@ test('PV13: the texts a record shows carry no process wording', () => {
   assert.deepEqual(subjects(mutant((r) => (r('alpha').source.upstreams[0].files = ['scripts/baseline_diff.py', 'references/ich-q2r2.md']))), []);
   assert.deepEqual(processWordingProblems('the docstring audit script; Pass 6 was contributed by Kyle Niemeyer; read on 2026-11-27'), []);
   assert.deepEqual(processWordingProblems("by owner Q4; the audit's table; audit 2.4; (evidence.json keeps its text); judges' read"), ['owner Q4', "the audit's", 'audit 2.4', 'evidence.json', "judges'"]);
+});
+
+test('PV13: work package and triage labels in shown text, licence notes included, are process wording', () => {
+  assert.deepEqual(processWordingProblems('a template shell; 1.1.0 was rewritten (WP-16)'), ['WP-16']);
+  assert.deepEqual(processWordingProblems('copied as a reference (text exported by WP-15b)'), ['WP-15b']);
+  assert.deepEqual(processWordingProblems('the repository LICENSE.md is MIT (triage W18)'), ['triage W18']);
+  assert.deepEqual(processWordingProblems('WPA-2 and the W18 bus; version 1.1.0 is a rewrite'), []);
+  assert.deepEqual(subjects(mutant((r) => (r('gamma').components.three.ideas_from[0].licence_note = 'the skill\'s own field (triage W18)'))),
+    ['PV13:process-text:gamma:components.three.ideas_from[0].licence_note']);
+  assert.deepEqual(subjects(mutant((r) => (r('alpha').source.references = [{ name: 'A Paper', cite: 'A Paper. 2020.', licence: 'not stated', licence_note: 'set by WP-12' }]))),
+    ['PV13:process-text:alpha:source.references[0].licence_note']);
+});
+
+test('PV6: an idea names its people as a list, and they count for the account-name warning', () => {
+  const ok = mutant((r) => (r('delta').source.ideas_from[0].people = ['Ada Lovelace', 'Alan Turing']));
+  assert.deepEqual(subjects(ok), []);
+  assert.deepEqual(ok.warnings, []);
+  assert.deepEqual(subjects(mutant((r) => (r('delta').source.ideas_from[0].people = 'Ada Lovelace'))), ['PV6:idea:delta:Example Research Skills']);
+  assert.deepEqual(subjects(mutant((r) => (r('delta').source.ideas_from[0].people = ['Ada Lovelace', '']))), ['PV6:idea:delta:Example Research Skills']);
+  assert.deepEqual(subjects(mutant((r) => (r('delta').source.ideas_from[0].skills = 'one'))), ['PV6:idea:delta:Example Research Skills']);
+  // A person named by the account that hosts the idea's repository is an account name, as for an upstream's people.
+  const account = mutant((r) => (r('delta').source.ideas_from[0].people = ['example-lab']));
+  assert.deepEqual(subjects(account), []);
+  assert.match(account.warnings.join('\n'), /"example-lab" is an account name/);
+});
+
+test("PV6: a component's references are complete, and each optional reference field is text", () => {
+  assert.deepEqual(subjects(mutant((r) => (r('gamma').components.two.references = [{ name: 'EconML', credit: 'PyWhy', cite: null }]))), ['PV6:reference:gamma/two:EconML']);
+  assert.deepEqual(subjects(mutant((r) => (r('gamma').components.two.references = [{ name: 'EconML', url: 'https://github.com/py-why/EconML', credit: 'PyWhy' }]))), []);
+  assert.deepEqual(subjects(mutant((r) => (r('gamma').components.one.written_for_biorouter[0].references = [{ name: 'X', url: 'ftp://x' }]))), ['PV6:reference:gamma/one:X']);
+  assert.deepEqual(subjects(mutant((r) => (r('alpha').source.references = [{ name: 'A Paper', cite: 'A Paper. 2020.', what: '' }]))), ['PV6:reference:alpha:A Paper']);
+  assert.deepEqual(subjects(mutant((r) => (r('alpha').source.references = [{ kind: 'paper', name: 'A Paper', cite: 'A Paper. 2020.', what: 'the method', licence: 'CC-BY-4.0', licence_note: 'as the journal states it', note: 'read on 2026-11-28' }]))), []);
+});
+
+test("PV11: a component lists no services of its own; they are the row's, and a component note is text", () => {
+  const service = { kind: 'service', name: 'PubMed', url: 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils', terms: 'public domain', credit: 'NCBI', how: 'called at run time' };
+  assert.deepEqual(subjects(mutant((r) => (r('gamma').components.two.data_and_services = [service]))), ['PV11:component:gamma/two']);
+  assert.deepEqual(subjects(mutant((r) => (r('gamma').source.data_and_services = [{ ...service, how: 'called at run time by the two component' }]))), []);
+  // Terms the record says were not read are listed for review.
+  const unread = mutant((r) => (r('gamma').source.data_and_services = [{ ...service, terms: 'Not read: the page renders only in a browser' }]));
+  assert.deepEqual(subjects(unread), []);
+  assert.match(unread.warnings.join('\n'), /data or service PubMed: its terms were not read/);
+  assert.deepEqual(subjects(mutant((r) => (r('gamma').components.two.note = ''))), ['PV11:component:gamma/two']);
+  assert.deepEqual(subjects(mutant((r) => (r('gamma').components.two.note = 'follows a section convention; no text shared'))), []);
+});
+
+test('PV6: a path field may list several paths; only an entry that holds a note or a description warns', () => {
+  const warns = (p) => mutant((r) => (r('alpha').source.upstreams[0].path = p)).warnings.filter((w) => w.includes('reads as prose') || w.includes('read as prose'));
+  assert.deepEqual(warns('skills/prd, skills/ralph, prompt.md'), []);
+  assert.deepEqual(warns('skills/example'), []);
+  assert.match(warns('skills/scientific-slides (references, assets, three scripts)').join('\n'), /path entry "skills\/scientific-slides \(references, assets, three scripts\)" reads as prose/);
+  assert.match(warns('skills/a, mermaid.min.js as vendored in plugins/x').join('\n'), /path entry "mermaid\.min\.js as vendored in plugins\/x" reads as prose/);
+  assert.deepEqual(pathEntries('a, b (c, d), e'), ['a', 'b (c, d)', 'e']);
+  assert.deepEqual(pathEntries(null), []);
+  // upstream-drift reads the same list, and drops each entry's note.
+  assert.deepEqual(upstreamPaths('plugins/code-review (v1.0.1, c905cd8 command), plugins/commit-commands/'), ['plugins/code-review', 'plugins/commit-commands']);
 });
 
 test('PV6: a source with no licence file is the lab\'s own work or is not copied', () => {

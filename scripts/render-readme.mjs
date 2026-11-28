@@ -28,6 +28,7 @@ import {
   frontmatterCredits,
   groupSources,
   isLabOwned,
+  isPublication,
   labCopyrightLine,
   licenceTokens,
   provenanceFormat,
@@ -111,11 +112,18 @@ function sourceLabel(row) {
 
 const USE_NOTES = { dependency: 'a dependency', launched: 'run at run time', hosted: "run on its publisher's servers" };
 
-/** One source group of a format 2 row: "[name](url) by credit (licences)", noting a source that is not redistributed. */
+/** The README's words for a source whose repository has no licence file at its pin, as PROVENANCE.md's licence cell writes them. */
+const NO_LICENCE_FILE = 'no licence file in its repository';
+
+/**
+ * One source group of a format 2 row: "[name](url) by credit (licences)", noting a source that is not redistributed.
+ * A group whose entries all record licence_file false makes no licence claim (only the lab's own work may be such a source).
+ */
 function groupLabel(g) {
   const u = g.entries.find((e) => e.url) ?? g.entries[0];
   const url = sourceUrl(u) ?? (u.repo ? `https://github.com/${u.repo}` : null);
-  let s = `${mdLink(g.name, url)} by ${mdText(g.credit) || 'an uncredited author'} (${g.licences.join(', ') || 'licence not recorded'})`;
+  const lic = g.entries.every((e) => e.licence_file === false) ? NO_LICENCE_FILE : g.licences.join(', ') || 'licence not recorded';
+  let s = `${mdLink(g.name, url)} by ${mdText(g.credit) || 'an uncredited author'} (${lic})`;
   if (!g.entries.some(shipped)) {
     const notes = uniq(g.entries.flatMap(usesOf).map((x) => USE_NOTES[x] ?? x));
     if (notes.length) s += `, ${notes.join(' and ')}`;
@@ -159,7 +167,12 @@ function provenanceTable(rows, catalogFormat) {
   return groupedTable(['Skills', 'Origin', 'Sources and credit', 'Licence'], rows, (r) => [...provenanceCells(r, catalogFormat), r.licence ?? '']).lines.join('\n');
 }
 
-const ideaRef = (i) => `${mdLink(i.name, i.url)}${i.credit ? ` (${mdText(i.credit)})` : ''}`;
+/** "[name](url) (credit, with people)": an idea or a reference, and the people it names. */
+const ideaRef = (i) => {
+  const people = list(i.people).map(mdText).filter(Boolean);
+  const who = [mdText(i.credit), people.length ? `with ${people.join(', ')}` : ''].filter(Boolean).join(', ');
+  return `${mdLink(i.name, i.url)}${who ? ` (${who})` : ''}`;
+};
 
 /** Ideas, references and earlier versions of one active row, or null when it records none. */
 function ideasCells(row, catalogFormat) {
@@ -208,11 +221,21 @@ function whereText(paths) {
 
 function pinText(u) {
   if (u.commit) return `commit ${u.commit}`;
+  // A publication is named by its title in the block, so its DOI, or its URL, says which one.
+  if (isPublication(u)) return u.doi ? `DOI ${u.doi}` : u.url ?? (u.version ? `version ${u.version}` : '');
   if (u.version) return `version ${u.version}`;
   return '';
 }
 
 const HOLDERLESS = 'its licence names no copyright holder';
+/** A guideline or paper with no copyright line: the record keeps the article's own statement whenever the article has one. */
+const HOLDERLESS_PUBLICATION = 'the publication names no copyright holder';
+
+/** "<copyright line>, licensed under X." without doubling the line's own full stop. */
+function copyrightAndLicence(copyright, licence) {
+  const line = String(copyright).trim();
+  return /\.$/.test(line) ? `${line} Licensed under ${licence}.` : `${line}, licensed under ${licence}.`;
+}
 /** The lab's own work, which the copyright line at the top of the NOTICE covers. */
 const LAB_WORK = "the Baranzini Lab's own work, under the copyright line at the top of this file";
 
@@ -297,7 +320,8 @@ export function renderNotice(catalog, { baseline = null } = {}) {
       continue;
     }
     for (const u of ups) {
-      if (shipped(u)) add(blocks, JSON.stringify([2, sourceKey(u), u.commit ?? null, u.version ?? null, u.licence ?? null, u.licence_file ?? null, u.copyright ?? null, isLabOwned(u)]), () => ({ format: 2, u }), r.id, u.path, u);
+      // A commit pins the source on its own; the version is the key only for a source with no commit (it is what the block prints).
+      if (shipped(u)) add(blocks, JSON.stringify([2, sourceKey(u), u.commit ?? null, u.commit ? null : u.version ?? null, u.licence ?? null, u.licence_file ?? null, u.copyright ?? null, isLabOwned(u)]), () => ({ format: 2, u }), r.id, u.path, u);
       else add(others, JSON.stringify(['source', sourceKey(u), u.version ?? null, u.licence ?? null]), () => ({ kind: 'source', u }), r.id, null);
     }
     for (const d of list(r.source?.data_and_services)) add(others, JSON.stringify(['data', d.name, d.url ?? null]), () => ({ kind: 'data', d }), r.id, null);
@@ -308,15 +332,15 @@ export function renderNotice(catalog, { baseline = null } = {}) {
     const { u } = g;
     const subject = subjectOf(g.ids, 'includes', 'include');
     const where = whereText(g.paths);
-    const ident = g.format === 1 ? u.repo : u.repo ?? sourceUrl(u) ?? sourceName(u);
+    const ident = g.format === 1 ? u.repo : u.repo ?? (isPublication(u) ? sourceName(u) : sourceUrl(u) ?? sourceName(u));
     const said = [where, pinText(u)].filter(Boolean).join(', ');
     let text = `${subject} material from ${ident}${said ? ` (${said})` : ''}`;
     // The lab's own work is under the line at the top; a repository with no
     // licence file gets no licence claim. A holder-less source gets the fixed
     // sentence only: its copyright_note is for the item's PROVENANCE.md.
     if (g.format === 2 && isLabOwned(u)) text += u.licence_file === false ? `, ${LAB_WORK}; that repository has no licence file.` : `, ${LAB_WORK}, licensed under ${u.licence}.`;
-    else if (u.copyright) text += `,\n${u.copyright}, licensed under ${u.licence}.`;
-    else text += `, licensed under ${u.licence}; ${HOLDERLESS}.`;
+    else if (u.copyright) text += `,\n${copyrightAndLicence(u.copyright, u.licence)}`;
+    else text += `, licensed under ${u.licence}; ${g.format === 2 && isPublication(u) ? HOLDERLESS_PUBLICATION : HOLDERLESS}.`;
     if (g.format === 1 && g.changes) text += ` Changes: ${g.changes}`;
     if (g.format === 2) {
       // One block may hold the same source as several items record it: every item's credit, people and

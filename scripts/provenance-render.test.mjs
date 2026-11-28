@@ -109,7 +109,7 @@ test('PROVENANCE.md: table cells are escaped, a holder-less source is flagged, v
   const md = renderProvenanceMd(row, catalogOf([row]));
   assert.ok(md.includes('Pipe \\| Org; people: Ada Lovelace, Alan Turing'), 'a pipe in a cell is escaped');
   assert.ok(md.includes('text: two lines'), 'a newline in a cell is a space');
-  assert.ok(md.includes('Apache-2.0; its licence names no copyright holder (the licence names no holder); its NOTICE file ships with this item'));
+  assert.ok(md.includes('Apache-2.0; no copyright line: the licence names no holder; its NOTICE file ships with this item'));
   // example-skills draws on origin-skills (its via), so origin-skills was reached through example-skills.
   assert.ok(md.includes('| origin-skills: `origin-org/origin-skills` | version 2.1.0, taken 2026-11-25 | MIT | Origin Org | dependency: installed at run time |  | `example-org/example-skills` |'), 'a url-less source is not linked, an empty list is an empty cell, and Via names the source it was reached through');
   assert.ok(md.split('\n').find((l) => l.startsWith('| [example-skills]')).endsWith('| `SKILL.md` |  |'), 'the source that draws on another was not reached through it');
@@ -263,6 +263,43 @@ test('README: provenance blocks for a mixed catalog, format 2 by origin and sour
   for (const [name, body] of Object.entries(s)) noLeaks(body, `README block ${name}`);
 });
 
+test("README: a lab-owned source with no licence file makes no licence claim, as NOTICE and PROVENANCE.md say", () => {
+  const lab = upstream({ repo: 'lab-org/lab-skills', display: 'lab-skills', url: 'https://github.com/lab-org/lab-skills', path: 'SKILL.md', copyright: null,
+    copyright_note: "the Baranzini Lab's own work", credit: 'Baranzini Lab (Wanjun Gu, UCSF)', owner: 'lab', licence_file: false });
+  const row = adaptedRow('alpha', { source: { ...adaptedRow('alpha').source, upstreams: [upstream(), lab] } });
+  const p = renderSections(catalogOf([row])).provenance;
+  assert.ok(p.includes('[lab-skills](https://github.com/lab-org/lab-skills) by Baranzini Lab (Wanjun Gu, UCSF) (no licence file in its repository)'), p);
+  assert.ok(p.includes('[example-skills](https://github.com/example-org/example-skills) by Example Org (MIT)'), 'a source with a licence file keeps its licence');
+  assert.ok(!/lab-skills\][^|]*\(MIT\)/.test(p), 'no licence is claimed for the lab source');
+  // The same row with a licence file names its licence.
+  const withFile = adaptedRow('alpha', { source: { ...adaptedRow('alpha').source, upstreams: [upstream(), { ...lab, licence_file: undefined }] } });
+  assert.ok(renderSections(catalogOf([withFile])).provenance.includes('by Baranzini Lab (Wanjun Gu, UCSF) (MIT)'));
+});
+
+test('README and PROVENANCE.md: the people an idea names are credited with it', () => {
+  const row = ideasDerivedRow('delta');
+  row.source.ideas_from[0].people = ['Ada Lovelace', 'Alan Turing'];
+  row.source.ideas_from[0].licence_note = 'as the repository states it';
+  const ideas = renderSections(catalogOf([row]))['provenance-ideas'];
+  assert.ok(ideas.includes('[Example Research Skills](https://github.com/example-lab/example-research-skills) (Example Lab, with Ada Lovelace, Alan Turing)'), ideas);
+  const md = renderProvenanceMd(row, catalogOf([row]));
+  assert.match(md, /\[Example Research Skills\]\(https:\/\/github\.com\/example-lab\/example-research-skills\), a repository by Example Lab, with Ada Lovelace, Alan Turing \(CC-BY-SA-4\.0; as the repository states it\): the stage list/);
+  noLeaks(ideas, 'README ideas');
+  noLeaks(md, 'ideas with people');
+});
+
+test('PROVENANCE.md: a reference shows what it gave, its licence and note, and a component its note', () => {
+  const row = thirdPartyBundleRow('gamma');
+  row.components.two.note = 'its section headings follow bioSkills; no text is shared';
+  row.components.two.references = [{ kind: 'software', name: 'ESM', url: 'https://github.com/facebookresearch/esm', credit: 'Meta FAIR', note: 'which esm package is meant is not pinned' }];
+  row.source.references = [{ name: 'A Course', url: 'https://example.org/course', credit: 'A University', what: 'the method the skill teaches', licence: 'CC BY (version not stated)', licence_note: 'as the course states it', cite: 'A Course. A University.' }];
+  const md = renderProvenanceMd(row, catalogOf([row]));
+  assert.match(md, /- \[A Course\]\(https:\/\/example\.org\/course\), by A University \(CC BY \(version not stated\); as the course states it\): the method the skill teaches\. Cite: A Course\. A University\./);
+  assert.match(md, /Status: active\. Note: its section headings follow bioSkills; no text is shared\./);
+  assert.match(md, /References: \[ESM\]\(https:\/\/github\.com\/facebookresearch\/esm\), by Meta FAIR\. Note: which esm package is meant is not pinned\./);
+  noLeaks(md, 'reference fields');
+});
+
 test('README: the ideas block says so when no row has anything to show', () => {
   assert.equal(renderSections(catalogOf([formatOneRow('lab-one', { origin: 'lab' })]))['provenance-ideas'], 'No item records ideas, references or earlier versions yet.');
 });
@@ -338,7 +375,8 @@ test("the repository's generated NOTICE names every person every shipped source 
   for (const row of catalog.items.filter((r) => r.status === 'active')) {
     for (const u of row.source?.upstreams ?? []) {
       if (!(u.use ?? []).some((x) => ['text', 'code', 'data', 'bundled', 'bundled-modified'].includes(x))) continue;
-      const ident = u.repo ?? u.url ?? u.display;
+      // A repository is named by its owner/name; a guideline or a paper by its title.
+      const ident = u.repo ?? (['guideline', 'paper'].includes(u.kind) ? u.display : u.url ?? u.display);
       const mine = blocks.filter((b) => b.includes(` material from ${ident}`) && new RegExp(`(^|, )${row.id}( |,)`).test(b.split('\n')[0]));
       assert.ok(mine.length, `${row.id}: no NOTICE block for ${ident}`);
       for (const who of [u.credit, ...(u.people ?? [])].filter(Boolean)) {
@@ -369,6 +407,20 @@ test("NOTICE: the lab's own work is under the top line, a repository with no lic
   const labRow = md.split('\n').find((l) => l.includes('lab-org/lab-skills') && l.startsWith('|'));
   assert.match(labRow, /\| no licence file in its repository; held by Baranzini Lab, University of California, San Francisco \|/);
   assert.ok(!/\| MIT/.test(labRow) && !labRow.includes('names no copyright holder'), labRow);
+});
+
+test('NOTICE: one source at one commit is one block whether or not an entry records a version, and a line\'s own full stop is not doubled', () => {
+  const at = (id, extra) => adaptedRow(id, { source: { ...adaptedRow(id).source, upstreams: [upstream(extra)] } });
+  const items = [at('alpha', { version: 'v2.72.0' }), at('omega', { path: 'skills/other', version: null })];
+  const blocks = renderNotice(catalogOf(items)).split('\n\n').filter((b) => b.includes('example-org/example-skills'));
+  assert.equal(blocks.length, 1, blocks.join('\n---\n'));
+  assert.match(blocks[0], /^alpha, omega include material from example-org\/example-skills \(skills\/example, skills\/other, commit 0123456789abcdef0123456789abcdef01234567\),/);
+  // A version still keys a source that has no commit.
+  const pinned = (id, version) => adaptedRow(id, { source: { ...adaptedRow(id).source, upstreams: [upstream({ commit: null, version })] } });
+  assert.equal(renderNotice(catalogOf([pinned('alpha', '1.0'), pinned('omega', '2.0')])).split('\n\n').filter((b) => b.includes('example-org/example-skills')).length, 2);
+  const dotted = renderNotice(catalogOf([at('alpha', { copyright: 'Copyright (c) 2026: Tim Holy.' })]));
+  assert.ok(dotted.includes('\nCopyright (c) 2026: Tim Holy. Licensed under MIT.\n'), dotted);
+  assert.ok(!dotted.includes('Holy.,'));
 });
 
 test('NOTICE: the preamble names the items whose notice file waits for its next release', () => {

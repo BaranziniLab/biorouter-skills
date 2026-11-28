@@ -22,7 +22,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { REPO_ROOT } from './lib/repo.mjs';
-import { PROVENANCE_FORMAT, isLabOwned, provenanceFormat } from './lib/catalog-rules.mjs';
+import { PROVENANCE_FORMAT, isLabOwned, pathEntries, provenanceFormat } from './lib/catalog-rules.mjs';
 
 /**
  * The paths an upstream's `path` field names. The field is a comma-separated
@@ -32,21 +32,8 @@ import { PROVENANCE_FORMAT, isLabOwned, provenanceFormat } from './lib/catalog-r
  * empty field gives [].
  */
 export function upstreamPaths(field) {
-  if (typeof field !== 'string') return [];
-  const entries = [];
-  let depth = 0;
-  let entry = '';
-  for (const ch of field) {
-    if (ch === '(') depth++;
-    else if (ch === ')') depth = Math.max(0, depth - 1);
-    if (ch === ',' && depth === 0) {
-      entries.push(entry);
-      entry = '';
-    } else entry += ch;
-  }
-  entries.push(entry);
   const paths = [];
-  for (const e of entries) {
+  for (const e of pathEntries(field)) {
     const p = e.replace(/\s+\(.*\)\s*$/s, '').trim().replace(/\/+$/, '');
     if (p && !paths.includes(p)) paths.push(p);
   }

@@ -5,7 +5,7 @@
 // file with this function's output, and render-readme.mjs writes it, only for
 // rows where folderProvenanceWanted() holds.
 //
-// Step 1 contract: the export names and signatures of PROVENANCE_FILE,
+// The export names and signatures of PROVENANCE_FILE,
 // GENERATED_MARK and renderProvenanceMd are fixed. Every credit text comes
 // from scripts/lib/catalog-rules.mjs, so this file, the README, the front
 // matter, the page and the app print the same words.
@@ -137,8 +137,11 @@ function licenceCell(u, row) {
     return parts.join('; ');
   }
   const parts = [mdText(u.licence) || 'licence not recorded'];
+  // With no copyright line, the note (when there is one) says why, in the record's words; the fixed sentence
+  // is for a source whose record gives no reason.
   if (has(u.copyright)) parts.push(`${mdText(u.copyright)}${has(u.copyright_note) ? ` (${mdText(u.copyright_note)})` : ''}`);
-  else if (shipped(u) || has(u.copyright_note)) parts.push(`its licence names no copyright holder${has(u.copyright_note) ? ` (${mdText(u.copyright_note)})` : ''}`);
+  else if (has(u.copyright_note)) parts.push(`no copyright line: ${mdText(u.copyright_note)}`);
+  else if (shipped(u)) parts.push(isPublication(u) ? 'the publication names no copyright holder' : 'its licence names no copyright holder');
   if (u.upstream_notice === true) parts.push(`its NOTICE file ships with this item${has(row.notice_file) ? ` in ${mdText(row.notice_file)}` : ''}`);
   return parts.join('; ');
 }
@@ -188,11 +191,24 @@ function citationLines(ups) {
   return out;
 }
 
-/** "[name](url), a repository by Credit (licence): what." */
+/** "(licence; licence note)", or "" when the record names no licence. */
+function licenceParen(x) {
+  if (!has(x.licence)) return '';
+  return ` (${mdText(x.licence)}${has(x.licence_note) ? `; ${mdText(x.licence_note)}` : ''})`;
+}
+
+/** " by Credit, with A, B" from a credit and the people it names. */
+function byLine(x) {
+  const people = list(x.people).filter(has).map(mdText);
+  if (!has(x.credit) && !people.length) return '';
+  return ` by ${[mdText(x.credit), people.length ? `with ${people.join(', ')}` : ''].filter(Boolean).join(', ')}`;
+}
+
+/** "[name](url), a repository by Credit, with people (licence; note): what." */
 function ideaLine(i, { withEvidence = true } = {}) {
   const kind = has(i.kind) ? article(mdText(i.kind)) : 'a source';
-  const by = has(i.credit) ? ` by ${mdText(i.credit)}` : '';
-  const lic = has(i.licence) ? ` (${mdText(i.licence)})` : '';
+  const by = byLine(i);
+  const lic = licenceParen(i);
   let s = `${mdLink(i.name, i.url)}, ${kind}${by}${lic}: ${sentence(i.what) || 'not recorded.'}`;
   if (withEvidence && has(i.evidence)) s += ` Ideas only, no text or code taken: ${sentence(i.evidence)}`;
   if (has(i.version_read)) s += ` Version read: ${sentence(i.version_read)}`;
@@ -203,7 +219,9 @@ function ideaLine(i, { withEvidence = true } = {}) {
 function referenceLine(r) {
   let s = mdLink(r.name, r.url);
   if (has(r.credit)) s += `, by ${mdText(r.credit)}`;
-  s += '.';
+  s += licenceParen(r);
+  s += has(r.what) ? `: ${sentence(r.what)}` : '.';
+  if (has(r.note)) s += ` Note: ${sentence(r.note)}`;
   if (has(r.cite)) s += ` Cite: ${sentence(r.cite)}`;
   return s;
 }
@@ -257,6 +275,7 @@ function componentSection(row, folder, comp) {
   facts.push(`Status: ${statusText(comp.status)}.`);
   if (has(comp.upstream_path)) facts.push(`Source path: ${code(comp.upstream_path)}.`);
   if (has(comp.content_moved_to)) facts.push(`Its content now lives in ${code(comp.content_moved_to)}.`);
+  if (has(comp.note)) facts.push(`Note: ${sentence(comp.note)}`);
   out.push(facts.join(' '), '');
   const ups = list(row.source?.upstreams);
   if (Array.isArray(comp.sources) && comp.sources.length && has(comp.origin)) {
