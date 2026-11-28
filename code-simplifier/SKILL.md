@@ -5,8 +5,10 @@ license: Apache-2.0
 user-invocable: true
 metadata:
   version: "1.1.1"
-  origin: adapted
+  origin: "adapted"
   upstream: "anthropics/claude-plugins-official/plugins/code-simplifier@de573bd84695c6657b28f05ffe32c37bb54d1f55"
+  credit: "Adapted from code-simplifier plugin by Anthropic (Apache-2.0)."
+  curated_by: "Curated and organized by Wanjun Gu, Baranzini Lab, UCSF."
 ---
 
 <!-- Adapted for Biorouter from anthropics/claude-plugins-official/plugins/code-simplifier (Apache License 2.0). -->

@@ -1002,20 +1002,6 @@
     },
     {
       "rule": "PV9",
-      "subject": "folder:code-simplifier",
-      "wp": "PROV-S4",
-      "since": "2026-11-28",
-      "note": "code-simplifier: has no PROVENANCE.md; node scripts/render-readme.mjs writes it once the row's folder files are due"
-    },
-    {
-      "rule": "PV10",
-      "subject": "frontmatter:code-simplifier",
-      "wp": "PROV-S4",
-      "since": "2026-11-28",
-      "note": "code-simplifier: front matter credits differ from the catalog in SKILL.md (metadata.credit, metadata.curated_by); node scripts/render-readme.mjs writes them once the row's folder files are due"
-    },
-    {
-      "rule": "PV9",
       "subject": "folder:commit-commands",
       "wp": "PROV-S4",
       "since": "2026-11-28",
@@ -1069,20 +1055,6 @@
       "wp": "PROV-S4",
       "since": "2026-11-28",
       "note": "code-modernization: front matter credits differ from the catalog in SKILL.md (metadata.credit, metadata.curated_by); node scripts/render-readme.mjs writes them once the row's folder files are due"
-    },
-    {
-      "rule": "PV9",
-      "subject": "folder:playground",
-      "wp": "PROV-S4",
-      "since": "2026-11-28",
-      "note": "playground: has no PROVENANCE.md; node scripts/render-readme.mjs writes it once the row's folder files are due"
-    },
-    {
-      "rule": "PV10",
-      "subject": "frontmatter:playground",
-      "wp": "PROV-S4",
-      "since": "2026-11-28",
-      "note": "playground: front matter credits differ from the catalog in SKILL.md (metadata.credit, metadata.curated_by); node scripts/render-readme.mjs writes them once the row's folder files are due"
     },
     {
       "rule": "PV9",
