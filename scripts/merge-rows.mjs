@@ -13,6 +13,11 @@
 // component entry without a `name` takes the name from its folder's SKILL.md,
 // and keeps the boundaries the catalog already recorded for it. A new id must
 // be a complete row. The merged catalog is checked afterwards.
+//
+// Provenance (format 2): an incoming `source` replaces the existing one whole,
+// since it is one record, and `contributors` are united by name, the incoming
+// entry winning (so a package can change a person's role). checkRowShape and
+// the provenance rules then decide whether the row is valid.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -45,6 +50,9 @@ export function mergeRow(existing, incoming, root = REPO_ROOT) {
     const b = y.version.split('.').map(Number);
     return a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
   });
+  if (Object.hasOwn(base, 'contributors') || Object.hasOwn(incoming, 'contributors')) {
+    merged.contributors = union(base.contributors ?? [], incoming.contributors ?? [], (c) => c?.name);
+  }
   merged.release = { ...base.release, ...(incoming.release ?? {}) };
   merged.release.tag = `skill-${merged.id}`;
   merged.release.asset = `${merged.id}.zip`;
@@ -112,7 +120,7 @@ function main() {
     const incoming = JSON.parse(fs.readFileSync(f, 'utf8'));
     const i = byId.get(incoming.id);
     const merged = mergeRow(i === undefined ? null : catalog.items[i], incoming);
-    const shape = checkRowShape(merged);
+    const shape = checkRowShape(merged, catalog.format);
     if (shape.length) for (const s of shape) console.log(`warn  ${path.basename(f)}: ${s.message}`);
     if (i === undefined) {
       catalog.items.push(merged);

@@ -14,7 +14,7 @@ function run(mutate = () => {}) {
   const fx = makeFixture();
   const catalog = clone(fx.catalog);
   mutate({ ...fx, catalog });
-  return runCheck({ root: fx.root, catalog, builtins: BUILTINS });
+  return runCheck({ root: fx.root, catalog, builtins: BUILTINS, frozenRows: fx.frozenRows });
 }
 
 test('the fixture passes', () => {
@@ -23,7 +23,9 @@ test('the fixture passes', () => {
 
 test('a folder without a row fails, and so does a row without a folder', () => {
   assert.deepEqual(rules(run(({ write }) => write('delta/SKILL.md', '---\nname: delta\n---\n'))), ['folder:unlisted:delta']);
-  assert.deepEqual(rules(run(({ catalog }) => catalog.items.push(row('epsilon')))), ['folder:missing:epsilon']);
+  // A row added after the provenance rules landed is never baselined, so a
+  // format 1 row added now also fails PV1.
+  assert.deepEqual(rules(run(({ catalog }) => catalog.items.push(row('epsilon')))), ['PV1:format:epsilon', 'folder:missing:epsilon']);
 });
 
 test('a frontmatter name that is not the id fails', () => {
@@ -72,24 +74,51 @@ test('a licence line that differs from the row fails, and a refused licence fail
   assert.ok(rules(gpl).includes('row:upstream-licence:beta'));
 });
 
-test('MIT upstream text needs a notice file that carries the copyright line', () => {
+test('MIT upstream text needs a notice file that carries the copyright line and the licence text (PV7)', () => {
   const up = { repo: 'x/y', licence: 'MIT', copyright: 'Copyright (c) 2026 Someone', commit: 'abcdef1' };
   const adapt = (catalog) => {
     catalog.items[0].source = { origin: 'adapted', upstreams: [up], maintained_here: false };
   };
-  assert.deepEqual(rules(run(({ catalog }) => adapt(catalog))), ['notice:notice:alpha']);
+  const mit = 'Permission is hereby granted, free of charge, to any person obtaining a copy\nof this software.\n';
+  assert.deepEqual(rules(run(({ catalog }) => adapt(catalog))), ['PV7:notice:alpha']);
+  const missing = run(({ catalog }) => {
+    adapt(catalog);
+    catalog.items[0].notice_file = 'LICENSE-UPSTREAM';
+  });
+  assert.deepEqual(rules(missing), ['PV7:notice:alpha']);
   const wrong = run(({ catalog, write }) => {
     adapt(catalog);
     catalog.items[0].notice_file = 'LICENSE-UPSTREAM';
-    write('alpha/LICENSE-UPSTREAM', 'MIT License\nCopyright (c) 2025 Someone Else\n');
+    write('alpha/LICENSE-UPSTREAM', `MIT License\nCopyright (c) 2025 Someone Else\n\n${mit}`);
   });
-  assert.deepEqual(rules(wrong), ['notice:notice:alpha']);
-  const right = run(({ catalog, write }) => {
+  assert.deepEqual(rules(wrong), ['PV7:notice-copyright:alpha:x/y']);
+  const noText = run(({ catalog, write }) => {
     adapt(catalog);
     catalog.items[0].notice_file = 'LICENSE-UPSTREAM';
     write('alpha/LICENSE-UPSTREAM', 'MIT License\nCopyright (c) 2026 Someone\n');
   });
+  assert.deepEqual(rules(noText), ['PV7:notice-licence:alpha:MIT']);
+  const right = run(({ catalog, write }) => {
+    adapt(catalog);
+    catalog.items[0].notice_file = 'LICENSE-UPSTREAM';
+    write('alpha/LICENSE-UPSTREAM', `MIT License\nCopyright (c) 2026 Someone\n\n${mit}`);
+  });
   assert.deepEqual(rules(right), []);
+  // Format 1 keeps the old rule: an MIT upstream must record its copyright line.
+  const unrecorded = run(({ catalog, write }) => {
+    catalog.items[0].source = { origin: 'adapted', upstreams: [{ ...up, copyright: null }], maintained_here: false };
+    catalog.items[0].notice_file = 'LICENSE-UPSTREAM';
+    write('alpha/LICENSE-UPSTREAM', `MIT License\nCopyright (c) 2026 Someone\n\n${mit}`);
+  });
+  assert.deepEqual(rules(unrecorded), ['PV7:notice-copyright:alpha:x/y']);
+  assert.match(unrecorded.errors[0].message, /records no copyright line for x\/y/);
+  // An Apache-2.0 upstream's licence names no holder, so a null copyright passes (code-simplifier, playground).
+  const apache = run(({ catalog, write }) => {
+    catalog.items[0].source = { origin: 'adapted', upstreams: [{ ...up, licence: 'Apache-2.0', copyright: null }], maintained_here: false };
+    catalog.items[0].notice_file = 'LICENSE-UPSTREAM';
+    write('alpha/LICENSE-UPSTREAM', 'Apache License\nTERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\nEND OF TERMS AND CONDITIONS\n');
+  });
+  assert.deepEqual(rules(apache), []);
 });
 
 test('a merged row needs its generated stub and a complete redirect', () => {
@@ -142,7 +171,9 @@ test('the D6 shell check runs over the single skills of the repository', () => {
       catalog.items.push(row(id));
     }
   });
-  assert.deepEqual(rules(res), ['D6:shell:s1', 'D6:shell:s2', 'D6:shell:s3', 'D6:shell:s4', 'D6:shell:s5', 'D6:shell:s6']);
+  const d6 = rules(res).filter((r) => !r.startsWith('PV1:format:'));
+  assert.deepEqual(d6, ['D6:shell:s1', 'D6:shell:s2', 'D6:shell:s3', 'D6:shell:s4', 'D6:shell:s5', 'D6:shell:s6']);
+  assert.equal(rules(res).length, 12, 'and each of the six new format 1 rows fails PV1');
 });
 
 test('a baseline entry silences its failure until its work package is done', () => {
@@ -163,8 +194,8 @@ test('jobs.json must carry the same screen settings as the rules library', async
   const { DEFAULT_SIMILARITY_THRESHOLD, DEFAULT_COMPONENT_SIMILARITY_THRESHOLD, DEFAULT_GENERIC_WORDS } = await import('./lib/catalog-rules.mjs');
   const fx = makeFixture();
   const jobs = { similarity_threshold: DEFAULT_SIMILARITY_THRESHOLD, component_similarity_threshold: DEFAULT_COMPONENT_SIMILARITY_THRESHOLD, generic_words: [...DEFAULT_GENERIC_WORDS], builtin: [], required: [] };
-  assert.deepEqual(rules(runCheck({ root: fx.root, catalog: fx.catalog, builtins: BUILTINS, jobs })), []);
-  const drift = runCheck({ root: fx.root, catalog: fx.catalog, builtins: BUILTINS, jobs: { ...jobs, similarity_threshold: 0.4 } });
+  assert.deepEqual(rules(runCheck({ root: fx.root, catalog: fx.catalog, builtins: BUILTINS, jobs, frozenRows: fx.frozenRows })), []);
+  const drift = runCheck({ root: fx.root, catalog: fx.catalog, builtins: BUILTINS, jobs: { ...jobs, similarity_threshold: 0.4 }, frozenRows: fx.frozenRows });
   assert.deepEqual(rules(drift), ['jobs:rules-drift']);
 });
 
@@ -182,7 +213,7 @@ test('a retired extension may pass its name to the skill that took over its job,
   });
   const check = (extensions) => {
     const fx = makeFixture();
-    return runCheck({ root: fx.root, catalog: clone(fx.catalog), builtins: BUILTINS, extensions });
+    return runCheck({ root: fx.root, catalog: clone(fx.catalog), builtins: BUILTINS, extensions, frozenRows: fx.frozenRows });
   };
   const d2 = (res) => rules(res).filter((r) => r.startsWith('D2:'));
   assert.deepEqual(d2(check(ext({ reason: 'x', name_passes_to: 'skill:alpha' }))), []);

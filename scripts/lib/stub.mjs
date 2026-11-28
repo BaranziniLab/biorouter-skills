@@ -5,12 +5,20 @@
 // registry gets a pointer instead of stale content. The text is generated from
 // the catalog row, and check-catalog.mjs fails when a stub folder differs from
 // what this function produces, so a stub can never drift from its row.
+//
+// A row in format 2 whose folder files are wanted now (folderProvenanceWanted
+// in catalog-rules.mjs) gets the provenance variant: the front matter carries
+// metadata.origin, metadata.credit and metadata.curated_by, and the body names
+// the last real content's credit and the curator line. The default output is
+// the stub as it was before format 2, byte for byte.
 
-function yamlString(value) {
-  return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
-}
+import { frontmatterCredits, stubCreditLines } from './catalog-rules.mjs';
+import { yamlString } from './frontmatter.mjs';
 
-function frontmatter({ name, description, version, status }) {
+/** How every stub's last bullet begins; the provenance credit lines go just before it. */
+export const STUB_LAST_BULLET = '- This copy is only a';
+
+function frontmatter({ name, description, version, status, credits = null }) {
   return [
     '---',
     `name: ${name}`,
@@ -20,6 +28,7 @@ function frontmatter({ name, description, version, status }) {
     'metadata:',
     `  version: ${yamlString(version)}`,
     `  status: ${yamlString(status)}`,
+    ...(credits ? Object.entries(credits).map(([k, v]) => `  ${k}: ${yamlString(v)}`) : []),
     '---',
     '',
   ].join('\n');
@@ -34,9 +43,10 @@ function addFromBaam(targetId, targetName, oldId) {
 
 /**
  * row: the catalog row of the old skill. catalog: the whole catalog (to find the
- * target's display name). Returns { 'SKILL.md': text }.
+ * target's display name). provenance: write the format 2 credits (see above).
+ * Returns { 'SKILL.md': text }.
  */
-export function stubFiles(row, catalog) {
+export function stubFiles(row, catalog, { provenance = false } = {}) {
   const byId = new Map((catalog.items ?? []).map((r) => [r.id, r]));
   const status = row.status;
   let description;
@@ -97,6 +107,18 @@ export function stubFiles(row, catalog) {
   } else {
     throw new Error(`${row.id} is active; only a merged or retired skill gets a stub`);
   }
-  const text = frontmatter({ name: row.id, description, version: row.version, status }) + '\n' + body.join('\n');
+  let credits = null;
+  if (provenance) {
+    credits = frontmatterCredits(row);
+    // The credit lines go before the bullet that says what this copy is
+    // ("- This copy is only a pointer ..." or "... only a notice ..."), found by
+    // its text, so a change to the body's shape cannot move them.
+    const last = body.findIndex((line) => line.startsWith(STUB_LAST_BULLET));
+    if (last < 0 || body.findIndex((line, i) => i > last && line.startsWith(STUB_LAST_BULLET)) >= 0) {
+      throw new Error(`${row.id}: the stub body has no single "${STUB_LAST_BULLET}" bullet to put the credit lines before`);
+    }
+    body.splice(last, 0, ...stubCreditLines(row, catalog.items ?? []).map((line) => `- ${line}`));
+  }
+  const text = frontmatter({ name: row.id, description, version: row.version, status, credits }) + '\n' + body.join('\n');
   return { 'SKILL.md': text };
 }
