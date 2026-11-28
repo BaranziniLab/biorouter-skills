@@ -516,6 +516,7 @@
             "commit": null,
             "version": "TRIPOD+AI 2024",
             "licence": "CC-BY-4.0",
+            "licence_note": "the article's licence paragraph grants CC BY 4.0, commercial use included",
             "copyright": "© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY. No commercial re-use. See rights and permissions. Published by BMJ.",
             "copyright_note": "the article's copyright statement as its publisher deposited it in PubMed Central (PMC11019967), read through Europe PMC on 2026-11-28; the article's licence paragraph grants CC BY 4.0 and says it 'permits others to distribute, remix, adapt and build upon this work, for commercial use, provided the original work is properly cited'; the checklist file names no copyright line for the statement; licence CC BY 4.0, as the checklist file states it",
             "credit": "Collins GS et al.",
@@ -548,6 +549,7 @@
             "commit": null,
             "version": "PRISMA 2020",
             "licence": "CC-BY-4.0",
+            "licence_note": "the article's licence paragraph grants CC BY 4.0, commercial use included",
             "copyright": "© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY. No commercial re-use. See rights and permissions. Published by BMJ.",
             "copyright_note": "the article's copyright statement as its publisher deposited it in PubMed Central (PMC8005924), read through Europe PMC on 2026-11-28; the article's licence paragraph grants CC BY 4.0 and says it 'permits others to distribute, remix, adapt and build upon this work, for commercial use, provided the original work is properly cited'; the checklist file names no copyright line for the statement; licence CC BY 4.0, as both checklist files state it",
             "credit": "Page MJ et al.",
@@ -584,6 +586,7 @@
             "commit": null,
             "version": "CONSORT 2025",
             "licence": "CC-BY-4.0",
+            "licence_note": "the article's licence paragraph grants CC BY 4.0, commercial use included",
             "copyright": "© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY. No commercial re-use. See rights and permissions. Published by BMJ.",
             "copyright_note": "the article's copyright statement as its publisher deposited it in PubMed Central (PMC11995449), read through Europe PMC on 2026-11-28; the article's licence paragraph grants CC BY 4.0 and says it 'permits others to distribute, remix, adapt and build upon this work, for commercial use, provided the original work is properly cited'; the checklist file names no copyright line for the statement; licence CC BY 4.0, confirmed by Aperivue through Crossref",
             "credit": "Hopewell S et al.",
@@ -619,6 +622,7 @@
             "commit": null,
             "version": "SPIRIT 2025",
             "licence": "CC-BY-4.0",
+            "licence_note": "the article's licence paragraph grants CC BY 4.0, commercial use included",
             "copyright": "© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY. No commercial re-use. See rights and permissions. Published by BMJ.",
             "copyright_note": "the article's copyright statement as its publisher deposited it in PubMed Central (PMC12035670), read through Europe PMC on 2026-11-28; the article's licence paragraph grants CC BY 4.0 and says it 'permits others to distribute, remix, adapt and build upon this work, for commercial use, provided the original work is properly cited'; the checklist file names no copyright line for the statement; licence CC BY 4.0, confirmed by Aperivue through Crossref",
             "credit": "Chan AW et al.",
@@ -1521,7 +1525,7 @@
             "repo": "K-Dense-AI/scientific-agent-skills",
             "display": "Scientific Agent Skills",
             "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
-            "path": "skills/scientific-slides (references, assets, three scripts)",
+            "path": "skills/scientific-slides/references, skills/scientific-slides/assets, skills/scientific-slides/scripts/slides_to_pdf.py, skills/scientific-slides/scripts/validate_presentation.py",
             "ref": "main",
             "commit": "ec59a29a03d5c40f73ab40878df04860bc00e876",
             "version": null,
@@ -1540,7 +1544,7 @@
               "code",
               "text"
             ],
-            "what": "skills/scientific-slides (references, assets, three scripts) at ec59a29, as this item's scientific-slides/assets/beamer_template_conference.tex, scientific-slides/assets/beamer_template_defense.tex, scientific-slides/assets/beamer_template_seminar.tex and 12 more files",
+            "what": "skills/scientific-slides/references, skills/scientific-slides/assets, skills/scientific-slides/scripts/slides_to_pdf.py, skills/scientific-slides/scripts/validate_presentation.py at ec59a29, as this item's scientific-slides/assets/beamer_template_conference.tex, scientific-slides/assets/beamer_template_defense.tex, scientific-slides/assets/beamer_template_seminar.tex and 12 more files",
             "files": [
               "scientific-slides/assets/beamer_template_conference.tex",
               "scientific-slides/assets/beamer_template_defense.tex",
@@ -3659,6 +3663,7 @@
               "Yuhuan He",
               "Darshil Patel",
               "Aubrey M. Brueckner",
+              "Yaroslav Halchenko",
               "Andrey Fedorov"
             ],
             "use": [
@@ -3868,7 +3873,8 @@
               "Vinayak Agarwal",
               "Yuhuan He",
               "Darshil Patel",
-              "Aubrey M. Brueckner"
+              "Aubrey M. Brueckner",
+              "Yaroslav Halchenko"
             ],
             "use": [
               "code",
@@ -8126,7 +8132,7 @@
             "repo": "obra/superpowers",
             "display": "superpowers",
             "url": "https://github.com/obra/superpowers",
-            "path": "skills/ (13 of 15; using-superpowers and diagnosing-superpowers left out)",
+            "path": "skills/brainstorming, skills/dispatching-parallel-agents, skills/executing-plans, skills/finishing-a-development-branch, skills/receiving-code-review, skills/requesting-code-review, skills/subagent-driven-development, skills/systematic-debugging, skills/test-driven-development, skills/using-git-worktrees, skills/verification-before-completion, skills/writing-plans, skills/writing-skills",
             "ref": "v7.0.2",
             "commit": "22f0b463e7a5e579904dd6211a520321035526f7",
             "version": "v7.0.2",
@@ -8139,7 +8145,7 @@
               "code",
               "text"
             ],
-            "what": "skills/ (13 of 15; using-superpowers and diagnosing-superpowers left out) at 22f0b46, as this item's brainstorming/SKILL.md, brainstorming/builder-check-prompt.md, brainstorming/scripts/frame-template.html and 47 more files",
+            "what": "skills/brainstorming, skills/dispatching-parallel-agents, skills/executing-plans, skills/finishing-a-development-branch, skills/receiving-code-review, skills/requesting-code-review, skills/subagent-driven-development, skills/systematic-debugging, skills/test-driven-development, skills/using-git-worktrees, skills/verification-before-completion, skills/writing-plans, skills/writing-skills at 22f0b46 (13 of its 15 skills; using-superpowers and diagnosing-superpowers are left out), as this item's brainstorming/SKILL.md, brainstorming/builder-check-prompt.md, brainstorming/scripts/frame-template.html and 47 more files",
             "files": [
               "brainstorming/SKILL.md",
               "brainstorming/builder-check-prompt.md",
@@ -8498,7 +8504,7 @@
             "repo": "anthropics/claude-plugins-official",
             "display": "code-review plugin",
             "url": "https://github.com/anthropics/claude-plugins-official",
-            "path": "plugins/code-review (v1.0.1, c905cd8 command)",
+            "path": "plugins/code-review/commands/code-review.md",
             "ref": "code-review v1.0.1",
             "commit": "73c8cf3ea7e296057b467990f2f5d61b4c922260",
             "version": "1.0.1",
@@ -8507,12 +8513,13 @@
             "copyright_note": "the licence file (plugins/code-review/LICENSE, LICENSE) names no copyright holder; the source has no NOTICE file",
             "credit": "Anthropic",
             "people": [
-              "Noah Zweben"
+              "Noah Zweben",
+              "Mohamed Hegazy"
             ],
             "use": [
               "text"
             ],
-            "what": "plugins/code-review (v1.0.1, c905cd8 command) at 73c8cf3, as this item's references/upstream-command.md",
+            "what": "plugins/code-review/commands/code-review.md at 73c8cf3 (the plugin's command, at plugin version 1.0.1), as this item's references/upstream-command.md; that command is the copy commit c905cd8 (2026-10-26) brought in from anthropics/claude-code, co-authored by Mohamed Hegazy",
             "files": [
               "references/upstream-command.md"
             ],
@@ -8526,7 +8533,7 @@
             "repo": "anthropics/claude-plugins-official",
             "display": "pr-review-toolkit plugin",
             "url": "https://github.com/anthropics/claude-plugins-official",
-            "path": "plugins/pr-review-toolkit/agents (silent-failure-hunter, pr-test-analyzer)",
+            "path": "plugins/pr-review-toolkit/agents/silent-failure-hunter.md, plugins/pr-review-toolkit/agents/pr-test-analyzer.md",
             "ref": "main",
             "commit": "73c8cf3ea7e296057b467990f2f5d61b4c922260",
             "version": null,
@@ -8536,13 +8543,12 @@
             "credit": "Anthropic",
             "people": [
               "Noah Zweben",
-              "Dickson Tsai",
               "Pete Blois"
             ],
             "use": [
               "text"
             ],
-            "what": "plugins/pr-review-toolkit/agents (silent-failure-hunter, pr-test-analyzer) at 73c8cf3, as this item's references/silent-failure-pass.md and references/test-coverage-pass.md",
+            "what": "plugins/pr-review-toolkit/agents/silent-failure-hunter.md, plugins/pr-review-toolkit/agents/pr-test-analyzer.md at 73c8cf3, as this item's references/silent-failure-pass.md and references/test-coverage-pass.md",
             "files": [
               "references/silent-failure-pass.md",
               "references/test-coverage-pass.md"
@@ -8557,7 +8563,7 @@
             "repo": "anthropics/claude-plugins-official",
             "display": "security-guidance plugin",
             "url": "https://github.com/anthropics/claude-plugins-official",
-            "path": "plugins/security-guidance/hooks/llm.py (review rubric)",
+            "path": "plugins/security-guidance/hooks/llm.py",
             "ref": "main",
             "commit": "73c8cf3ea7e296057b467990f2f5d61b4c922260",
             "version": null,
@@ -8572,7 +8578,7 @@
             "use": [
               "text"
             ],
-            "what": "plugins/security-guidance/hooks/llm.py (review rubric) at 73c8cf3, as this item's references/security-pass.md",
+            "what": "plugins/security-guidance/hooks/llm.py at 73c8cf3 (its review rubric), as this item's references/security-pass.md",
             "files": [
               "references/security-pass.md"
             ],
@@ -8783,7 +8789,8 @@
             "copyright_note": "the licence file (plugins/commit-commands/LICENSE, LICENSE) names no copyright holder; the source has no NOTICE file",
             "credit": "Anthropic",
             "people": [
-              "Noah Zweben"
+              "Noah Zweben",
+              "Mohamed Hegazy"
             ],
             "use": [
               "text"
@@ -9106,7 +9113,7 @@
             "repo": "anthropics/claude-plugins-official",
             "display": "code-modernization plugin",
             "url": "https://github.com/anthropics/claude-plugins-official",
-            "path": "plugins/code-modernization (commands, agents, scripts, references, report assets)",
+            "path": "plugins/code-modernization/commands, plugins/code-modernization/agents, plugins/code-modernization/scripts, plugins/code-modernization/references, plugins/code-modernization/assets/report-template.html, plugins/code-modernization/assets/topology-viewer.html",
             "ref": "plugin 1.1.0 (includes d7d3279)",
             "commit": "73c8cf3ea7e296057b467990f2f5d61b4c922260",
             "version": "1.1.0",
@@ -9121,7 +9128,7 @@
               "code",
               "text"
             ],
-            "what": "plugins/code-modernization (commands, agents, scripts, references, report assets) at 73c8cf3, as this item's agents/architecture-critic.md, agents/business-rules-extractor.md, agents/legacy-analyst.md and 29 more files",
+            "what": "plugins/code-modernization/commands, plugins/code-modernization/agents, plugins/code-modernization/scripts, plugins/code-modernization/references, plugins/code-modernization/assets/report-template.html, plugins/code-modernization/assets/topology-viewer.html at 73c8cf3, as this item's agents/architecture-critic.md, agents/business-rules-extractor.md, agents/legacy-analyst.md and 29 more files",
             "files": [
               "agents/architecture-critic.md",
               "agents/business-rules-extractor.md",
@@ -9367,7 +9374,7 @@
             "use": [
               "text"
             ],
-            "what": "skills/frontend-design at e4bb5d9, as this item's SKILL.md",
+            "what": "skills/frontend-design at e4bb5d9, as this item's SKILL.md; 39 of the 65 non-blank lines of the item's SKILL.md are from it",
             "files": [
               "SKILL.md"
             ],
@@ -9381,7 +9388,7 @@
             "repo": "Leonxlnx/taste-skill",
             "display": "Taste Skill",
             "url": "https://github.com/Leonxlnx/taste-skill",
-            "path": "skills/taste-skill/SKILL.md (v2 single-file)",
+            "path": "skills/taste-skill/SKILL.md",
             "ref": "84ff339",
             "commit": "84ff339312d29955ce2040c02fd6e5bedb934608",
             "version": null,
@@ -9395,8 +9402,9 @@
             "use": [
               "text"
             ],
-            "what": "skills/taste-skill/SKILL.md (v2 single-file) at 84ff339, as this item's references/taste-rules.md",
+            "what": "skills/taste-skill/SKILL.md at 84ff339 (the v2 single-file skill), as this item's SKILL.md and references/taste-rules.md; 14 of the 65 non-blank lines of the item's SKILL.md are from it",
             "files": [
+              "SKILL.md",
               "references/taste-rules.md"
             ],
             "via": null,
@@ -13853,7 +13861,7 @@
             "kind": "service",
             "name": "PubMed (NCBI E-utilities)",
             "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils",
-            "terms": "NLM public-domain utility service; terms: https://www.ncbi.nlm.nih.gov/books/NBK25501/ (as BioMCP 0.9.3's source inventory records it, reviewed 2026-04-10)",
+            "terms": "NLM does not claim the copyright on the abstracts in PubMed, though journal publishers or authors may, and NCBI places no restrictions on the molecular data it holds, though submitters may claim rights in theirs; scripts are to send E-utilities requests to eutils.ncbi.nlm.nih.gov, make no more than 3 requests a second, pass the tool and email parameters, run any series of more than 100 requests at weekends or between 9 pm and 5 am Eastern Time on weekdays, and make NCBI's disclaimer and copyright notice evident to their users (NCBI policies page, https://www.ncbi.nlm.nih.gov/home/about/policies/, read 2026-11-27)",
             "credit": "National Center for Biotechnology Information",
             "cite": null,
             "how": "called at run time by the open-literature-discovery component"
@@ -13880,7 +13888,7 @@
             "kind": "service",
             "name": "Semantic Scholar Graph API",
             "url": "https://api.semanticscholar.org/graph/v1",
-            "terms": "custom API license agreement; terms: https://www.semanticscholar.org/product/api/license (as BioMCP 0.9.3's source inventory records it, reviewed 2026-09-27)",
+            "terms": "The Allen Institute for Artificial Intelligence (AI2) grants a limited, non-exclusive, terminable licence to use the API to reach and display the data Semantic Scholar serves, which stay under the licences that come with them (such as CC BY-NC or ODC-BY) and, for third-party content, its owners' terms; users may not redistribute or sublicense the API or exceed or get around its rate limits, are to credit Semantic Scholar in material that draws on it, and are to cite The Semantic Scholar Open Data Platform in scientific publications whose results used it (Semantic Scholar API License Agreement, last updated May 17, 2023, https://www.semanticscholar.org/product/api/license, read 2026-11-28)",
             "credit": "Allen Institute for AI",
             "cite": null,
             "how": "called at run time by the open-literature-discovery component"
@@ -20103,8 +20111,8 @@
             "copyright_note": "the licence file (LICENSE) names no copyright holder; the source has no NOTICE file",
             "credit": "marimo",
             "people": [
-              "Myles Scolnick",
               "vincent d warmerdam",
+              "Myles Scolnick",
               "Arpit Garg"
             ],
             "use": [
@@ -20146,6 +20154,7 @@
             "copyright_note": "the licence file (LICENSE) names no copyright holder; the source has no NOTICE file",
             "credit": "marimo",
             "people": [
+              "vincent d warmerdam",
               "Trevor Manz",
               "Konstantin Taletskiy"
             ],
@@ -26817,7 +26826,7 @@
             "cite": "Kristin Sainani. Writing in the Sciences. Stanford University. https://www.coursera.org/learn/sciwrite",
             "what": "the writing methodology sciwrite applies, which reaches the item through sciwrite's own text: sciwrite's CITATION.cff lists the course under references, its SKILL.md front matter gives 'source: Kristin Sainani, Writing in the Sciences (Stanford, CC-BY lectures)', and its README says the methodology is drawn from Dr. Kristin Sainani's Writing in the Sciences course at Stanford University (labarba/sciwrite at 5b2ef3b)",
             "licence": "CC BY (version not stated)",
-            "licence_note": "as sciwrite states it for the course's video lectures: 'CC-BY lectures' (SKILL.md front matter) and 'The original video lectures are available on YouTube under a CC BY license' (README, Acknowledgments, linking https://www.youtube.com/playlist?list=PLVc-QdfGfSl2Ntc6CvIP83Nj_uHTSdNSw); the lectures' own licence statement was not read, and no lecture material is copied into the item except through sciwrite's text"
+            "licence_note": "as sciwrite states it for the course's video lectures: 'CC-BY lectures' (SKILL.md front matter) and 'The original video lectures are available on YouTube under a CC BY license' (README, Acknowledgments, linking https://www.youtube.com/playlist?list=PLVc-QdfGfSl2Ntc6CvIP83Nj_uHTSdNSw); the item copies no lecture material except through sciwrite's text"
           },
           {
             "name": "How to construct a Nature summary paragraph",
@@ -26826,7 +26835,7 @@
             "cite": "Nature. How to construct a Nature summary paragraph. September 2019. https://www.nature.com/documents/nature-summary-paragraph.pdf",
             "what": "the sequence of rhetorical moves and sentence budgets Pass 6 checks a summary paragraph against; sciwrite's README at 5b2ef3b says Pass 6 follows this guide and that the document, the property of Springer Nature, is referenced, not reproduced (the item names Nature's structure in references/summary-paragraph.md)",
             "licence": "not stated",
-            "licence_note": "the guide's own terms were not read; no text of it is copied into the item"
+            "licence_note": "sciwrite's README calls the document the property of Springer Nature, referenced and not reproduced; the item copies none of its text"
           }
         ],
         "refused_sources": [],

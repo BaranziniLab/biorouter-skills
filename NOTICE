@@ -43,22 +43,22 @@ Credited to Bossuyt PM et al., with Reitsma JB, Bruns DE, Gatsonis CA, Glasziou 
 Cite: Bossuyt PM, Reitsma JB, Bruns DE, Gatsonis CA, Glasziou PP, Irwig L, et al. STARD 2015: an updated list of essential items for reporting diagnostic accuracy studies. BMJ 2015;351:h5527. doi:10.1136/bmj.h5527
 
 replication-package-audit includes material from TRIPOD+AI 2024 (DOI 10.1136/bmj-2023-078378),
-© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY. No commercial re-use. See rights and permissions. Published by BMJ. Licensed under CC-BY-4.0.
+© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY. No commercial re-use. See rights and permissions. Published by BMJ. Licensed under CC-BY-4.0. The article's licence paragraph grants CC BY 4.0, commercial use included.
 Credited to Collins GS et al., with Moons KGM, Dhiman P.
 Cite: Collins GS, Moons KGM, Dhiman P, et al. TRIPOD+AI statement: updated guidance for reporting clinical prediction models that use regression or machine learning methods. BMJ 2024;385:e078378. doi:10.1136/bmj-2023-078378
 
 replication-package-audit includes material from PRISMA 2020 (DOI 10.1136/bmj.n71),
-© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY. No commercial re-use. See rights and permissions. Published by BMJ. Licensed under CC-BY-4.0.
+© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY. No commercial re-use. See rights and permissions. Published by BMJ. Licensed under CC-BY-4.0. The article's licence paragraph grants CC BY 4.0, commercial use included.
 Credited to Page MJ et al., with McKenzie JE, Bossuyt PM, Boutron I, Hoffmann TC, Mulrow CD.
 Cite: Page MJ, McKenzie JE, Bossuyt PM, Boutron I, Hoffmann TC, Mulrow CD, et al. The PRISMA 2020 statement: an updated guideline for reporting systematic reviews. BMJ 2021;372:n71. doi:10.1136/bmj.n71
 
 replication-package-audit includes material from CONSORT 2025 (DOI 10.1136/bmj-2024-081123),
-© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY. No commercial re-use. See rights and permissions. Published by BMJ. Licensed under CC-BY-4.0.
+© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY. No commercial re-use. See rights and permissions. Published by BMJ. Licensed under CC-BY-4.0. The article's licence paragraph grants CC BY 4.0, commercial use included.
 Credited to Hopewell S et al., with Chan AW, Collins GS, Hróbjartsson A, Moher D, Schulz KF.
 Cite: Hopewell S, Chan AW, Collins GS, Hróbjartsson A, Moher D, Schulz KF, et al. CONSORT 2025 statement: updated guideline for reporting randomised trials. BMJ 2025;389:e081123. doi:10.1136/bmj-2024-081123
 
 replication-package-audit includes material from SPIRIT 2025 (DOI 10.1136/bmj-2024-081477),
-© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY. No commercial re-use. See rights and permissions. Published by BMJ. Licensed under CC-BY-4.0.
+© Author(s) (or their employer(s)) 2019. Re-use permitted under CC BY. No commercial re-use. See rights and permissions. Published by BMJ. Licensed under CC-BY-4.0. The article's licence paragraph grants CC BY 4.0, commercial use included.
 Credited to Chan AW et al., with Boutron I, Hopewell S, Moher D, Schulz KF, Collins GS.
 Cite: Chan AW, Boutron I, Hopewell S, Moher D, Schulz KF, Collins GS, et al. SPIRIT 2025 statement: updated guideline for protocols of randomised trials. BMJ 2025;389:e081477. doi:10.1136/bmj-2024-081477
 
@@ -72,7 +72,7 @@ Credited to Cathryn Lavery.
 
 scientific-artifacts, scientific-data-engineering, statistical-modeling-bayes, scientific-machine-learning, geospatial-science, neurophysiology-analysis, quantum-scientific-computing, materials-informatics, biomedical-imaging-pathology, citation-library-management, laboratory-automation-planning, systematic-review-prisma, simulation-optimization, physical-science-computing, clinical-decision-support-review, grant-funding-strategy, regulatory-quality-systems, gpu-compute-optimization, research-evaluation-venues, database-access, exploratory-data-analysis, figure-qa, manuscript-peer-review, microscopy-image-analysis, python-visualization, scientific-manuscript-writing include material from K-Dense-AI/scientific-agent-skills (44 folders across the items named here, commit ec59a29a03d5c40f73ab40878df04860bc00e876),
 Copyright (c) 2025 K-Dense Inc. Licensed under MIT.
-Credited to K-Dense Inc., with Timothy Kassis, Vinayak Agarwal, Yuhuan He, Darshil Patel, Aubrey M. Brueckner, Dylan Pulver, Andrey Fedorov, Tai An.
+Credited to K-Dense Inc., with Timothy Kassis, Vinayak Agarwal, Yuhuan He, Darshil Patel, Aubrey M. Brueckner, Dylan Pulver, Yaroslav Halchenko, Andrey Fedorov, Tai An.
 Cite: Timothy Kassis, Vinayak Agarwal, Yuhuan He, Darshil Patel and Aubrey M. Brueckner. Scientific Agent Skills: A Library of Procedural Knowledge for Research Agents. arXiv:2609.00065 (2026). doi:10.48550/arXiv.2609.00065
 
 scientific-artifacts, scientific-data-engineering, statistical-modeling-bayes, scientific-machine-learning, quantum-scientific-computing, biomedical-imaging-pathology, simulation-optimization include material from K-Dense-AI/scientific-agent-skills (10 folders across the items named here, commit ec59a29a03d5c40f73ab40878df04860bc00e876),
@@ -128,7 +128,7 @@ ralph includes material from snarktank/ralph (skills/prd, skills/ralph, prompt.m
 Copyright (c) 2026 snarktank, licensed under MIT.
 Credited to snarktank, with Ryan Carson, Manav Kundra.
 
-superpowers includes material from obra/superpowers (skills/ (13 of 15; using-superpowers and diagnosing-superpowers left out), commit 22f0b463e7a5e579904dd6211a520321035526f7),
+superpowers includes material from obra/superpowers (skills/brainstorming, skills/dispatching-parallel-agents, skills/executing-plans, skills/finishing-a-development-branch, skills/receiving-code-review, skills/requesting-code-review, skills/subagent-driven-development, skills/systematic-debugging, skills/test-driven-development, skills/using-git-worktrees, skills/verification-before-completion, skills/writing-plans, skills/writing-skills, commit 22f0b463e7a5e579904dd6211a520321035526f7),
 Copyright (c) 2025 Jesse Vincent, licensed under MIT.
 Credited to Jesse Vincent.
 
@@ -136,7 +136,7 @@ ucsf-hpc includes material from BaranziniLab/UCSFHPCAgent (skills/ucsf-hpc-compu
 Credited to Baranzini Lab (Wanjun Gu, UCSF).
 
 code-review, commit-commands, code-modernization include material from anthropics/claude-plugins-official (5 folders across the items named here, commit 73c8cf3ea7e296057b467990f2f5d61b4c922260), licensed under Apache-2.0; its licence names no copyright holder.
-Credited to Anthropic, with Noah Zweben, Dickson Tsai, Pete Blois, Mohamed Hegazy, Octavian Guzu, Morgan Lunt.
+Credited to Anthropic, with Noah Zweben, Mohamed Hegazy, Pete Blois, Octavian Guzu, Morgan Lunt.
 
 code-review, reporting, figure-qa, interactive-dashboards, r-package-development include material from posit-dev/skills (5 folders across the items named here, commit 951959403f4ecc9d0274adf35538fc67153b6f31),
 Copyright (c) 2025 Posit PBC, licensed under MIT.
@@ -152,7 +152,7 @@ Credited to Knut Sveidqvist.
 frontend-design includes material from anthropics/skills (skills/frontend-design, commit e4bb5d960d87126ff3b3a8af1a104b7db67560ba), licensed under Apache-2.0; its licence names no copyright holder.
 Credited to Anthropic, with Keith Lazuka, william qian.
 
-frontend-design includes material from Leonxlnx/taste-skill (skills/taste-skill/SKILL.md (v2 single-file), commit 84ff339312d29955ce2040c02fd6e5bedb934608),
+frontend-design includes material from Leonxlnx/taste-skill (skills/taste-skill/SKILL.md, commit 84ff339312d29955ce2040c02fd6e5bedb934608),
 Copyright (c) 2026 Leonxlnx, licensed under MIT.
 Credited to Leonxlnx, with Leon Lin.
 
@@ -160,7 +160,7 @@ reporting includes material from openai/skills (skills/.curated/jupyter-notebook
 Credited to OpenAI, with Vaibhav Srivastav, Dominik Kundel, Gav Verma.
 
 reporting includes material from marimo-team/skills (skills/marimo-notebook, skills/jupyter-to-marimo, commit d5783f16066d6b05576e8a8637466c11f2433734), licensed under Apache-2.0; its licence names no copyright holder.
-Credited to marimo, with Myles Scolnick, vincent d warmerdam, Arpit Garg, Trevor Manz, Konstantin Taletskiy.
+Credited to marimo, with vincent d warmerdam, Myles Scolnick, Arpit Garg, Trevor Manz, Konstantin Taletskiy.
 
 figure-qa includes material from neuromechanist/research-skills (plugins/figures/skills/figure-qa/references/figure-qa-procedure.md, plugins/figures/agents/figure-qa-scripts/check_raster.py, plugins/figures/agents/figure-qa-scripts/check_svg.py, plugins/figures/agents/figure-qa-scripts/check_plot_script.py, commit 1bbc8382711216a39cee05e6e096acbf6b1b6d65),
 Copyright (c) 2026, Seyed (Yahya) Shirazi, licensed under BSD-3-Clause.
@@ -207,13 +207,13 @@ Cite: Lorena A. Barba. SciWrite: an Agent Skill for reviewing the writing qualit
 Other credited work
 ===================
 
-database-access uses PubMed (NCBI E-utilities) (https://eutils.ncbi.nlm.nih.gov/entrez/eutils), a service by National Center for Biotechnology Information; terms: NLM public-domain utility service; terms: https://www.ncbi.nlm.nih.gov/books/NBK25501/ (as BioMCP 0.9.3's source inventory records it, reviewed 2026-04-10).
+database-access uses PubMed (NCBI E-utilities) (https://eutils.ncbi.nlm.nih.gov/entrez/eutils), a service by National Center for Biotechnology Information; terms: NLM does not claim the copyright on the abstracts in PubMed, though journal publishers or authors may, and NCBI places no restrictions on the molecular data it holds, though submitters may claim rights in theirs; scripts are to send E-utilities requests to eutils.ncbi.nlm.nih.gov, make no more than 3 requests a second, pass the tool and email parameters, run any series of more than 100 requests at weekends or between 9 pm and 5 am Eastern Time on weekdays, and make NCBI's disclaimer and copyright notice evident to their users (NCBI policies page, https://www.ncbi.nlm.nih.gov/home/about/policies/, read 2026-11-27).
 
 database-access uses Crossref REST API (https://api.crossref.org), a service by Crossref; terms: No sign-up is needed, almost none of the metadata is subject to copyright and it may be used for any purpose, though some abstracts may be under their publishers' or authors' copyright; the polite pool asks for a mailto address (Crossref REST API page, https://www.crossref.org/documentation/retrieve-metadata/rest-api/, read 2026-11-27).
 
 database-access uses OpenAlex API (https://api.openalex.org), a service by OurResearch; terms: OpenAlex data is under CC0, in the public domain (attribution appreciated, not required); free API use is capped at 100,000 credits a day and 100 requests a second, more on a paid plan (OpenAlex's documentation source, ourresearch/openalex-docs license.md and how-to-use-the-api/rate-limits-and-authentication.md at 8cec9db, read 2026-11-27).
 
-database-access uses Semantic Scholar Graph API (https://api.semanticscholar.org/graph/v1), a service by Allen Institute for AI; terms: custom API license agreement; terms: https://www.semanticscholar.org/product/api/license (as BioMCP 0.9.3's source inventory records it, reviewed 2026-09-27).
+database-access uses Semantic Scholar Graph API (https://api.semanticscholar.org/graph/v1), a service by Allen Institute for AI; terms: The Allen Institute for Artificial Intelligence (AI2) grants a limited, non-exclusive, terminable licence to use the API to reach and display the data Semantic Scholar serves, which stay under the licences that come with them (such as CC BY-NC or ODC-BY) and, for third-party content, its owners' terms; users may not redistribute or sublicense the API or exceed or get around its rate limits, are to credit Semantic Scholar in material that draws on it, and are to cite The Semantic Scholar Open Data Platform in scientific publications whose results used it (Semantic Scholar API License Agreement, last updated May 17, 2023, https://www.semanticscholar.org/product/api/license, read 2026-11-28).
 
 database-access uses arXiv API (https://export.arxiv.org/api/query), a service by arXiv (Cornell University); terms: Descriptive metadata is free to use under CC0 1.0; e-prints keep their authors' or publishers' copyright, and redistributing one needs the holder's permission unless its own licence allows it; the legacy API asks for at most one request every three seconds over one connection (arXiv API terms of use, https://info.arxiv.org/help/api/tou.html, read 2026-11-27).
 
